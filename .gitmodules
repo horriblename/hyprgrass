@@ -1,0 +1,3 @@
+[submodule "wf-touch"]
+	path = subprojects/wf-touch
+	url = https://github.com/WayfireWM/wf-touch
