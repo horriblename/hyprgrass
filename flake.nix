@@ -16,12 +16,13 @@
         pkgs = import nixpkgs { inherit system; };
         hyprpkgs = hyprland.packages.${system};
       in
-      {
+      rec {
         packages.default = pkgs.callPackage ./hyprland-touch-gestures.nix {
           stdenv = pkgs.gcc12Stdenv;
           hyprland-headers = hyprpkgs.hyprland-pluginenv;
           wlroots = hyprpkgs.wlroots-hyprland;
         };
+        packages.wf-touch = pkgs.callPackage ./wf-touch.nix { };
 
         devShells.default = pkgs.mkShell.override { stdenv = pkgs.gcc12Stdenv; } {
           name = "hyprland-plugin-shell";
@@ -37,6 +38,7 @@
             hyprpkgs.wlroots-hyprland
             libdrm
             pixman
+            packages.wf-touch
           ];
 
           inputsFrom = [
