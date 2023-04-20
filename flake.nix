@@ -20,12 +20,12 @@
       pkgs = import nixpkgs {inherit system;};
       hyprpkgs = hyprland.packages.${system};
     in rec {
-      packages.default = pkgs.callPackage ./hyprland-touch-gestures.nix {
+      packages.default = pkgs.callPackage ./nix/default.nix {
         stdenv = pkgs.gcc12Stdenv;
         hyprland-headers = hyprpkgs.hyprland-pluginenv;
         wlroots = hyprpkgs.wlroots-hyprland;
       };
-      packages.wf-touch = pkgs.callPackage ./wf-touch.nix {};
+      packages.wf-touch = pkgs.callPackage ./nix/wf-touch.nix {};
 
       formatter = pkgs.alejandra;
       devShells.default = pkgs.mkShell.override {stdenv = pkgs.gcc12Stdenv;} {

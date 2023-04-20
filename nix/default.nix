@@ -26,7 +26,7 @@
 stdenv.mkDerivation {
   pname = "hyprland-touch-gestures";
   inherit version;
-  src = ./.;
+  src = ./..;
 
   HYPRLAND_HEADERS = hyprland-headers;
 
