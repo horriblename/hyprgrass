@@ -20,9 +20,14 @@ stdenv.mkDerivation {
   };
 
   nativeBuildInputs = [meson pkg-config cmake ninja];
-  buildInputs = [glm doctest];
+  buildInputs = [doctest];
+  propagatedBuildInputs = [glm];
 
   mesonBuildType = "release";
+
+  patches = [
+    ./wf-touch.patch
+  ];
 
   outputs = ["out" "dev"];
   meta = with lib; {

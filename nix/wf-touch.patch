@@ -1,0 +1,14 @@
+diff --git a/meson.build b/meson.build
+index 33dbb59..b432d84 100644
+--- a/meson.build
++++ b/meson.build
+@@ -13,6 +13,9 @@ subdir: 'wayfire/touch')
+ wftouch_lib = static_library('wftouch', ['src/touch.cpp', 'src/actions.cpp', 'src/math.cpp'],
+     dependencies: glm, install: true)
+ 
++pkg = import('pkgconfig')
++pkg.generate(wftouch_lib)
++
+ wftouch = declare_dependency(link_with: wftouch_lib,
+     include_directories: wf_touch_inc_dirs, dependencies: glm)
+ 
