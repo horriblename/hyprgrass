@@ -10,43 +10,47 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { nixpkgs, hyprland, flake-utils, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs { inherit system; };
-        hyprpkgs = hyprland.packages.${system};
-      in
-      rec {
-        packages.default = pkgs.callPackage ./hyprland-touch-gestures.nix {
-          stdenv = pkgs.gcc12Stdenv;
-          hyprland-headers = hyprpkgs.hyprland-pluginenv;
-          wlroots = hyprpkgs.wlroots-hyprland;
-        };
-        packages.wf-touch = pkgs.callPackage ./wf-touch.nix { };
+  outputs = {
+    nixpkgs,
+    hyprland,
+    flake-utils,
+    ...
+  }:
+    flake-utils.lib.eachDefaultSystem (system: let
+      pkgs = import nixpkgs {inherit system;};
+      hyprpkgs = hyprland.packages.${system};
+    in rec {
+      packages.default = pkgs.callPackage ./hyprland-touch-gestures.nix {
+        stdenv = pkgs.gcc12Stdenv;
+        hyprland-headers = hyprpkgs.hyprland-pluginenv;
+        wlroots = hyprpkgs.wlroots-hyprland;
+      };
+      packages.wf-touch = pkgs.callPackage ./wf-touch.nix {};
 
-        devShells.default = pkgs.mkShell.override { stdenv = pkgs.gcc12Stdenv; } {
-          name = "hyprland-plugin-shell";
-          nativeBuildInputs = with pkgs; [
-            cmake
-            pkg-config
+      formatter = pkgs.alejandra;
+      devShells.default = pkgs.mkShell.override {stdenv = pkgs.gcc12Stdenv;} {
+        name = "hyprland-plugin-shell";
+        nativeBuildInputs = with pkgs; [
+          cmake
+          pkg-config
 
-            clang-tools_15
-            bear
-          ];
+          clang-tools_15
+          bear
+        ];
 
-          buildInputs = with pkgs; [
-            hyprpkgs.wlroots-hyprland
-            libdrm
-            pixman
-            packages.wf-touch
-          ];
+        buildInputs = with pkgs; [
+          hyprpkgs.wlroots-hyprland
+          libdrm
+          pixman
+          packages.wf-touch
+        ];
 
-          inputsFrom = [
-            hyprpkgs.hyprland
-            hyprpkgs.wlroots-hyprland
-          ];
+        inputsFrom = [
+          hyprpkgs.hyprland
+          hyprpkgs.wlroots-hyprland
+        ];
 
-          #HYPRLAND_HEADERS = hyprpkgs.hyprland.src; - TODO
-        };
-      });
+        #HYPRLAND_HEADERS = hyprpkgs.hyprland.src; - TODO
+      };
+    });
 }

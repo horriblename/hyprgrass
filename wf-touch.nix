@@ -1,12 +1,13 @@
-{ lib
-, stdenv
-, fetchFromGitHub
-, pkg-config
-, meson
-, cmake
-, ninja
-, glm
-, doctest
+{
+  lib,
+  stdenv,
+  fetchFromGitHub,
+  pkg-config,
+  meson,
+  cmake,
+  ninja,
+  glm,
+  doctest,
 }:
 stdenv.mkDerivation {
   pname = "wf-touch";
@@ -18,12 +19,12 @@ stdenv.mkDerivation {
     hash = "sha256-MjsYeKWL16vMKETtKM5xWXszlYUOEk3ghwYI85Lv4SE=";
   };
 
-  nativeBuildInputs = [ meson pkg-config cmake ninja ];
-  buildInputs = [ glm doctest ];
+  nativeBuildInputs = [meson pkg-config cmake ninja];
+  buildInputs = [glm doctest];
 
   mesonBuildType = "release";
 
-  outputs = [ "out" "dev"];
+  outputs = ["out" "dev"];
   meta = with lib; {
     homepage = "https://github.com/WayfireWM/wf-touch";
     license = licenses.mit;
