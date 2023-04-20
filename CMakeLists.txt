@@ -10,27 +10,22 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
       ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
 endif()
 
-IF(NOT DEFINED ENV{HYPRLAND_HEADERS})
- message(FATAL_ERROR "$HYPRLAND_HEADERS is unset")
-ENDIF()
-
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(DEPS REQUIRED pixman-1 libdrm)
+pkg_check_modules(DEPS REQUIRED pixman-1 libdrm wf-touch)
 
 include_directories(
 	"include/"
 )
 
-add_library(hy3 SHARED
+add_library(touch-gestures SHARED
 	# files here
 	"src/main.cpp"
 )
 
-target_include_directories(hy3 PRIVATE
+target_include_directories(touch-gestures PRIVATE
 	${DEPS_INCLUDE_DIRS}
-	$ENV{HYPRLAND_HEADERS}
 )
 
-install(TARGETS hy3
+install(TARGETS touch-gestures
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

@@ -1,10 +1,12 @@
-[split-monitor-workspaces]
-description = "Split monitor workspaces"
-version = "1.0.0"
-author = "Duckonaut"
+[touch-gestures]
+description = "Touch gestures"
+version = "0.0.1"
+author = "horriblename"
 
 [split-monitor-workspaces.build]
-output = "split-monitor-workspaces.so"
+output = "touch-gestures.so"
 steps = [
-    "make all",
+    "mkdir -p build",
+    "cmake -B build",
+    "cmake --build build",
 ]
