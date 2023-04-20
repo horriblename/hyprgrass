@@ -23,6 +23,7 @@
       packages.default = pkgs.callPackage ./nix/default.nix {
         stdenv = pkgs.gcc12Stdenv;
         hyprland-headers = hyprpkgs.hyprland-pluginenv;
+				wf-touch = packages.wf-touch;
         wlroots = hyprpkgs.wlroots-hyprland;
       };
       packages.wf-touch = pkgs.callPackage ./nix/wf-touch.nix {};

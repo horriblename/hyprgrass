@@ -20,7 +20,7 @@
   libxcb,
   xcbutilwm,
   xwayland,
-  # , wf-touch
+  wf-touch,
   version ? "git",
 }:
 stdenv.mkDerivation {
@@ -49,6 +49,7 @@ stdenv.mkDerivation {
     wayland-scanner
     pciutils
     wlroots
+		wf-touch
 
     libxcb
     xcbutilwm
