@@ -4,7 +4,7 @@ IndentWidth: 4
 UseTab: Never
 AllowShortIfStatementsOnASingleLine: false
 IndentCaseLabels: true
-ColumnLimit: 200
+ColumnLimit: 80
 PointerAlignment: Left
 AllowShortBlocksOnASingleLine: Empty
 AllowShortEnumsOnASingleLine: false
