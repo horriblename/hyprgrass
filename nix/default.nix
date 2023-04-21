@@ -1,8 +1,10 @@
 {
   lib,
   stdenv,
-  cmake,
-  hyprland-headers,
+  # cmake,
+	ninja,
+	meson,
+  hyprland,
   pkg-config,
   cairo,
   hyprland-protocols,
@@ -28,14 +30,12 @@ stdenv.mkDerivation {
   inherit version;
   src = ./..;
 
-  HYPRLAND_HEADERS = hyprland-headers;
-
   outputs = ["out"];
 
-  nativeBuildInputs = [pkg-config cmake];
+  nativeBuildInputs = [pkg-config ninja meson];
 
   buildInputs = [
-    hyprland-headers
+    hyprland
     cairo
     hyprland-protocols
     libdrm
