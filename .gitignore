@@ -1,2 +1,4 @@
 *.so
 compile_flags.txt
+.ccls-cache
+.ccls
