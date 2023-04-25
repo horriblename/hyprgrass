@@ -14,20 +14,23 @@ const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f,
 inline CFunctionHook* g_pTouchDownHook = nullptr;
 inline CFunctionHook* g_pTouchUpHook = nullptr;
 inline CFunctionHook* g_pTouchMoveHook = nullptr;
+typedef void (*origTouchDown)(void*, wlr_touch_down_event*);
+typedef void (*origTouchUp)(void*, wlr_touch_up_event*);
+typedef void (*origTouchMove)(void*, wlr_touch_motion_event*);
 
 void hkOnTouchDown(void* thisptr, wlr_touch_down_event* e) {
     if (g_pGestureManager->onTouchDown(e))
         return;
 
-    g_pInputManager->onTouchDown(e);
+    (*(origTouchDown)g_pTouchDownHook->m_pOriginal)(thisptr, e);
 }
 
 void hkOnTouchUp(void* thisptr, wlr_touch_up_event* e) {
-    g_pInputManager->onTouchUp(e);
+    (*(origTouchUp)g_pTouchUpHook->m_pOriginal)(thisptr, e);
 }
 
 void hkOnTouchMove(void* thisptr, wlr_touch_motion_event* e) {
-    g_pInputManager->onTouchMove(e);
+    (*(origTouchMove)g_pTouchMoveHook->m_pOriginal)(thisptr, e);
 }
 
 // Do NOT change this function.
@@ -43,8 +46,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValue(PHANDLE, "touch-gestures:3:right-left",
                                 SConfigValue{.strValue = ""});
 
-    HyprlandAPI::reloadConfig();
-
     // Hook a private member
     g_pTouchDownHook = HyprlandAPI::createFunctionHook(
         PHANDLE, (void*)&CInputManager::onTouchDown, (void*)&hkOnTouchDown);
@@ -59,6 +60,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     g_pTouchUpHook->hook();
     g_pTouchMoveHook->hook();
 
+    HyprlandAPI::reloadConfig();
+
+    Debug::log(LOG, "[touch-gestures] Initialized successfully!");
     HyprlandAPI::addNotification(PHANDLE,
                                  "[touch-gestures] Initialized successfully!",
                                  s_pluginColor, 5000);
