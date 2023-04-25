@@ -58,7 +58,7 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state,
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 
-CGestures::CGestures() {
+void CGestures::addDefaultGestures() {
     static const double SENSITIVITY = TEMP_CONFIG_SENSITIVITY;
 
     auto swipe =
@@ -67,24 +67,24 @@ CGestures::CGestures() {
     swipe->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE * SENSITIVITY);
 
     // Edge swipe needs a quick release to be considered edge swipe
-    auto edge_swipe =
+    auto edge =
         std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE / SENSITIVITY);
     auto edge_release = std::make_unique<wf::touch::touch_action_t>(1, false);
-    edge_swipe->set_duration(GESTURE_BASE_DURATION * SENSITIVITY);
-    edge_swipe->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE *
-                                   SENSITIVITY);
+    edge->set_duration(GESTURE_BASE_DURATION * SENSITIVITY);
+    edge->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE * SENSITIVITY);
 
     // The release action needs longer duration to handle the case where the
     // gesture is actually longer than the max distance.
     edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * SENSITIVITY);
 
+    // HACK I should figure out how to properly manage memory here
     auto swipe_ptr = swipe.get();
-    auto edge_ptr = edge_swipe.get();
+    auto edge_ptr = edge.get();
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions,
         edge_swipe_actions;
     swipe_actions.emplace_back(std::move(swipe));
-    edge_swipe_actions.emplace_back(std::move(edge_swipe));
+    edge_swipe_actions.emplace_back(std::move(edge));
     edge_swipe_actions.emplace_back(std::move(edge_release));
 
     auto ack_swipe = [swipe_ptr, this]() {
@@ -112,14 +112,23 @@ CGestures::CGestures() {
             handleGesture(gesture);
         }
     };
-    m_pMultiSwipe = std::make_unique<wf::touch::gesture_t>(
+    auto multi_swipe = std::make_unique<wf::touch::gesture_t>(
         std::move(swipe_actions), ack_swipe);
-    m_pEdgeSwipe = std::make_unique<wf::touch::gesture_t>(
+    auto edge_swipe = std::make_unique<wf::touch::gesture_t>(
         std::move(edge_swipe_actions), ack_edge_swipe);
+
+    addTouchGesture(std::move(multi_swipe));
+    addTouchGesture(std::move(edge_swipe));
+
+    Debug::log(INFO, "initialized a CGestures object");
 }
 
 void CGestures::emulateSwipeBegin() {}
 void CGestures::emulateSwipeEnd() {}
+
+void CGestures::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture) {
+    m_pGestures.emplace_back(std::move(gesture));
+}
 
 void CGestures::handleGesture(const TouchGesture& gev) {
     Debug::log(INFO, "handling gesture {direction = %d, fingers = %d }",

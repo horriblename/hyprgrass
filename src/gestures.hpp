@@ -85,7 +85,8 @@ class CGestures {
     void emulateSwipeBegin();
     void emulateSwipeEnd();
 
-    void addTouchGesture(wf::touch::gesture_t gesture);
+    void addDefaultGestures(); // TODO rename to init or something?
+    void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
     void handleGesture(const TouchGesture& gev);
     // TODO how to refer to gesture?
     // void deleteTouchGesture()
@@ -96,8 +97,6 @@ class CGestures {
     std::unique_ptr<wf::touch::gesture_state_t> m_pGestureState;
     Vector2D m_vTouchGestureLastCenter;
     bool m_bTouchGestureActive;
-
-    std::unique_ptr<wf::touch::gesture_t> m_pMultiSwipe, m_pEdgeSwipe;
 
     CMonitor* m_pLastTouchedMonitor;
 
