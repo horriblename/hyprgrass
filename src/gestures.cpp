@@ -58,6 +58,10 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state,
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 
+CGestures::CGestures() {
+    addDefaultGestures();
+}
+
 void CGestures::addDefaultGestures() {
     static const double SENSITIVITY = TEMP_CONFIG_SENSITIVITY;
 

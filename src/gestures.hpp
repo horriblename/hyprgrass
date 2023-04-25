@@ -85,7 +85,6 @@ class CGestures {
     void emulateSwipeBegin();
     void emulateSwipeEnd();
 
-    void addDefaultGestures(); // TODO rename to init or something?
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
     void handleGesture(const TouchGesture& gev);
     // TODO how to refer to gesture?
@@ -100,6 +99,7 @@ class CGestures {
 
     CMonitor* m_pLastTouchedMonitor;
 
+    void addDefaultGestures();
     void updateGestures(const wf::touch::gesture_event_t&);
     uint32_t find_swipe_edges(wf::touch::point_t point);
 };

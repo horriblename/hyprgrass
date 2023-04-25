@@ -1,5 +1,6 @@
 // #include "src/plugins/PluginAPI.hpp"
 #include "src/gestures.hpp"
+#include <memory>
 #define WLR_USE_UNSTABLE
 
 #include "globals.hpp"
@@ -56,7 +57,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     g_pTouchMoveHook = HyprlandAPI::createFunctionHook(
         PHANDLE, (void*)&CInputManager::onTouchDown, (void*)&hkOnTouchMove);
 
-    g_pGestureManager->addDefaultGestures();
+    g_pGestureManager = std::make_unique<CGestures>();
 
     return {"touch-gestures", "Touchscreen gestures", "horriblename", "1.0"};
 }
