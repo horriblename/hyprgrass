@@ -41,7 +41,7 @@ enum eTouchGestureDirection {
     // GESTURE_DIRECTION_OUT = (1 << 5),
 };
 
-// can be one of @eTouchGestureDirection or a combination of them, or none (0)
+// can be one of @eTouchGestureDirection or a combination of them
 using gestureDirection = uint32_t;
 
 /**
