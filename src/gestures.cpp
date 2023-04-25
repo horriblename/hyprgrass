@@ -160,6 +160,10 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
 }
 
 uint32_t CGestures::find_swipe_edges(wf::touch::point_t point) {
+    if (!m_pLastTouchedMonitor) {
+        Debug::log(ERR, "[touch-gestures] m_pLastTouchedMonitor is null!");
+        return 0;
+    }
     auto position = m_pLastTouchedMonitor->vecPosition;
     auto geometry = m_pLastTouchedMonitor->vecSize;
 
