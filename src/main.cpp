@@ -46,7 +46,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
-    HyprlandAPI::addNotification(
-        PHANDLE, "[split-monitor-workspaces] Unloaded successfully!",
-        s_pluginColor, 5000);
+    HyprlandAPI::addNotification(PHANDLE,
+                                 "[touch-gestures] Unloaded successfully!",
+                                 s_pluginColor, 5000);
 }

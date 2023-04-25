@@ -3,10 +3,9 @@ description = "Touch gestures"
 version = "0.0.1"
 author = "horriblename"
 
-[split-monitor-workspaces.build]
-output = "touch-gestures.so"
+[touch-gestures.build]
+output = "_build/libtouch-gestures.so"
 steps = [
-    "mkdir -p build",
-    "cmake -B build",
-    "cmake --build build",
+    "meson setup _build",
+    "ninja -C _build",
 ]
