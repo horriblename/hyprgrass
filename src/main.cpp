@@ -45,10 +45,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     HyprlandAPI::reloadConfig();
 
-    HyprlandAPI::addNotification(PHANDLE,
-                                 "[touch-gestures] Initialized successfully!",
-                                 s_pluginColor, 5000);
-
     // Hook a private member
     g_pTouchDownHook = HyprlandAPI::createFunctionHook(
         PHANDLE, (void*)&CInputManager::onTouchDown, (void*)&hkOnTouchDown);
@@ -58,6 +54,14 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         PHANDLE, (void*)&CInputManager::onTouchDown, (void*)&hkOnTouchMove);
 
     g_pGestureManager = std::make_unique<CGestures>();
+
+    g_pTouchDownHook->hook();
+    g_pTouchUpHook->hook();
+    g_pTouchMoveHook->hook();
+
+    HyprlandAPI::addNotification(PHANDLE,
+                                 "[touch-gestures] Initialized successfully!",
+                                 s_pluginColor, 5000);
 
     return {"touch-gestures", "Touchscreen gestures", "horriblename", "1.0"};
 }
