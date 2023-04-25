@@ -1,51 +1,180 @@
 #include "gestures.hpp"
 #include "src/Compositor.hpp"
+#include "src/debug/Log.hpp"
 #include "src/managers/input/InputManager.hpp"
+#include <algorithm>
+#include <cstdint>
+#include <memory>
+#include <vector>
+#include <wayfire/touch/touch.hpp>
 
-// returns whether or not to inhibit further actions
-void CGestures::onTouchDown(wlr_touch_down_event* e) {
-    if (e->touch_id == 0) {
-        return;
+constexpr double SWIPE_THRESHOLD = 30.;
+
+constexpr double TEMP_CONFIG_SENSITIVITY = 1;
+
+wf::touch::action_status_t
+CMultiAction::update_state(const wf::touch::gesture_state_t& state,
+                           const wf::touch::gesture_event_t& event) {
+    if (event.time - this->start_time > this->get_duration()) {
+        return wf::touch::ACTION_STATUS_CANCELLED;
     }
-    auto PMONITOR = g_pCompositor->getMonitorFromName(e->touch->output_name ? e->touch->output_name : "");
 
-    const auto PDEVIT = std::find_if(g_pInputManager->m_lTouchDevices.begin(), g_pInputManager->m_lTouchDevices.end(), [&](const STouchDevice& other) { return other.pWlrDevice == &e->touch->base; });
+    if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP) {
+        return wf::touch::ACTION_STATUS_CANCELLED;
+    }
 
-    if (PDEVIT != g_pInputManager->m_lTouchDevices.end() && !PDEVIT->boundOutput.empty())
-        PMONITOR = g_pCompositor->getMonitorFromName(PDEVIT->boundOutput);
+    if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
+        finger_count = state.fingers.size();
+        for (auto& finger : state.fingers) {
+            if (glm::length(finger.second.delta()) >
+                GESTURE_INITIAL_TOLERANCE) {
+                return wf::touch::ACTION_STATUS_CANCELLED;
+            }
+        }
 
-    PMONITOR = PMONITOR ? PMONITOR : g_pCompositor->m_pLastMonitor;
+        return wf::touch::ACTION_STATUS_RUNNING;
+    }
 
-    wlr_cursor_warp(g_pCompositor->m_sWLRCursor, nullptr, PMONITOR->vecPosition.x + e->x * PMONITOR->vecSize.x, PMONITOR->vecPosition.y + e->y * PMONITOR->vecSize.y);
+    // swipe case
+    if ((glm::length(state.get_center().delta()) >= MIN_SWIPE_DISTANCE) &&
+        (this->target_direction == 0)) {
+        this->target_direction = state.get_center().get_direction();
+    }
 
-    g_pInputManager->refocus();
+    if (this->target_direction == 0) {
+        return wf::touch::ACTION_STATUS_RUNNING;
+    }
 
-    g_pInputManager->m_bLastInputTouch = true;
+    for (auto& finger : state.fingers) {
+        if (finger.second.get_incorrect_drag_distance(this->target_direction) >
+            this->get_move_tolerance()) {
+            return wf::touch::ACTION_STATUS_CANCELLED;
+        }
+    }
 
-    // g_pInputManager->m_sTouchData.touchFocusWindow = g_pInputManager->m_pFoundWindowToFocus;
-    // g_pInputManager->m_sTouchData.touchFocusSurface = g_pInputManager->m_pFoundSurfaceToFocus;
-    // g_pInputManager->m_sTouchData.touchFocusLS = g_pInputManager->m_pFoundLSToFocus;
-    //
-    // Vector2D local;
-    //
-    // if (g_pInputManager->m_sTouchData.touchFocusWindow) {
-    //     if (g_pInputManager->m_sTouchData.touchFocusWindow->m_bIsX11) {
-    //         local = g_pInputManager->getMouseCoordsInternal() - g_pInputManager->m_sTouchData.touchFocusWindow->m_vRealPosition.goalv();
-    //     } else {
-    //         g_pCompositor->vectorWindowToSurface(g_pInputManager->getMouseCoordsInternal(), g_pInputManager->m_sTouchData.touchFocusWindow, local);
-    //     }
-    //
-    //     g_pInputManager->m_sTouchData.touchSurfaceOrigin = g_pInputManager->getMouseCoordsInternal() - local;
-    // } else if (g_pInputManager->m_sTouchData.touchFocusLS) {
-    //     local = g_pInputManager->getMouseCoordsInternal() - Vector2D(g_pInputManager->m_sTouchData.touchFocusLS->geometry.x, g_pInputManager->m_sTouchData.touchFocusLS->geometry.y) -
-    //             g_pCompositor->m_pLastMonitor->vecPosition;
-    //
-    //     g_pInputManager->m_sTouchData.touchSurfaceOrigin = g_pInputManager->getMouseCoordsInternal() - local;
-    // } else {
-    //     return; // oops, nothing found.
-    // }
-    //
-    // wlr_seat_touch_notify_down(g_pCompositor->m_sSeat.seat, g_pInputManager->m_sTouchData.touchFocusSurface, e->time_msec, e->touch_id, local.x, local.y);
-    //
-    // wlr_idle_notify_activity(g_pCompositor->m_sWLRIdle, g_pCompositor->m_sSeat.seat);
+    if (state.get_center().get_drag_distance(target_direction) >= threshold) {
+        return wf::touch::ACTION_STATUS_COMPLETED;
+    }
+    return wf::touch::ACTION_STATUS_RUNNING;
+}
+
+CGestures::CGestures() {
+    static const double SENSITIVITY = TEMP_CONFIG_SENSITIVITY;
+
+    auto swipe =
+        std::make_unique<CMultiAction>(0.75 * MAX_SWIPE_DISTANCE / SENSITIVITY);
+    swipe->set_duration(GESTURE_BASE_DURATION * SENSITIVITY);
+    swipe->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE * SENSITIVITY);
+
+    // Edge swipe needs a quick release to be considered edge swipe
+    auto edge_swipe =
+        std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE / SENSITIVITY);
+    auto edge_release = std::make_unique<wf::touch::touch_action_t>(1, false);
+    edge_swipe->set_duration(GESTURE_BASE_DURATION * SENSITIVITY);
+    edge_swipe->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE *
+                                   SENSITIVITY);
+
+    // The release action needs longer duration to handle the case where the
+    // gesture is actually longer than the max distance.
+    edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * SENSITIVITY);
+
+    auto swipe_ptr = swipe.get();
+    auto edge_ptr = edge_swipe.get();
+
+    std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions,
+        edge_swipe_actions;
+    swipe_actions.emplace_back(std::move(swipe));
+    edge_swipe_actions.emplace_back(std::move(edge_swipe));
+    edge_swipe_actions.emplace_back(std::move(edge_release));
+
+    auto ack_swipe = [swipe_ptr, this]() {
+        gestureDirection possible_edges =
+            find_swipe_edges(m_pGestureState->get_center().origin);
+        if (possible_edges)
+            return;
+
+        gestureDirection direction = swipe_ptr->target_direction;
+        auto gesture = TouchGesture{GESTURE_TYPE_SWIPE, direction,
+                                    swipe_ptr->finger_count};
+        handleGesture(gesture);
+    };
+
+    auto ack_edge_swipe = [edge_ptr, this]() {
+        gestureDirection possible_edges =
+            find_swipe_edges(m_pGestureState->get_center().origin);
+        // FIXME target_direction was never assigned a meaningful value
+        gestureDirection target_dir = edge_ptr->target_direction;
+
+        possible_edges &= target_dir;
+        if (possible_edges) {
+            auto gesture = TouchGesture{GESTURE_TYPE_EDGE_SWIPE, target_dir,
+                                        edge_ptr->finger_count};
+            handleGesture(gesture);
+        }
+    };
+    m_pMultiSwipe = std::make_unique<wf::touch::gesture_t>(
+        std::move(swipe_actions), ack_swipe);
+    m_pEdgeSwipe = std::make_unique<wf::touch::gesture_t>(
+        std::move(edge_swipe_actions), ack_edge_swipe);
+}
+
+void CGestures::emulateSwipeBegin() {}
+void CGestures::emulateSwipeEnd() {}
+
+void CGestures::updateGestures(const wf::touch::gesture_event_t& ev) {
+    for (auto& gesture : m_pGestures) {
+        if (m_pGestureState->fingers.size() == 1 &&
+            ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
+            gesture->reset(ev.time);
+        }
+
+        gesture->update_state(ev);
+    }
+}
+
+// @return whether or not to inhibit further actions
+bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
+    m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(
+        ev->touch->output_name ? ev->touch->output_name : "");
+
+    if (ev->touch_id == 0) {
+        return false;
+    }
+
+    wf::touch::gesture_event_t gesture_event = {
+        .type = wf::touch::EVENT_TYPE_TOUCH_DOWN,
+        .time = ev->time_msec,
+        .finger = ev->touch_id,
+        .pos = {ev->x, ev->y}};
+
+    // refocus
+
+    updateGestures(gesture_event);
+
+    return false;
+}
+
+uint32_t CGestures::find_swipe_edges(wf::touch::point_t point) {
+    auto position = m_pLastTouchedMonitor->vecPosition;
+    auto geometry = m_pLastTouchedMonitor->vecSize;
+
+    gestureDirection edge_directions = 0;
+
+    if (point.x <= position.x + EDGE_SWIPE_THRESHOLD) {
+        edge_directions |= GESTURE_DIRECTION_RIGHT;
+    }
+
+    if (point.x >= position.x + geometry.x - EDGE_SWIPE_THRESHOLD) {
+        edge_directions |= GESTURE_DIRECTION_LEFT;
+    }
+
+    if (point.y <= position.y + EDGE_SWIPE_THRESHOLD) {
+        edge_directions |= GESTURE_DIRECTION_DOWN;
+    }
+
+    if (point.y >= position.y + geometry.y - EDGE_SWIPE_THRESHOLD) {
+        edge_directions |= GESTURE_DIRECTION_UP;
+    }
+
+    return edge_directions;
 }
