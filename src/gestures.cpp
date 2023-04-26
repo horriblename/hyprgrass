@@ -1,7 +1,6 @@
 #include "gestures.hpp"
 #include "src/Compositor.hpp"
 #include "src/debug/Log.hpp"
-#include "src/managers/input/InputManager.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <memory>

@@ -2,9 +2,7 @@
 #include "globals.hpp"
 #include "src/helpers/Monitor.hpp"
 #include <glm/glm.hpp>
-#include <src/Compositor.hpp>
 #include <src/includes.hpp>
-#include <src/managers/input/InputManager.hpp>
 #include <vector>
 #include <wayfire/touch/touch.hpp>
 
@@ -92,7 +90,6 @@ class CGestures {
 
   private:
     std::vector<std::unique_ptr<wf::touch::gesture_t>> m_pGestures;
-    std::unique_ptr<wf::touch::gesture_t> m_pGestureHandler;
     std::unique_ptr<wf::touch::gesture_state_t> m_pGestureState;
     Vector2D m_vTouchGestureLastCenter;
     bool m_bTouchGestureActive;
