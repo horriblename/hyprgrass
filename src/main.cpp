@@ -26,10 +26,16 @@ void hkOnTouchDown(void* thisptr, wlr_touch_down_event* e) {
 }
 
 void hkOnTouchUp(void* thisptr, wlr_touch_up_event* e) {
+    if (g_pGestureManager->onTouchUp(e))
+        return;
+
     (*(origTouchUp)g_pTouchUpHook->m_pOriginal)(thisptr, e);
 }
 
 void hkOnTouchMove(void* thisptr, wlr_touch_motion_event* e) {
+    if (g_pGestureManager->onTouchMove(e))
+        return;
+
     (*(origTouchMove)g_pTouchMoveHook->m_pOriginal)(thisptr, e);
 }
 
