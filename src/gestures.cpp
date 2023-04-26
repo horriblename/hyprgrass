@@ -121,6 +121,11 @@ CGestures::CGestures() {
 void CGestures::emulateSwipeBegin() {}
 void CGestures::emulateSwipeEnd() {}
 
+void CGestures::handleGesture(const TouchGesture& gev) {
+    Debug::log(INFO, "handling gesture {direction = %d, fingers = %d }",
+               gev.direction, gev.finger_count);
+}
+
 void CGestures::updateGestures(const wf::touch::gesture_event_t& ev) {
     for (auto& gesture : m_pGestures) {
         if (m_pGestureState->fingers.size() == 1 &&
