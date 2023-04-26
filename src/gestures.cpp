@@ -93,7 +93,7 @@ void CGestures::addDefaultGestures() {
     auto ack_swipe = [swipe_ptr, this]() {
         if (!swipe_ptr) {
             // Not sure if swipe_ptr is actually usable - see above
-            Debug::log(ERR, "swipe pointer missing!");
+            Debug::log(ERR, "[touch-gesture] swipe pointer missing!");
             return;
         }
         gestureDirection possible_edges =
@@ -110,7 +110,7 @@ void CGestures::addDefaultGestures() {
     auto ack_edge_swipe = [edge_ptr, this]() {
         if (!edge_ptr) {
             // Not sure if edge_ptr is actually usable - see above
-            Debug::log(ERR, "edge swipe pointer missing!");
+            Debug::log(ERR, "[touch-gesture] edge swipe pointer missing!");
             return;
         }
         gestureDirection possible_edges =
@@ -132,8 +132,6 @@ void CGestures::addDefaultGestures() {
 
     addTouchGesture(std::move(multi_swipe));
     addTouchGesture(std::move(edge_swipe));
-
-    Debug::log(INFO, "initialized a CGestures object");
 }
 
 void CGestures::emulateSwipeBegin() {}
@@ -144,8 +142,10 @@ void CGestures::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture) {
 }
 
 void CGestures::handleGesture(const TouchGesture& gev) {
-    Debug::log(INFO, "handling gesture {direction = %d, fingers = %d }",
-               gev.direction, gev.finger_count);
+    Debug::log(
+        INFO,
+        "[touch-gestures] handling gesture {direction = %d, fingers = %d }",
+        gev.direction, gev.finger_count);
 }
 
 void CGestures::updateGestures(const wf::touch::gesture_event_t& ev) {
