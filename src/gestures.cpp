@@ -91,6 +91,11 @@ void CGestures::addDefaultGestures() {
     edge_swipe_actions.emplace_back(std::move(edge_release));
 
     auto ack_swipe = [swipe_ptr, this]() {
+        if (!swipe_ptr) {
+            // Not sure if swipe_ptr is actually usable - see above
+            Debug::log(ERR, "swipe pointer missing!");
+            return;
+        }
         gestureDirection possible_edges =
             find_swipe_edges(m_pGestureState.get_center().origin);
         if (possible_edges)
@@ -103,6 +108,11 @@ void CGestures::addDefaultGestures() {
     };
 
     auto ack_edge_swipe = [edge_ptr, this]() {
+        if (!edge_ptr) {
+            // Not sure if edge_ptr is actually usable - see above
+            Debug::log(ERR, "edge swipe pointer missing!");
+            return;
+        }
         gestureDirection possible_edges =
             find_swipe_edges(m_pGestureState.get_center().origin);
         // FIXME target_direction was never assigned a meaningful value
