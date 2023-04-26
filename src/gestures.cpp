@@ -155,9 +155,9 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(
         ev->touch->output_name ? ev->touch->output_name : "");
 
-    if (ev->touch_id == 0) {
-        return false;
-    }
+    // if (ev->touch_id == 0) {
+    //     return false;
+    // }
 
     wf::touch::gesture_event_t gesture_event = {
         .type = wf::touch::EVENT_TYPE_TOUCH_DOWN,
