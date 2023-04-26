@@ -92,7 +92,7 @@ void CGestures::addDefaultGestures() {
 
     auto ack_swipe = [swipe_ptr, this]() {
         gestureDirection possible_edges =
-            find_swipe_edges(m_pGestureState->get_center().origin);
+            find_swipe_edges(m_pGestureState.get_center().origin);
         if (possible_edges)
             return;
 
@@ -104,7 +104,7 @@ void CGestures::addDefaultGestures() {
 
     auto ack_edge_swipe = [edge_ptr, this]() {
         gestureDirection possible_edges =
-            find_swipe_edges(m_pGestureState->get_center().origin);
+            find_swipe_edges(m_pGestureState.get_center().origin);
         // FIXME target_direction was never assigned a meaningful value
         gestureDirection target_dir = edge_ptr->target_direction;
 
@@ -140,7 +140,7 @@ void CGestures::handleGesture(const TouchGesture& gev) {
 
 void CGestures::updateGestures(const wf::touch::gesture_event_t& ev) {
     for (auto& gesture : m_pGestures) {
-        if (m_pGestureState->fingers.size() == 1 &&
+        if (m_pGestureState.fingers.size() == 1 &&
             ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
             gesture->reset(ev.time);
         }
@@ -164,7 +164,7 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
         .finger = ev->touch_id,
         .pos = {ev->x, ev->y}};
 
-    m_pGestureState->update(gesture_event);
+    m_pGestureState.update(gesture_event);
 
     // was supposed to refoces here?
 
@@ -174,7 +174,7 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
 }
 
 bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
-    const auto lift_off_pos = m_pGestureState->fingers[ev->touch_id].current;
+    const auto lift_off_pos = m_pGestureState.fingers[ev->touch_id].current;
 
     const wf::touch::gesture_event_t gesture_event = {
         .type = wf::touch::EVENT_TYPE_TOUCH_UP,
@@ -184,7 +184,7 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
     };
 
     updateGestures(gesture_event);
-    m_pGestureState->update(gesture_event);
+    m_pGestureState.update(gesture_event);
     return false;
 }
 
@@ -196,7 +196,7 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
         .pos = {ev->x, ev->y},
     };
     updateGestures(gesture_event);
-    m_pGestureState->update(gesture_event);
+    m_pGestureState.update(gesture_event);
 
     return false;
 }

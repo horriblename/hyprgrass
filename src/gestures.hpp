@@ -90,7 +90,7 @@ class CGestures {
 
   private:
     std::vector<std::unique_ptr<wf::touch::gesture_t>> m_pGestures;
-    std::unique_ptr<wf::touch::gesture_state_t> m_pGestureState;
+    wf::touch::gesture_state_t m_pGestureState;
     Vector2D m_vTouchGestureLastCenter;
     bool m_bTouchGestureActive;
 
