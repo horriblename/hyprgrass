@@ -82,7 +82,7 @@ void CGestures::addDefaultGestures() {
 
     // HACK I should figure out how to properly manage memory here
     auto swipe_ptr = swipe.get();
-    auto edge_ptr = edge.get();
+    auto edge_ptr  = edge.get();
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions,
         edge_swipe_actions;
@@ -97,7 +97,7 @@ void CGestures::addDefaultGestures() {
             return;
 
         gestureDirection direction = swipe_ptr->target_direction;
-        auto gesture = TouchGesture{GESTURE_TYPE_SWIPE, direction,
+        auto gesture               = TouchGesture{GESTURE_TYPE_SWIPE, direction,
                                     swipe_ptr->finger_count};
         handleGesture(gesture);
     };
@@ -159,10 +159,10 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     // }
 
     wf::touch::gesture_event_t gesture_event = {
-        .type = wf::touch::EVENT_TYPE_TOUCH_DOWN,
-        .time = ev->time_msec,
+        .type   = wf::touch::EVENT_TYPE_TOUCH_DOWN,
+        .time   = ev->time_msec,
         .finger = ev->touch_id,
-        .pos = {ev->x, ev->y}};
+        .pos    = {ev->x, ev->y}};
 
     m_pGestureState.update(gesture_event);
 
@@ -177,10 +177,10 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
     const auto lift_off_pos = m_pGestureState.fingers[ev->touch_id].current;
 
     const wf::touch::gesture_event_t gesture_event = {
-        .type = wf::touch::EVENT_TYPE_TOUCH_UP,
-        .time = ev->time_msec,
+        .type   = wf::touch::EVENT_TYPE_TOUCH_UP,
+        .time   = ev->time_msec,
         .finger = ev->touch_id,
-        .pos = {lift_off_pos.x, lift_off_pos.y},
+        .pos    = {lift_off_pos.x, lift_off_pos.y},
     };
 
     updateGestures(gesture_event);
@@ -190,10 +190,10 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
 
 bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
     const wf::touch::gesture_event_t gesture_event = {
-        .type = wf::touch::EVENT_TYPE_MOTION,
-        .time = ev->time_msec,
+        .type   = wf::touch::EVENT_TYPE_MOTION,
+        .time   = ev->time_msec,
         .finger = ev->touch_id,
-        .pos = {ev->x, ev->y},
+        .pos    = {ev->x, ev->y},
     };
     updateGestures(gesture_event);
     m_pGestureState.update(gesture_event);

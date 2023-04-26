@@ -12,7 +12,7 @@
 const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f,
                               1.0f};
 inline CFunctionHook* g_pTouchDownHook = nullptr;
-inline CFunctionHook* g_pTouchUpHook = nullptr;
+inline CFunctionHook* g_pTouchUpHook   = nullptr;
 inline CFunctionHook* g_pTouchMoveHook = nullptr;
 typedef void (*origTouchDown)(void*, wlr_touch_down_event*);
 typedef void (*origTouchUp)(void*, wlr_touch_up_event*);

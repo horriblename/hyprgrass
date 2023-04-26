@@ -2,6 +2,7 @@ BasedOnStyle: LLVM
 TabWidth: 4
 IndentWidth: 4
 UseTab: Never
+AlignConsecutiveAssignments: true
 AllowShortIfStatementsOnASingleLine: false
 IndentCaseLabels: true
 ColumnLimit: 80
