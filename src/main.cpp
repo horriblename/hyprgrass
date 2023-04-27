@@ -58,7 +58,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     g_pTouchUpHook = HyprlandAPI::createFunctionHook(
         PHANDLE, (void*)&CInputManager::onTouchUp, (void*)&hkOnTouchUp);
     g_pTouchMoveHook = HyprlandAPI::createFunctionHook(
-        PHANDLE, (void*)&CInputManager::onTouchDown, (void*)&hkOnTouchMove);
+        PHANDLE, (void*)&CInputManager::onTouchMove, (void*)&hkOnTouchMove);
 
     g_pGestureManager = std::make_unique<CGestures>();
 
