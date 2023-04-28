@@ -38,3 +38,6 @@ enum eTouchGestureDirection {
     // GESTURE_DIRECTION_IN = (1 << 4),
     // GESTURE_DIRECTION_OUT = (1 << 5),
 };
+
+std::unique_ptr<wf::touch::gesture_t>
+newWorkspaceSwipeStartGesture(const double sensitivity);
