@@ -5,10 +5,14 @@
 #define CONFIG_SENSITIVITY 1.0
 
 CMockGestureManager::CMockGestureManager() {
-    auto emulateSwipeBegin = []() {
-        std::cout << "emulate workspace swipe begin";
+    auto emulateSwipeBegin = [this]() {
+        std::cout << "emulate workspace swipe begin\n";
+        this->workspaceSwipeTriggered = true;
     };
-    auto emulateSwipeEnd = []() { std::cout << "emulate workspace swipe end"; };
+    auto emulateSwipeEnd = [this]() {
+        std::cout << "emulate workspace swipe end\n";
+        this->workspaceSwipeCancelled = true;
+    };
 
     addTouchGesture(newWorkspaceSwipeStartGesture(
         CONFIG_SENSITIVITY, emulateSwipeBegin, emulateSwipeEnd));

@@ -1,6 +1,9 @@
 #!/bin/env python
 from dataclasses import dataclass
 
+# using space to make parsing in c++ easier
+CSV_SEP = " "
+
 
 @dataclass
 class Point:
@@ -10,10 +13,16 @@ class Point:
 
 class Event:
     def __repr__(self) -> str:
+        return self.csv_repr()
+
+    def csv_repr(self) -> str:
+        return "undefined"
+
+    def c_struct_repr(self) -> str:
         return "undefined"
 
     def print(self):
-        print(self.__repr__(), ",")
+        print(self.__repr__())
 
 
 @dataclass
@@ -23,7 +32,12 @@ class DownEvent(Event):
     x: int
     y: int
 
-    def __repr__(self) -> str:
+    def csv_repr(self) -> str:
+        return CSV_SEP.join(
+            ["DOWN"] + list(map(str, [self.time, self.id, self.x, self.y]))
+        )
+
+    def c_struct_repr(self) -> str:
         return (
             "wlr_touch_down_event{ nullptr, "
             + f"{self.time}, {self.id}, {self.x}, {self.y}"
@@ -36,8 +50,19 @@ class UpEvent(Event):
     time: int
     id: int
 
-    def __repr__(self) -> str:
+    def csv_repr(self) -> str:
+        return CSV_SEP.join(["UP"] + list(map(str, [self.time, self.id])))
+
+    def c_struct_repr(self) -> str:
         return "wlr_touch_up_event{ nullptr, " + f"{self.time}, {self.id}" + "}"
+
+
+@dataclass
+class CheckEvent(Event):
+    what: str
+
+    def csv_repr(self) -> str:
+        return CSV_SEP.join(["CHECK", self.what])
 
 
 @dataclass
@@ -47,7 +72,12 @@ class MoveEvent(Event):
     x: int
     y: int
 
-    def __repr__(self) -> str:
+    def csv_repr(self) -> str:
+        return CSV_SEP.join(
+            ["MOVE"] + list(map(str, [self.time, self.id, self.x, self.y]))
+        )
+
+    def c_struct_repr(self) -> str:
         return (
             "wlr_touch_motion_event{ nullptr, "
             + f"{self.time}, {self.id}, {self.x}, {self.y}"
@@ -81,6 +111,7 @@ def makeLeftSwipe3(
     events.append(DownEvent(start_time, 0, finger0.x, finger0.y))
     events.append(DownEvent(start_time, 1, finger1.x, finger1.y))
     events.append(DownEvent(start_time, 2, finger2.x, finger2.y))
+    events.append(CheckEvent("complete"))
 
     for t in range(start_time + time_step, start_time + duration, time_step):
         finger0.x -= dist_step

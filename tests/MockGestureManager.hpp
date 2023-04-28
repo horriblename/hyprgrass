@@ -7,4 +7,14 @@
 class CMockGestureManager : public IGestureManager {
   public:
     CMockGestureManager();
+    ~CMockGestureManager() {}
+
+    bool workspaceSwipeTriggered = false;
+    bool workspaceSwipeCancelled = false;
+
+  private:
+    void resetTestResults() {
+        workspaceSwipeTriggered = false;
+        workspaceSwipeCancelled = false;
+    }
 };

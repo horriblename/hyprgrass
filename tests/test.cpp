@@ -4,35 +4,64 @@
  *
  */
 #include "MockGestureManager.hpp"
-#include "tests.hpp"
 #include "wayfire/touch/touch.hpp"
 #include <cassert>
+#include <fstream>
+#include <iostream>
 #include <memory>
+#include <sstream>
+#include <string>
 #include <variant>
 
 // @return true if passed
-bool runTest(const TestCase& test) {
-    auto mockGM = std::unique_ptr<CMockGestureManager>();
+bool testFile(std::string fname) {
+    std::ifstream infile(fname);
+    std::string type, line;
+    uint32_t time;
+    int id;
+    double x, y;
+    CMockGestureManager mockGM;
 
-    for (auto& input : test.inputStream) {
-        if (std::holds_alternative<wlr_touch_down_event>(input)) {
-            auto ev = std::get<wlr_touch_down_event>(input);
-            mockGM->onTouchDown(&ev);
-        } else if (std::holds_alternative<wlr_touch_up_event>(input)) {
-            auto ev = std::get<wlr_touch_up_event>(input);
-            mockGM->onTouchUp(&ev);
+    while (std::getline(infile, line)) {
+        std::istringstream linestream(line);
+        linestream >> type;
+        if (type == "DOWN") {
+            linestream >> time >> id >> x >> y;
+
+            wlr_touch_down_event ev = {
+                .time_msec = time, .touch_id = id, .x = x, .y = y};
+            mockGM.onTouchDown(&ev);
+        } else if (type == "UP") {
+            linestream >> time >> id;
+
+            wlr_touch_up_event ev = {.time_msec = time, .touch_id = id};
+            mockGM.onTouchUp(&ev);
+        } else if (type == "MOVE") {
+            linestream >> time >> id >> x >> y;
+
+            wlr_touch_motion_event ev = {
+                .time_msec = time, .touch_id = id, .x = x, .y = y};
+            mockGM.onTouchMove(&ev);
+        } else if (type == "CHECK") {
+            linestream >> type;
+            if (type == "complete") {
+                assert(mockGM.workspaceSwipeTriggered);
+            } else {
+                assert(mockGM.workspaceSwipeCancelled);
+            }
         } else {
-            auto ev = std::get<wlr_touch_motion_event>(input);
-            mockGM->onTouchMove(&ev);
+            assert(false);
         }
-
-        // TODO assert or something
     }
 
     return true;
 }
 
 int main() {
-    auto test = TEST();
-    runTest(test);
+    if (testFile("tests/cases/swipeLeft.csv"))
+        std::cout << "passed test #1";
+    else
+        return 1;
+
+    return 0;
 }
