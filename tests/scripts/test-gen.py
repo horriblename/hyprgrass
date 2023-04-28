@@ -22,7 +22,7 @@ class Event:
         return "undefined"
 
     def print(self):
-        print(self.__repr__())
+        print(self.csv_repr())
 
 
 @dataclass

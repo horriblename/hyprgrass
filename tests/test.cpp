@@ -63,5 +63,10 @@ int main() {
     else
         return 1;
 
+    if (testFile("tests/cases/swipeTimeout.csv"))
+        std::cout << "passed test #2";
+    else
+        return 2;
+
     return 0;
 }
