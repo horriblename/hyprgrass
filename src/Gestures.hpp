@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <memory>
 #include <wayfire/touch/touch.hpp>
+#include <wlr/types/wlr_touch.h>
 
 // Swipe params
 constexpr static int EDGE_SWIPE_THRESHOLD              = 10;
@@ -40,4 +41,24 @@ enum eTouchGestureDirection {
 };
 
 std::unique_ptr<wf::touch::gesture_t>
-newWorkspaceSwipeStartGesture(const double sensitivity);
+newWorkspaceSwipeStartGesture(const double sensitivity,
+                              wf::touch::gesture_callback_t completed_cb,
+                              wf::touch::gesture_callback_t cancel_cb);
+
+/*
+ * Interface; there's only @CGestures and the mock gesture manager for testing
+ * that implements this
+ */
+class IGestureManager {
+  public:
+    virtual bool onTouchDown(wlr_touch_down_event*) = 0;
+    bool onTouchUp(wlr_touch_up_event*);
+    bool onTouchMove(wlr_touch_motion_event*);
+
+    void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
+
+  protected:
+    std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
+    wf::touch::gesture_state_t m_sGestureState;
+    void updateGestures(const wf::touch::gesture_event_t&);
+};

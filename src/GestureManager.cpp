@@ -97,7 +97,7 @@ void CGestures::addDefaultGestures() {
             return;
         }
         gestureDirection possible_edges =
-            find_swipe_edges(m_pGestureState.get_center().origin);
+            find_swipe_edges(m_sGestureState.get_center().origin);
         if (possible_edges)
             return;
 
@@ -114,8 +114,7 @@ void CGestures::addDefaultGestures() {
             return;
         }
         gestureDirection possible_edges =
-            find_swipe_edges(m_pGestureState.get_center().origin);
-        // FIXME target_direction was never assigned a meaningful value
+            find_swipe_edges(m_sGestureState.get_center().origin);
         gestureDirection target_dir = edge_ptr->target_direction;
 
         possible_edges &= target_dir;
@@ -137,10 +136,6 @@ void CGestures::addDefaultGestures() {
 void CGestures::emulateSwipeBegin() {}
 void CGestures::emulateSwipeEnd() {}
 
-void CGestures::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture) {
-    m_pGestures.emplace_back(std::move(gesture));
-}
-
 void CGestures::handleGesture(const TouchGesture& gev) {
     Debug::log(
         INFO,
@@ -148,70 +143,15 @@ void CGestures::handleGesture(const TouchGesture& gev) {
         gev.direction, gev.finger_count);
 }
 
-void CGestures::updateGestures(const wf::touch::gesture_event_t& ev) {
-    for (auto& gesture : m_pGestures) {
-        if (m_pGestureState.fingers.size() == 1 &&
-            ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
-            gesture->reset(ev.time);
-        }
-
-        gesture->update_state(ev);
-    }
-}
-
 // @return whether or not to inhibit further actions
 bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(
         ev->touch->output_name ? ev->touch->output_name : "");
 
-    // if (ev->touch_id == 0) {
-    //     return false;
-    // }
-
-    wf::touch::gesture_event_t gesture_event = {
-        .type   = wf::touch::EVENT_TYPE_TOUCH_DOWN,
-        .time   = ev->time_msec,
-        .finger = ev->touch_id,
-        .pos    = {ev->x, ev->y}};
-
-    m_pGestureState.update(gesture_event);
-
-    // was supposed to refoces here?
-
-    updateGestures(gesture_event);
-
-    return false;
+    return IGestureManager::onTouchDown(ev);
 }
 
-bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
-    const auto lift_off_pos = m_pGestureState.fingers[ev->touch_id].current;
-
-    const wf::touch::gesture_event_t gesture_event = {
-        .type   = wf::touch::EVENT_TYPE_TOUCH_UP,
-        .time   = ev->time_msec,
-        .finger = ev->touch_id,
-        .pos    = {lift_off_pos.x, lift_off_pos.y},
-    };
-
-    m_pGestureState.update(gesture_event);
-    updateGestures(gesture_event);
-    return false;
-}
-
-bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
-    const wf::touch::gesture_event_t gesture_event = {
-        .type   = wf::touch::EVENT_TYPE_MOTION,
-        .time   = ev->time_msec,
-        .finger = ev->touch_id,
-        .pos    = {ev->x, ev->y},
-    };
-
-    m_pGestureState.update(gesture_event);
-    updateGestures(gesture_event);
-
-    return false;
-}
-
+// swiping from left edge will result in GESTURE_DIRECTION_RIGHT etc.
 uint32_t CGestures::find_swipe_edges(wf::touch::point_t point) {
     if (!m_pLastTouchedMonitor) {
         Debug::log(ERR, "[touch-gestures] m_pLastTouchedMonitor is null!");

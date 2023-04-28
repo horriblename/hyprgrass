@@ -1,28 +1,78 @@
 #include "Gestures.hpp"
+#include "wayfire/touch/touch.hpp"
 
+// FIXME move this into CGestures / abstract class coz its bad
 std::unique_ptr<wf::touch::gesture_t>
-newWorkspaceSwipeStartGesture(const double sensitivity) {
+newWorkspaceSwipeStartGesture(double sensitivity,
+                              wf::touch::gesture_callback_t completed_cb,
+                              wf::touch::gesture_callback_t cancel_cb) {
     auto swipe = std::make_unique<wf::touch::touch_action_t>(3, true);
     swipe->set_duration(GESTURE_BASE_DURATION * sensitivity);
 
-    auto swipe_ptr = swipe.get();
+    // auto swipe_ptr = swipe.get();
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
     swipe_actions.emplace_back(std::move(swipe));
 
-    auto ack_swipe = [swipe_ptr]() {
-        // gestureDirection possible_edges =
-        //     find_swipe_edges(m_pGestureState.get_center().origin);
-        // if (possible_edges)
-        //     return;
-
-        // start swipe
-        // cout << "workspace swipe started";
-    };
-    auto cancel_swipe = [swipe_ptr]() {
-        // end swipe
-        // cout << "workspace swipe ended";
-    };
-
     return std::make_unique<wf::touch::gesture_t>(std::move(swipe_actions),
-                                                  ack_swipe, cancel_swipe);
+                                                  completed_cb, cancel_cb);
+}
+
+void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
+    for (auto& gesture : m_vGestures) {
+        if (m_sGestureState.fingers.size() == 1 &&
+            ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
+            gesture->reset(ev.time);
+        }
+
+        gesture->update_state(ev);
+    }
+}
+
+// @return whether or not to inhibit further actions
+bool IGestureManager::onTouchDown(wlr_touch_down_event* ev) {
+    wf::touch::gesture_event_t gesture_event = {
+        .type   = wf::touch::EVENT_TYPE_TOUCH_DOWN,
+        .time   = ev->time_msec,
+        .finger = ev->touch_id,
+        .pos    = {ev->x, ev->y}};
+
+    m_sGestureState.update(gesture_event);
+
+    updateGestures(gesture_event);
+
+    return false;
+}
+
+bool IGestureManager::onTouchUp(wlr_touch_up_event* ev) {
+    const auto lift_off_pos = m_sGestureState.fingers[ev->touch_id].current;
+
+    const wf::touch::gesture_event_t gesture_event = {
+        .type   = wf::touch::EVENT_TYPE_TOUCH_UP,
+        .time   = ev->time_msec,
+        .finger = ev->touch_id,
+        .pos    = {lift_off_pos.x, lift_off_pos.y},
+    };
+
+    m_sGestureState.update(gesture_event);
+    updateGestures(gesture_event);
+    return false;
+}
+
+bool IGestureManager::onTouchMove(wlr_touch_motion_event* ev) {
+    const wf::touch::gesture_event_t gesture_event = {
+        .type   = wf::touch::EVENT_TYPE_MOTION,
+        .time   = ev->time_msec,
+        .finger = ev->touch_id,
+        .pos    = {ev->x, ev->y},
+    };
+
+    m_sGestureState.update(gesture_event);
+    updateGestures(gesture_event);
+
+    return false;
+}
+
+void IGestureManager::addTouchGesture(
+    std::unique_ptr<wf::touch::gesture_t> gesture) {
+    m_vGestures.emplace_back(std::move(gesture));
 }

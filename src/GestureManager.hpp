@@ -41,12 +41,12 @@ class CMultiAction : public wf::touch::gesture_action_t {
     };
 };
 
-class CGestures {
+class CGestures : public IGestureManager {
   public:
     CGestures();
     bool onTouchDown(wlr_touch_down_event*);
-    bool onTouchUp(wlr_touch_up_event*);
-    bool onTouchMove(wlr_touch_motion_event*);
+    // bool onTouchUp(wlr_touch_up_event*);
+    // bool onTouchMove(wlr_touch_motion_event*);
 
     void emulateSwipeBegin();
     void emulateSwipeEnd();
@@ -57,15 +57,15 @@ class CGestures {
     // void deleteTouchGesture()
 
   private:
-    std::vector<std::unique_ptr<wf::touch::gesture_t>> m_pGestures;
-    wf::touch::gesture_state_t m_pGestureState;
-    Vector2D m_vTouchGestureLastCenter;
-    bool m_bTouchGestureActive;
+    // std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
+    // wf::touch::gesture_state_t m_sGestureState;
+
+    // Vector2D m_vTouchGestureLastCenter;
+    // bool m_bTouchGestureActive;
 
     CMonitor* m_pLastTouchedMonitor;
 
     void addDefaultGestures();
-    void updateGestures(const wf::touch::gesture_event_t&);
     uint32_t find_swipe_edges(wf::touch::point_t point);
 };
 
