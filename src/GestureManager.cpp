@@ -1,4 +1,4 @@
-#include "gestures.hpp"
+#include "GestureManager.hpp"
 #include "src/Compositor.hpp"
 #include "src/debug/Log.hpp"
 #include <algorithm>
