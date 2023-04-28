@@ -193,8 +193,8 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
         .pos    = {lift_off_pos.x, lift_off_pos.y},
     };
 
-    updateGestures(gesture_event);
     m_pGestureState.update(gesture_event);
+    updateGestures(gesture_event);
     return false;
 }
 
@@ -205,8 +205,9 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
         .finger = ev->touch_id,
         .pos    = {ev->x, ev->y},
     };
-    updateGestures(gesture_event);
+
     m_pGestureState.update(gesture_event);
+    updateGestures(gesture_event);
 
     return false;
 }
