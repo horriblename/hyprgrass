@@ -29,7 +29,8 @@ endif
 
 shared_module('touch-gestures',
   'src/main.cpp',
-  'src/gestures.cpp',
+  'src/Gestures.cpp',
+  'src/GestureManager.cpp',
   cpp_args: ['-DWLR_USE_UNSTABLE'],
   dependencies: [
     wftouch,
