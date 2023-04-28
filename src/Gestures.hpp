@@ -51,7 +51,8 @@ newWorkspaceSwipeStartGesture(const double sensitivity,
  */
 class IGestureManager {
   public:
-    virtual bool onTouchDown(wlr_touch_down_event*) = 0;
+    virtual ~IGestureManager() {}
+    virtual bool onTouchDown(wlr_touch_down_event*);
     bool onTouchUp(wlr_touch_up_event*);
     bool onTouchMove(wlr_touch_motion_event*);
 
