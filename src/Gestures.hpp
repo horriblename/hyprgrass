@@ -41,7 +41,7 @@ enum eTouchGestureDirection {
 };
 
 std::unique_ptr<wf::touch::gesture_t>
-newWorkspaceSwipeStartGesture(const double sensitivity,
+newWorkspaceSwipeStartGesture(const double sensitivity, const int fingers,
                               wf::touch::gesture_callback_t completed_cb,
                               wf::touch::gesture_callback_t cancel_cb);
 

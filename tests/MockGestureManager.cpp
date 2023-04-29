@@ -17,5 +17,5 @@ void CMockGestureManager::addWorkspaceSwipeBeginGesture() {
     };
 
     addTouchGesture(newWorkspaceSwipeStartGesture(
-        CONFIG_SENSITIVITY, emulateSwipeBegin, emulateSwipeEnd));
+        CONFIG_SENSITIVITY, 3, emulateSwipeBegin, emulateSwipeEnd));
 }

@@ -2,11 +2,16 @@
 #include "wayfire/touch/touch.hpp"
 
 // FIXME move this into CGestures / abstract class coz its bad
+//
+// Create a new Gesture that triggers when @fingers amount of fingers touch
+// down on the screen. For the purpose of workspace swipe, cancelling the
+// swipe must be handled separately when a finger is lifted or when another
+// finger is added
 std::unique_ptr<wf::touch::gesture_t>
-newWorkspaceSwipeStartGesture(double sensitivity,
+newWorkspaceSwipeStartGesture(const double sensitivity, const int fingers,
                               wf::touch::gesture_callback_t completed_cb,
                               wf::touch::gesture_callback_t cancel_cb) {
-    auto swipe = std::make_unique<wf::touch::touch_action_t>(3, true);
+    auto swipe = std::make_unique<wf::touch::touch_action_t>(fingers, true);
     swipe->set_duration(GESTURE_BASE_DURATION * sensitivity);
 
     // auto swipe_ptr = swipe.get();

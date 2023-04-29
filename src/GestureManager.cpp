@@ -10,6 +10,7 @@
 constexpr double SWIPE_THRESHOLD = 30.;
 
 constexpr double TEMP_CONFIG_SENSITIVITY = 1;
+constexpr int TEMP_CONFIG_WORKSPACE_SWIPE_FINGERS = 3;
 
 wf::touch::action_status_t
 CMultiAction::update_state(const wf::touch::gesture_state_t& state,
