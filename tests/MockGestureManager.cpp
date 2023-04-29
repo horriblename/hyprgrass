@@ -4,7 +4,9 @@
 
 #define CONFIG_SENSITIVITY 1.0
 
-CMockGestureManager::CMockGestureManager() {
+CMockGestureManager::CMockGestureManager() {}
+
+void CMockGestureManager::addWorkspaceSwipeBeginGesture() {
     auto emulateSwipeBegin = [this]() {
         std::cout << "emulate workspace swipe begin\n";
         this->workspaceSwipeTriggered = true;

@@ -13,14 +13,29 @@
 #include <string>
 #include <variant>
 
+bool testFile(CMockGestureManager* mockGM, std::string fname);
+
+bool testWorkspaceSwipeBegin() {
+    CMockGestureManager mockGM;
+    mockGM.addWorkspaceSwipeBeginGesture();
+
+    return testFile(&mockGM, "tests/cases/swipeLeft.csv");
+}
+
+bool testWorkspaceSwipeTimeout() {
+    CMockGestureManager mockGM;
+    mockGM.addWorkspaceSwipeBeginGesture();
+
+    return testFile(&mockGM, "tests/cases/swipeTimeout.csv");
+}
+
 // @return true if passed
-bool testFile(std::string fname) {
+bool testFile(CMockGestureManager* mockGM, std::string fname) {
     std::ifstream infile(fname);
     std::string type, line;
     uint32_t time;
     int id;
     double x, y;
-    CMockGestureManager mockGM;
 
     while (std::getline(infile, line)) {
         std::istringstream linestream(line);
@@ -30,24 +45,24 @@ bool testFile(std::string fname) {
 
             wlr_touch_down_event ev = {
                 .time_msec = time, .touch_id = id, .x = x, .y = y};
-            mockGM.onTouchDown(&ev);
+            mockGM->onTouchDown(&ev);
         } else if (type == "UP") {
             linestream >> time >> id;
 
             wlr_touch_up_event ev = {.time_msec = time, .touch_id = id};
-            mockGM.onTouchUp(&ev);
+            mockGM->onTouchUp(&ev);
         } else if (type == "MOVE") {
             linestream >> time >> id >> x >> y;
 
             wlr_touch_motion_event ev = {
                 .time_msec = time, .touch_id = id, .x = x, .y = y};
-            mockGM.onTouchMove(&ev);
+            mockGM->onTouchMove(&ev);
         } else if (type == "CHECK") {
             linestream >> type;
             if (type == "complete") {
-                assert(mockGM.workspaceSwipeTriggered);
+                assert(mockGM->workspaceSwipeTriggered);
             } else {
-                assert(mockGM.workspaceSwipeCancelled);
+                assert(mockGM->workspaceSwipeCancelled);
             }
         } else {
             assert(false);
@@ -58,13 +73,13 @@ bool testFile(std::string fname) {
 }
 
 int main() {
-    if (testFile("tests/cases/swipeLeft.csv"))
-        std::cout << "passed test #1";
+    if (testWorkspaceSwipeBegin())
+        std::cout << "passed test #1\n";
     else
         return 1;
 
-    if (testFile("tests/cases/swipeTimeout.csv"))
-        std::cout << "passed test #2";
+    if (testWorkspaceSwipeTimeout())
+        std::cout << "passed test #2\n";
     else
         return 2;
 

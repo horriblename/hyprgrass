@@ -11,6 +11,7 @@ class CMockGestureManager : public IGestureManager {
 
     bool workspaceSwipeTriggered = false;
     bool workspaceSwipeCancelled = false;
+    void addWorkspaceSwipeBeginGesture();
 
   private:
     void resetTestResults() {
