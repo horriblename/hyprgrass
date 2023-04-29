@@ -53,7 +53,6 @@ class CGestures : public IGestureManager {
     void emulateSwipeEnd(uint32_t time, bool cancelled);
     void emulateSwipeUpdate(uint32_t time);
 
-    void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
     void handleGesture(const TouchGesture& gev);
     // TODO how to refer to gesture?
     // void deleteTouchGesture()
