@@ -46,23 +46,20 @@ bool testFile(CMockGestureManager* mockGM, std::string fname) {
         std::istringstream linestream(line);
         linestream >> type;
         if (type == "DOWN") {
-            assert(only_one(running, mockGM->workspaceSwipeTriggered,
-                            mockGM->workspaceSwipeCancelled));
+            assert(only_one(running, mockGM->triggered, mockGM->cancelled));
             linestream >> time >> id >> x >> y;
 
             wlr_touch_down_event ev = {
                 .time_msec = time, .touch_id = id, .x = x, .y = y};
             mockGM->onTouchDown(&ev);
         } else if (type == "UP") {
-            assert(only_one(running, mockGM->workspaceSwipeTriggered,
-                            mockGM->workspaceSwipeCancelled));
+            assert(only_one(running, mockGM->triggered, mockGM->cancelled));
             linestream >> time >> id;
 
             wlr_touch_up_event ev = {.time_msec = time, .touch_id = id};
             mockGM->onTouchUp(&ev);
         } else if (type == "MOVE") {
-            assert(only_one(running, mockGM->workspaceSwipeTriggered,
-                            mockGM->workspaceSwipeCancelled));
+            assert(only_one(running, mockGM->triggered, mockGM->cancelled));
             linestream >> time >> id >> x >> y;
 
             wlr_touch_motion_event ev = {
@@ -72,10 +69,10 @@ bool testFile(CMockGestureManager* mockGM, std::string fname) {
             linestream >> type;
             if (type == "complete") {
                 running = false;
-                assert(mockGM->workspaceSwipeTriggered);
+                assert(mockGM->triggered);
             } else {
                 running = false;
-                assert(mockGM->workspaceSwipeCancelled);
+                assert(mockGM->cancelled);
             }
         } else {
             assert(false);

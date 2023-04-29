@@ -9,13 +9,13 @@ class CMockGestureManager : public IGestureManager {
     CMockGestureManager();
     ~CMockGestureManager() {}
 
-    bool workspaceSwipeTriggered = false;
-    bool workspaceSwipeCancelled = false;
+    bool triggered = false;
+    bool cancelled = false;
     void addWorkspaceSwipeBeginGesture();
 
   private:
     void resetTestResults() {
-        workspaceSwipeTriggered = false;
-        workspaceSwipeCancelled = false;
+        triggered = false;
+        cancelled = false;
     }
 };

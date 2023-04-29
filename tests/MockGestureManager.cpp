@@ -9,11 +9,11 @@ CMockGestureManager::CMockGestureManager() {}
 void CMockGestureManager::addWorkspaceSwipeBeginGesture() {
     auto emulateSwipeBegin = [this]() {
         std::cout << "emulate workspace swipe begin\n";
-        this->workspaceSwipeTriggered = true;
+        this->triggered = true;
     };
     auto emulateSwipeEnd = [this]() {
         std::cout << "emulate workspace swipe end\n";
-        this->workspaceSwipeCancelled = true;
+        this->cancelled = true;
     };
 
     addTouchGesture(newWorkspaceSwipeStartGesture(
