@@ -21,6 +21,7 @@ struct TouchGesture {
     int finger_count;
 };
 
+// swipe and with multiple fingers and directions
 class CMultiAction : public wf::touch::gesture_action_t {
   public:
     CMultiAction(double threshold) : threshold(threshold){};
@@ -45,11 +46,12 @@ class CGestures : public IGestureManager {
   public:
     CGestures();
     bool onTouchDown(wlr_touch_down_event*);
-    // bool onTouchUp(wlr_touch_up_event*);
-    // bool onTouchMove(wlr_touch_motion_event*);
+    bool onTouchUp(wlr_touch_up_event*);
+    bool onTouchMove(wlr_touch_motion_event*);
 
-    void emulateSwipeBegin();
-    void emulateSwipeEnd();
+    void emulateSwipeBegin(uint32_t time);
+    void emulateSwipeEnd(uint32_t time, bool cancelled);
+    void emulateSwipeUpdate(uint32_t time);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
     void handleGesture(const TouchGesture& gev);
@@ -61,7 +63,8 @@ class CGestures : public IGestureManager {
     // wf::touch::gesture_state_t m_sGestureState;
 
     // Vector2D m_vTouchGestureLastCenter;
-    // bool m_bTouchGestureActive;
+    bool m_bWorkspaceSwipeActive = false;
+    wf::touch::point_t m_vGestureLastCenter;
 
     CMonitor* m_pLastTouchedMonitor;
 

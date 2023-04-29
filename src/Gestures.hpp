@@ -53,8 +53,8 @@ class IGestureManager {
   public:
     virtual ~IGestureManager() {}
     virtual bool onTouchDown(wlr_touch_down_event*);
-    bool onTouchUp(wlr_touch_up_event*);
-    bool onTouchMove(wlr_touch_motion_event*);
+    virtual bool onTouchUp(wlr_touch_up_event*);
+    virtual bool onTouchMove(wlr_touch_motion_event*);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
 

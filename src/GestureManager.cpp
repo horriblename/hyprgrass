@@ -1,6 +1,8 @@
 #include "GestureManager.hpp"
 #include "src/Compositor.hpp"
+#include "src/Gestures.hpp"
 #include "src/debug/Log.hpp"
+#include "src/managers/input/InputManager.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <memory>
@@ -9,9 +11,13 @@
 
 constexpr double SWIPE_THRESHOLD = 30.;
 
-constexpr double TEMP_CONFIG_SENSITIVITY = 1;
+// wayfire allows values between 0.1 ~ 5
+constexpr double TEMP_CONFIG_SENSITIVITY          = 1;
 constexpr int TEMP_CONFIG_WORKSPACE_SWIPE_FINGERS = 3;
+constexpr double TEMP_CONFIG_HOLD_DELAY           = 500;
 
+// The action is completed if any number of fingers is moved enough,
+// and can be later cancelled if a new finger touches down
 wf::touch::action_status_t
 CMultiAction::update_state(const wf::touch::gesture_state_t& state,
                            const wf::touch::gesture_event_t& event) {
@@ -24,6 +30,7 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state,
     }
 
     if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
+        // cancel if previous fingers moved too much
         finger_count = state.fingers.size();
         for (auto& finger : state.fingers) {
             if (glm::length(finger.second.delta()) >
@@ -60,8 +67,16 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state,
 
 CGestures::CGestures() {
     addDefaultGestures();
+    // FIXME time arg of @emulateSwipeBegin should probably be assigned
+    // something useful (though its not really used later)
+    auto workspaceSwipeBegin = [this]() { this->emulateSwipeBegin(0); };
+    // auto workspaceSwipeEnd   = [this]() { this->emulateSwipeEnd(); };
+    addTouchGesture(newWorkspaceSwipeStartGesture(
+        TEMP_CONFIG_SENSITIVITY, TEMP_CONFIG_WORKSPACE_SWIPE_FINGERS,
+        workspaceSwipeBegin, []() {}));
 }
 
+// NOTE should deprecate this
 void CGestures::addDefaultGestures() {
     static const double SENSITIVITY = TEMP_CONFIG_SENSITIVITY;
 
@@ -134,8 +149,57 @@ void CGestures::addDefaultGestures() {
     addTouchGesture(std::move(edge_swipe));
 }
 
-void CGestures::emulateSwipeBegin() {}
-void CGestures::emulateSwipeEnd() {}
+void CGestures::emulateSwipeBegin(uint32_t time) {
+    static auto* const PSWIPEFINGERS =
+        &g_pConfigManager->getConfigValuePtr("gestures:workspace_swipe_fingers")
+             ->intValue;
+
+    // HACK .pointer is not used by g_pInputManager->onSwipeBegin so it's fine I
+    // think
+    auto emulated_swipe =
+        wlr_pointer_swipe_begin_event{.pointer   = nullptr,
+                                      .time_msec = time,
+                                      .fingers   = (uint32_t)*PSWIPEFINGERS};
+    g_pInputManager->onSwipeBegin(&emulated_swipe);
+
+    m_vGestureLastCenter    = m_sGestureState.get_center().current;
+    m_bWorkspaceSwipeActive = true;
+}
+
+void CGestures::emulateSwipeEnd(uint32_t time, bool cancelled) {
+    auto emulated_swipe = wlr_pointer_swipe_end_event{
+        .pointer = nullptr, .time_msec = time, .cancelled = cancelled};
+    g_pInputManager->onSwipeEnd(&emulated_swipe);
+
+    m_bWorkspaceSwipeActive = false;
+}
+
+void CGestures::emulateSwipeUpdate(uint32_t time) {
+    static auto* const PSWIPEDIST =
+        &g_pConfigManager
+             ->getConfigValuePtr("gestures:workspace_swipe_distance")
+             ->intValue;
+
+    if (!g_pInputManager->m_sActiveSwipe.pMonitor) {
+        Debug::log(
+            ERR, "ignoring touch gesture motion event due to missing monitor!");
+        return;
+    }
+
+    auto currentCenter = m_sGestureState.get_center().current;
+
+    // touch coords are within 0 to 1, we need to scale it with PSWIPEDIST for
+    // one to one gesture
+    auto emulated_swipe = wlr_pointer_swipe_update_event{
+        .pointer   = nullptr,
+        .time_msec = time,
+        .fingers   = (uint32_t)m_sGestureState.fingers.size(),
+        .dx        = (currentCenter.x - m_vGestureLastCenter.x) * *PSWIPEDIST,
+        .dy        = (currentCenter.y - m_vGestureLastCenter.y) * *PSWIPEDIST};
+
+    g_pInputManager->onSwipeUpdate(&emulated_swipe);
+    m_vGestureLastCenter = currentCenter;
+}
 
 void CGestures::handleGesture(const TouchGesture& gev) {
     Debug::log(
@@ -149,7 +213,33 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(
         ev->touch->output_name ? ev->touch->output_name : "");
 
-    return IGestureManager::onTouchDown(ev);
+    IGestureManager::onTouchDown(ev);
+
+    if (m_bWorkspaceSwipeActive) {
+        emulateSwipeEnd(ev->time_msec, false);
+    }
+
+    return false;
+}
+
+bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
+    IGestureManager::onTouchUp(ev);
+
+    if (m_bWorkspaceSwipeActive) {
+        emulateSwipeEnd(ev->time_msec, false);
+    }
+
+    return false;
+}
+
+bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
+    IGestureManager::onTouchMove(ev);
+
+    if (m_bWorkspaceSwipeActive) {
+        emulateSwipeUpdate(ev->time_msec);
+    }
+
+    return false;
 }
 
 // swiping from left edge will result in GESTURE_DIRECTION_RIGHT etc.
