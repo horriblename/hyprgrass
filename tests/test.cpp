@@ -13,6 +13,10 @@
 #include <string>
 #include <variant>
 
+inline bool only_one(bool a, bool b, bool c) {
+    return (a && !b && !c) || (!a && b && !c) || (!a && !b && c);
+}
+
 bool testFile(CMockGestureManager* mockGM, std::string fname);
 
 bool testWorkspaceSwipeBegin() {
@@ -36,22 +40,29 @@ bool testFile(CMockGestureManager* mockGM, std::string fname) {
     uint32_t time;
     int id;
     double x, y;
+    bool running = true;
 
     while (std::getline(infile, line)) {
         std::istringstream linestream(line);
         linestream >> type;
         if (type == "DOWN") {
+            assert(only_one(running, mockGM->workspaceSwipeTriggered,
+                            mockGM->workspaceSwipeCancelled));
             linestream >> time >> id >> x >> y;
 
             wlr_touch_down_event ev = {
                 .time_msec = time, .touch_id = id, .x = x, .y = y};
             mockGM->onTouchDown(&ev);
         } else if (type == "UP") {
+            assert(only_one(running, mockGM->workspaceSwipeTriggered,
+                            mockGM->workspaceSwipeCancelled));
             linestream >> time >> id;
 
             wlr_touch_up_event ev = {.time_msec = time, .touch_id = id};
             mockGM->onTouchUp(&ev);
         } else if (type == "MOVE") {
+            assert(only_one(running, mockGM->workspaceSwipeTriggered,
+                            mockGM->workspaceSwipeCancelled));
             linestream >> time >> id >> x >> y;
 
             wlr_touch_motion_event ev = {
@@ -60,8 +71,10 @@ bool testFile(CMockGestureManager* mockGM, std::string fname) {
         } else if (type == "CHECK") {
             linestream >> type;
             if (type == "complete") {
+                running = false;
                 assert(mockGM->workspaceSwipeTriggered);
             } else {
+                running = false;
                 assert(mockGM->workspaceSwipeCancelled);
             }
         } else {
