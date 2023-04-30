@@ -1,1 +1,11 @@
-I gave up on this for the time being, if you really want, try [my fork of Hyprland](https://github.com/horriblename/Hyprland/tree/gestures-no-lib)
+# Hyprland Touch Gestures
+
+⚠️ WARNING this plugin is very alpha, expect breaking changes!
+
+## Features/Roadmap
+
+- [-] Workspace Swipe (currently only 3 finger allowed)
+  - [ ] Configurable finger count
+- [ ] Custom commands
+- [ ] Swipe From Edge
+- [ ] _n_-Finger swipe
