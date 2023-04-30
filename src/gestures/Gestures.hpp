@@ -92,5 +92,7 @@ class IGestureManager {
   protected:
     std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
     wf::touch::gesture_state_t m_sGestureState;
+
+  private:
     void updateGestures(const wf::touch::gesture_event_t&);
 };
