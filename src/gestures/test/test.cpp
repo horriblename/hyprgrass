@@ -23,14 +23,14 @@ bool testWorkspaceSwipeBegin() {
     CMockGestureManager mockGM;
     mockGM.addWorkspaceSwipeBeginGesture();
 
-    return testFile(&mockGM, "tests/cases/swipeLeft.csv");
+    return testFile(&mockGM, "test/cases/swipeLeft.csv");
 }
 
 bool testWorkspaceSwipeTimeout() {
     CMockGestureManager mockGM;
     mockGM.addWorkspaceSwipeBeginGesture();
 
-    return testFile(&mockGM, "tests/cases/swipeTimeout.csv");
+    return testFile(&mockGM, "test/cases/swipeTimeout.csv");
 }
 
 // @return true if passed
