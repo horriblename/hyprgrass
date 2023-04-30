@@ -68,7 +68,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     HyprlandAPI::reloadConfig();
 
-    Debug::log(LOG, "[touch-gestures] Initialized successfully!");
     HyprlandAPI::addNotification(PHANDLE,
                                  "[touch-gestures] Initialized successfully!",
                                  s_pluginColor, 5000);
