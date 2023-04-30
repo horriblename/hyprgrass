@@ -47,7 +47,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     g_pGestureManager = std::make_unique<CGestures>();
 
-    bool cfgStatus;
+    bool cfgStatus = false;
     cfgStatus = cfgStatus &&
                 HyprlandAPI::addConfigValue(
                     PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers",
