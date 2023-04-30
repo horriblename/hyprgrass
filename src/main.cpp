@@ -48,6 +48,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     g_pGestureManager = std::make_unique<CGestures>();
 
     bool cfgStatus = false;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
     cfgStatus = cfgStatus &&
                 HyprlandAPI::addConfigValue(
                     PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers",
@@ -58,14 +61,17 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
                                      "config values cannot be properly added",
                                      CColor(0.8, 0.2, 0.2, 1.0), 5000);
     }
+#pragma GCC diagnostic pop
 
-    // Hook a private member
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpmf-conversions"
     g_pTouchDownHook = HyprlandAPI::createFunctionHook(
         PHANDLE, (void*)&CInputManager::onTouchDown, (void*)&hkOnTouchDown);
     g_pTouchUpHook = HyprlandAPI::createFunctionHook(
         PHANDLE, (void*)&CInputManager::onTouchUp, (void*)&hkOnTouchUp);
     g_pTouchMoveHook = HyprlandAPI::createFunctionHook(
         PHANDLE, (void*)&CInputManager::onTouchMove, (void*)&hkOnTouchMove);
+#pragma GCC diagnostic pop
 
     g_pTouchDownHook->hook();
     g_pTouchUpHook->hook();
