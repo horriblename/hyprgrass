@@ -45,9 +45,9 @@ class CMultiAction : public wf::touch::gesture_action_t {
 class CGestures : public IGestureManager {
   public:
     CGestures();
-    bool onTouchDown(wlr_touch_down_event*);
-    bool onTouchUp(wlr_touch_up_event*);
-    bool onTouchMove(wlr_touch_motion_event*);
+    bool onTouchDown(wlr_touch_down_event*) override;
+    bool onTouchUp(wlr_touch_up_event*) override;
+    bool onTouchMove(wlr_touch_motion_event*) override;
 
     void emulateSwipeBegin(uint32_t time);
     void emulateSwipeEnd(uint32_t time, bool cancelled);
