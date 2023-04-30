@@ -1,7 +1,6 @@
 // #include "src/plugins/PluginAPI.hpp"
 #include "GestureManager.hpp"
 #include <memory>
-#define WLR_USE_UNSTABLE
 
 #include "globals.hpp"
 
