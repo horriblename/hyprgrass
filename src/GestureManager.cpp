@@ -210,11 +210,11 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(
         ev->touch->output_name ? ev->touch->output_name : "");
 
-    IGestureManager::onTouchDown(ev);
-
     if (m_bWorkspaceSwipeActive) {
         emulateSwipeEnd(ev->time_msec, false);
     }
+
+    IGestureManager::onTouchDown(ev);
 
     return false;
 }
