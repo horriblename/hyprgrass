@@ -4,8 +4,8 @@ version = "0.0.1"
 author = "horriblename"
 
 [touch-gestures.build]
-output = "_build/libtouch-gestures.so"
+output = "build/src/libtouch-gestures.so"
 steps = [
-    "meson setup _build",
-    "ninja -C _build",
+    "meson setup build",
+    "ninja -C build",
 ]
