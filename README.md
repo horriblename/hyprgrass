@@ -4,7 +4,7 @@
 
 ## Features/Roadmap
 
-- [-] Workspace Swipe (currently only 3 finger allowed)
+- [x] Workspace Swipe (currently only 3 finger allowed)
   - [ ] Configurable finger count
 - [ ] Custom commands
 - [ ] Swipe From Edge
