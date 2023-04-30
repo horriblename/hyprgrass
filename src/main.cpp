@@ -1,4 +1,3 @@
-// #include "src/plugins/PluginAPI.hpp"
 #include "GestureManager.hpp"
 #include <memory>
 
