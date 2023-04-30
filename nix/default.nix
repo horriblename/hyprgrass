@@ -1,9 +1,8 @@
 {
   lib,
   stdenv,
-  # cmake,
-	ninja,
-	meson,
+  ninja,
+  meson,
   hyprland,
   pkg-config,
   cairo,
@@ -49,7 +48,7 @@ stdenv.mkDerivation {
     wayland-scanner
     pciutils
     wlroots
-		wf-touch
+    wf-touch
 
     libxcb
     xcbutilwm

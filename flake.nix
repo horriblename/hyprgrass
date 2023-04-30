@@ -32,11 +32,12 @@
       devShells.default = pkgs.mkShell.override {stdenv = pkgs.gcc12Stdenv;} {
         name = "hyprland-plugin-shell";
         nativeBuildInputs = with pkgs; [
-          cmake
+          meson
+          ninja
           pkg-config
+          doctest
 
           clang-tools_15
-          bear
         ];
 
         buildInputs = with pkgs; [
