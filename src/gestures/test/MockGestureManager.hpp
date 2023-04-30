@@ -13,6 +13,11 @@ class CMockGestureManager : public IGestureManager {
     bool cancelled = false;
     void addWorkspaceSwipeBeginGesture();
 
+  protected:
+    std::optional<SMonitorArea> getMonitorArea() override {
+        return SMonitorArea{0, 0, 1080, 1920};
+    }
+
   private:
     void resetTestResults() {
         triggered = false;

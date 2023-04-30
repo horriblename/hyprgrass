@@ -157,6 +157,37 @@ bool IGestureManager::onTouchMove(wlr_touch_motion_event* ev) {
     return false;
 }
 
+// swiping from left edge will result in GESTURE_DIRECTION_RIGHT etc.
+gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
+    if (!getMonitorArea().has_value()) {
+        return 0;
+    }
+    auto mon = getMonitorArea().value();
+
+    // auto position = m_pLastTouchedMonitor->vecPosition;
+    // auto geometry = m_pLastTouchedMonitor->vecSize;
+
+    gestureDirection edge_directions = 0;
+
+    if (point.x <= mon.x + EDGE_SWIPE_THRESHOLD) {
+        edge_directions |= GESTURE_DIRECTION_RIGHT;
+    }
+
+    if (point.x >= mon.x + mon.w - EDGE_SWIPE_THRESHOLD) {
+        edge_directions |= GESTURE_DIRECTION_LEFT;
+    }
+
+    if (point.y <= mon.y + EDGE_SWIPE_THRESHOLD) {
+        edge_directions |= GESTURE_DIRECTION_DOWN;
+    }
+
+    if (point.y >= mon.y + mon.h - EDGE_SWIPE_THRESHOLD) {
+        edge_directions |= GESTURE_DIRECTION_UP;
+    }
+
+    return edge_directions;
+}
+
 void IGestureManager::addTouchGesture(
     std::unique_ptr<wf::touch::gesture_t> gesture) {
     m_vGestures.emplace_back(std::move(gesture));

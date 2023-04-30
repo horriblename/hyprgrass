@@ -120,32 +120,13 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
     return false;
 }
 
-// swiping from left edge will result in GESTURE_DIRECTION_RIGHT etc.
-uint32_t CGestures::find_swipe_edges(wf::touch::point_t point) {
+std::optional<SMonitorArea> CGestures::getMonitorArea() {
     if (!m_pLastTouchedMonitor) {
         Debug::log(ERR, "[touch-gestures] m_pLastTouchedMonitor is null!");
-        return 0;
+        return {};
     }
-    auto position = m_pLastTouchedMonitor->vecPosition;
-    auto geometry = m_pLastTouchedMonitor->vecSize;
+    auto& position = m_pLastTouchedMonitor->vecPosition;
+    auto& geometry = m_pLastTouchedMonitor->vecSize;
 
-    gestureDirection edge_directions = 0;
-
-    if (point.x <= position.x + EDGE_SWIPE_THRESHOLD) {
-        edge_directions |= GESTURE_DIRECTION_RIGHT;
-    }
-
-    if (point.x >= position.x + geometry.x - EDGE_SWIPE_THRESHOLD) {
-        edge_directions |= GESTURE_DIRECTION_LEFT;
-    }
-
-    if (point.y <= position.y + EDGE_SWIPE_THRESHOLD) {
-        edge_directions |= GESTURE_DIRECTION_DOWN;
-    }
-
-    if (point.y >= position.y + geometry.y - EDGE_SWIPE_THRESHOLD) {
-        edge_directions |= GESTURE_DIRECTION_UP;
-    }
-
-    return edge_directions;
+    return SMonitorArea{position.x, position.y, geometry.x, geometry.y};
 }

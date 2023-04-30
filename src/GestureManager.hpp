@@ -33,6 +33,9 @@ class CGestures : public IGestureManager {
     // TODO how to refer to gesture?
     // void deleteTouchGesture()
 
+  protected:
+    std::optional<SMonitorArea> getMonitorArea() override;
+
   private:
     // std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
     // wf::touch::gesture_state_t m_sGestureState;
@@ -44,7 +47,6 @@ class CGestures : public IGestureManager {
     CMonitor* m_pLastTouchedMonitor;
 
     void addDefaultGestures();
-    uint32_t find_swipe_edges(wf::touch::point_t point);
 };
 
 inline std::unique_ptr<CGestures> g_pGestureManager;

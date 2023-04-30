@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <wayfire/touch/touch.hpp>
 #include <wlr/types/wlr_touch.h>
 
@@ -39,6 +40,10 @@ enum eTouchGestureDirection {
     /* Pinch-specific */
     // GESTURE_DIRECTION_IN = (1 << 4),
     // GESTURE_DIRECTION_OUT = (1 << 5),
+};
+
+struct SMonitorArea {
+    double x, y, w, h;
 };
 
 // can be one of @eTouchGestureDirection or a combination of them
@@ -92,6 +97,9 @@ class IGestureManager {
   protected:
     std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
     wf::touch::gesture_state_t m_sGestureState;
+
+    gestureDirection find_swipe_edges(wf::touch::point_t point);
+    virtual std::optional<SMonitorArea> getMonitorArea() = 0;
 
   private:
     void updateGestures(const wf::touch::gesture_event_t&);
