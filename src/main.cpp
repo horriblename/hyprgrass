@@ -47,10 +47,18 @@ APICALL EXPORT std::string PLUGIN_API_VERSION() {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
-    HyprlandAPI::addConfigValue(PHANDLE, "touch-gestures:3:left-right",
-                                SConfigValue{.strValue = ""});
-    HyprlandAPI::addConfigValue(PHANDLE, "touch-gestures:3:right-left",
-                                SConfigValue{.strValue = ""});
+    bool cfgStatus;
+    cfgStatus = cfgStatus &&
+                HyprlandAPI::addConfigValue(
+                    PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers",
+                    SConfigValue{.intValue = 3});
+
+    if (!cfgStatus) {
+        HyprlandAPI::addNotification(PHANDLE,
+                                     "config values cannot be properly added",
+                                     CColor(0.8, 0.2, 0.2, 1.0), 5000);
+    }
+
 
     // Hook a private member
     g_pTouchDownHook = HyprlandAPI::createFunctionHook(
