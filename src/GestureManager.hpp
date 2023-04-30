@@ -7,9 +7,6 @@
 #include <vector>
 #include <wayfire/touch/touch.hpp>
 
-// can be one of @eTouchGestureDirection or a combination of them
-using gestureDirection = uint32_t;
-
 /**
  * Represents a touch gesture.
  *
@@ -19,27 +16,6 @@ struct TouchGesture {
     eTouchGestureType type;
     gestureDirection direction;
     int finger_count;
-};
-
-// swipe and with multiple fingers and directions
-class CMultiAction : public wf::touch::gesture_action_t {
-  public:
-    CMultiAction(double threshold) : threshold(threshold){};
-    // bool pinch;
-    // bool last_pinch_was_pinch_in = false;
-    double threshold;
-
-    gestureDirection target_direction = 0;
-    int finger_count                  = 0;
-
-    wf::touch::action_status_t
-    update_state(const wf::touch::gesture_state_t& state,
-                 const wf::touch::gesture_event_t& event) override;
-
-    void reset(uint32_t time) override {
-        gesture_action_t::reset(time);
-        target_direction = 0;
-    };
 };
 
 class CGestures : public IGestureManager {

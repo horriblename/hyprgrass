@@ -13,53 +13,16 @@ constexpr double TEMP_CONFIG_SENSITIVITY          = 1;
 constexpr int TEMP_CONFIG_WORKSPACE_SWIPE_FINGERS = 3;
 constexpr double TEMP_CONFIG_HOLD_DELAY           = 500;
 
-// The action is completed if any number of fingers is moved enough,
-// and can be later cancelled if a new finger touches down
-wf::touch::action_status_t
-CMultiAction::update_state(const wf::touch::gesture_state_t& state,
-                           const wf::touch::gesture_event_t& event) {
-    if (event.time - this->start_time > this->get_duration()) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
     }
 
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
     }
 
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
-        // cancel if previous fingers moved too much
-        finger_count = state.fingers.size();
-        for (auto& finger : state.fingers) {
-            if (glm::length(finger.second.delta()) >
-                GESTURE_INITIAL_TOLERANCE) {
-                return wf::touch::ACTION_STATUS_CANCELLED;
-            }
-        }
-
-        return wf::touch::ACTION_STATUS_RUNNING;
     }
 
-    // swipe case
-    if ((glm::length(state.get_center().delta()) >= MIN_SWIPE_DISTANCE) &&
-        (this->target_direction == 0)) {
-        this->target_direction = state.get_center().get_direction();
     }
 
-    if (this->target_direction == 0) {
-        return wf::touch::ACTION_STATUS_RUNNING;
     }
 
-    for (auto& finger : state.fingers) {
-        if (finger.second.get_incorrect_drag_distance(this->target_direction) >
-            this->get_move_tolerance()) {
-            return wf::touch::ACTION_STATUS_CANCELLED;
-        }
-    }
-
-    if (state.get_center().get_drag_distance(target_direction) >= threshold) {
-        return wf::touch::ACTION_STATUS_COMPLETED;
-    }
-    return wf::touch::ACTION_STATUS_RUNNING;
 }
 
 CGestures::CGestures() {
