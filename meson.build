@@ -27,15 +27,4 @@ if not wftouch.found()
   wftouch = subproject('wf-touch').get_variable('wftouch')
 endif
 
-shared_module('touch-gestures',
-  'src/main.cpp',
-  'src/Gestures.cpp',
-  'src/GestureManager.cpp',
-  cpp_args: ['-DWLR_USE_UNSTABLE'],
-  dependencies: [
-    wftouch,
-    dependency('pixman-1'),
-    dependency('libdrm'),
-    hyprland_headers
-  ],
-  install: true)
+subdir('src')

@@ -1,5 +1,5 @@
 #pragma once
-#include "Gestures.hpp"
+#include "gestures/Gestures.hpp"
 #include "globals.hpp"
 #include "src/helpers/Monitor.hpp"
 #include <glm/glm.hpp>

@@ -1,5 +1,4 @@
 #include "MockGestureManager.hpp"
-#include "../src/Gestures.hpp"
 #include <iostream>
 
 #define CONFIG_SENSITIVITY 1.0
