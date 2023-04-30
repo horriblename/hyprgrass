@@ -46,6 +46,8 @@ APICALL EXPORT std::string PLUGIN_API_VERSION() {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
+    g_pGestureManager = std::make_unique<CGestures>();
+
     bool cfgStatus;
     cfgStatus = cfgStatus &&
                 HyprlandAPI::addConfigValue(
@@ -58,7 +60,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
                                      CColor(0.8, 0.2, 0.2, 1.0), 5000);
     }
 
-
     // Hook a private member
     g_pTouchDownHook = HyprlandAPI::createFunctionHook(
         PHANDLE, (void*)&CInputManager::onTouchDown, (void*)&hkOnTouchDown);
@@ -66,8 +67,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         PHANDLE, (void*)&CInputManager::onTouchUp, (void*)&hkOnTouchUp);
     g_pTouchMoveHook = HyprlandAPI::createFunctionHook(
         PHANDLE, (void*)&CInputManager::onTouchMove, (void*)&hkOnTouchMove);
-
-    g_pGestureManager = std::make_unique<CGestures>();
 
     g_pTouchDownHook->hook();
     g_pTouchUpHook->hook();
