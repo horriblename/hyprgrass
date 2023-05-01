@@ -2,7 +2,6 @@
 #include "gestures/Gestures.hpp"
 #include "globals.hpp"
 #include "src/helpers/Monitor.hpp"
-#include <glm/glm.hpp>
 #include <src/includes.hpp>
 #include <vector>
 #include <wayfire/touch/touch.hpp>
@@ -16,6 +15,8 @@ struct TouchGesture {
     eTouchGestureType type;
     gestureDirection direction;
     int finger_count;
+
+    std::string to_string() const;
 };
 
 class CGestures : public IGestureManager {
