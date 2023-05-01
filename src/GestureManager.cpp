@@ -1,6 +1,7 @@
 #include "GestureManager.hpp"
 #include "src/Compositor.hpp"
 #include "src/debug/Log.hpp"
+#include "src/managers/KeybindManager.hpp"
 #include "src/managers/input/InputManager.hpp"
 #include <algorithm>
 #include <cstdint>
@@ -59,6 +60,23 @@ CGestures::CGestures() {
     // TODO make sensitivity and workspace_swipe_fingers dynamic
     addTouchGesture(newWorkspaceSwipeStartGesture(
         *PSENSITIVITY, *PTOUCHSWIPEFINGERS, workspaceSwipeBegin, []() {}));
+
+    auto edgeSwipeTrigger = [this](CMultiAction* edge_ptr) {
+        auto possible_edges =
+            find_swipe_edges(m_sGestureState.get_center().origin);
+        auto target_direction = edge_ptr->target_direction;
+
+        possible_edges &= target_direction;
+        if (!possible_edges) {
+            return;
+        }
+
+        auto gesture = TouchGesture{GESTURE_TYPE_EDGE_SWIPE, target_direction,
+                                    edge_ptr->finger_count};
+        handleGesture(gesture);
+    };
+    addTouchGesture(newEdgeSwipeGesture(
+        TEMP_CONFIG_SENSITIVITY, edgeSwipeTrigger, [](CMultiAction*) {}));
 }
 
 void CGestures::emulateSwipeBegin(uint32_t time) {
@@ -115,10 +133,35 @@ void CGestures::emulateSwipeUpdate(uint32_t time) {
 }
 
 void CGestures::handleGesture(const TouchGesture& gev) {
-    Debug::log(
-        INFO,
-        "[touch-gestures] handling gesture {direction = %d, fingers = %d }",
-        gev.direction, gev.finger_count);
+    auto bind = gev.to_string();
+    Debug::log(LOG, "[touch-gesture] Gesture Triggered: %s", bind.c_str());
+
+    for (const auto& k : g_pKeybindManager->m_lKeybinds) {
+        if (k.key != bind)
+            continue;
+
+        const auto DISPATCHER =
+            g_pKeybindManager->m_mDispatchers.find(k.handler);
+
+        // Should never happen, as we check in the ConfigManager, but oh well
+        if (DISPATCHER == g_pKeybindManager->m_mDispatchers.end()) {
+            Debug::log(
+                ERR,
+                "Invalid handler in a keybind! (handler %s does not exist)",
+                k.handler.c_str());
+            continue;
+        }
+
+        // call the dispatcher
+        Debug::log(LOG,
+                   "[touch-gesture] Gesture triggered, calling dispatcher (%s)",
+                   bind.c_str());
+
+        if (k.handler == "pass")
+            continue;
+
+        DISPATCHER->second(k.arg);
+    }
 }
 
 // @return whether or not to inhibit further actions
