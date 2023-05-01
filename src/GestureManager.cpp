@@ -161,6 +161,7 @@ void CGestures::handleGesture(const TouchGesture& gev) {
             continue;
 
         DISPATCHER->second(k.arg);
+        m_bDispatcherFound = true;
     }
 }
 
@@ -178,6 +179,8 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
 
     IGestureManager::onTouchDown(ev);
 
+    // TODO handle m_bDispatcherFound
+    m_bDispatcherFound = false;
     return false;
 }
 
@@ -187,10 +190,13 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
 
     IGestureManager::onTouchUp(ev);
 
+    // TODO where do I put this, before or after IGestureManager::onTouchUp...?
     if (m_bWorkspaceSwipeActive) {
         emulateSwipeEnd(ev->time_msec, false);
     }
 
+    // TODO handle m_bDispatcherFound
+    m_bDispatcherFound = false;
     return false;
 }
 
@@ -200,10 +206,13 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
 
     IGestureManager::onTouchMove(ev);
 
+    // TODO where do I put this
     if (m_bWorkspaceSwipeActive) {
         emulateSwipeUpdate(ev->time_msec);
     }
 
+    // TODO handle m_bDispatcherFound
+    m_bDispatcherFound = false;
     return false;
 }
 

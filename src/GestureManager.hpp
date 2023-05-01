@@ -43,6 +43,7 @@ class CGestures : public IGestureManager {
 
     // Vector2D m_vTouchGestureLastCenter;
     bool m_bWorkspaceSwipeActive = false;
+    bool m_bDispatcherFound      = false;
     wf::touch::point_t m_vGestureLastCenter;
 
     CMonitor* m_pLastTouchedMonitor;
