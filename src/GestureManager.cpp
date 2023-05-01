@@ -123,6 +123,9 @@ void CGestures::handleGesture(const TouchGesture& gev) {
 
 // @return whether or not to inhibit further actions
 bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
+    if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
+        return false;
+
     m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(
         ev->touch->output_name ? ev->touch->output_name : "");
 
@@ -136,6 +139,9 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
 }
 
 bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
+    if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
+        return false;
+
     IGestureManager::onTouchUp(ev);
 
     if (m_bWorkspaceSwipeActive) {
@@ -146,6 +152,9 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
 }
 
 bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
+    if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
+        return false;
+
     IGestureManager::onTouchMove(ev);
 
     if (m_bWorkspaceSwipeActive) {
