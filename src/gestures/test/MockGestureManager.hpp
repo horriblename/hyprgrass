@@ -12,6 +12,15 @@ class CMockGestureManager : public IGestureManager {
     bool triggered = false;
     bool cancelled = false;
     void addWorkspaceSwipeBeginGesture();
+    void addEdgeSwipeGesture();
+    void resetTestResults() {
+        triggered = false;
+        cancelled = false;
+    }
+
+    auto getGestureAt(int index) const {
+        return &this->m_vGestures.at(index);
+    }
 
   protected:
     std::optional<SMonitorArea> getMonitorArea() override {
@@ -19,8 +28,4 @@ class CMockGestureManager : public IGestureManager {
     }
 
   private:
-    void resetTestResults() {
-        triggered = false;
-        cancelled = false;
-    }
 };

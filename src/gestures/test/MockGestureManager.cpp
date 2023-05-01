@@ -1,4 +1,5 @@
 #include "MockGestureManager.hpp"
+#include "../Gestures.hpp"
 #include <iostream>
 
 #define CONFIG_SENSITIVITY 1.0
@@ -17,4 +18,18 @@ void CMockGestureManager::addWorkspaceSwipeBeginGesture() {
 
     addTouchGesture(newWorkspaceSwipeStartGesture(
         CONFIG_SENSITIVITY, 3, emulateSwipeBegin, emulateSwipeEnd));
+}
+
+void CMockGestureManager::addEdgeSwipeGesture() {
+    auto completed_cb = [this](CMultiAction*) {
+        std::cout << "edge swipe triggered\n";
+        this->triggered = true;
+    };
+    auto cancelled_cb = [this](CMultiAction*) {
+        std::cout << "edge swipe cancelled\n";
+        this->cancelled = true;
+    };
+
+    addTouchGesture(
+        newEdgeSwipeGesture(CONFIG_SENSITIVITY, completed_cb, cancelled_cb));
 }

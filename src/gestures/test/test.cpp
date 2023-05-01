@@ -5,6 +5,7 @@
  */
 #include "MockGestureManager.hpp"
 #include "wayfire/touch/touch.hpp"
+#include <bits/stdc++.h>
 #include <cassert>
 #include <fstream>
 #include <iostream>
@@ -33,14 +34,34 @@ bool testWorkspaceSwipeTimeout() {
     return testFile(&mockGM, "test/cases/swipeTimeout.csv");
 }
 
+bool testEdgeSwipe() {
+    CMockGestureManager mockGM;
+    mockGM.addEdgeSwipeGesture();
+    return testFile(&mockGM, "test/cases/edgeLeft.csv");
+}
+
+bool testEdgeSwipeTimeout() {
+    CMockGestureManager mockGM;
+    mockGM.addEdgeSwipeGesture();
+    return testFile(&mockGM, "test/cases/edgeSwipeTimeout.csv");
+}
+
+bool testEdgeReleaseTimeout() {
+    CMockGestureManager mockGM;
+    mockGM.addEdgeSwipeGesture();
+    return testFile(&mockGM, "test/cases/edgeReleaseTimeout.csv");
+}
+
 // @return true if passed
 bool testFile(CMockGestureManager* mockGM, std::string fname) {
-    std::ifstream infile(fname);
+    auto infile = std::ifstream(fname);
+    assert(infile.good());
     std::string type, line;
     uint32_t time;
     int id;
     double x, y;
     bool running = true;
+    std::cout << std::setprecision(2);
 
     while (std::getline(infile, line)) {
         std::istringstream linestream(line);
@@ -70,11 +91,28 @@ bool testFile(CMockGestureManager* mockGM, std::string fname) {
             if (type == "complete") {
                 running = false;
                 assert(mockGM->triggered);
-            } else {
+            } else if (type == "cancel") {
                 running = false;
                 assert(mockGM->cancelled);
+            } else if (type == "progress") {
+                double actual_progress =
+                    mockGM->getGestureAt(0)->get()->get_progress();
+                double progress;
+                linestream >> progress;
+                std::cout << "CHECK progress: " << actual_progress
+                          << ", status: ";
+                std::cout << (running ? "running" : "")
+                          << (mockGM->triggered ? "triggered" : "")
+                          << (mockGM->cancelled ? "cancelled" : "") << "\n";
+
+                assert(actual_progress == progress);
+            } else {
+                std::cout << "unknown argument to CHECK: " << type;
+                assert(false);
             }
         } else {
+            std::cout << "invalid COMMAND in test file " << fname << ": "
+                      << type << "\n";
             assert(false);
         }
     }
@@ -92,6 +130,21 @@ int main() {
         std::cout << "passed test #2\n";
     else
         return 2;
+
+    if (testEdgeSwipe())
+        std::cout << "passed test #3\n";
+    else
+        return 3;
+
+    if (testEdgeSwipeTimeout())
+        std::cout << "passed test #4\n";
+    else
+        return 4;
+
+    if (testEdgeReleaseTimeout())
+        std::cout << "passed test #5\n";
+    else
+        return 5;
 
     return 0;
 }
