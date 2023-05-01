@@ -84,6 +84,11 @@ newEdgeSwipeGesture(const double sensitivity, edge_swipe_callback completed_cb,
 /*
  * Interface; there's only @CGestures and the mock gesture manager for testing
  * that implements this
+ *
+ * New gesture_t are added with @addTouchGesture(). Callbacks are triggered
+ * during updateGestures if all actions within a geture_t is completed (actions
+ * are chained serially, i.e. one action must be "completed" before the next
+ * can start "running")
  */
 class IGestureManager {
   public:
