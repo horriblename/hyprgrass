@@ -207,7 +207,14 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
-    const auto lift_off_pos = m_sGestureState.fingers[ev->touch_id].current;
+    // NOTE this is neccessary because onTouchDown might fail and exit without
+    // updating gestures
+    wf::touch::point_t lift_off_pos;
+    try {
+        lift_off_pos = m_sGestureState.fingers.at(ev->touch_id).current;
+    } catch (const std::out_of_range&) {
+        return false;
+    }
 
     const wf::touch::gesture_event_t gesture_event = {
         .type   = wf::touch::EVENT_TYPE_TOUCH_UP,
