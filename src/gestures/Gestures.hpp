@@ -103,7 +103,7 @@ class IGestureManager {
     wf::touch::gesture_state_t m_sGestureState;
 
     gestureDirection find_swipe_edges(wf::touch::point_t point);
-    virtual std::optional<SMonitorArea> getMonitorArea() const = 0;
+    virtual SMonitorArea getMonitorArea() const = 0;
 
   private:
     void updateGestures(const wf::touch::gesture_event_t&);

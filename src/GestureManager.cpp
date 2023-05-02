@@ -199,16 +199,13 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
     // represent "how many percent of screen" whereas
     // @wf::touch::gesture_event_t uses PIXELS as unit
-    auto maybePos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
-
-    if (!maybePos.has_value())
-        return false;
+    auto pos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
 
     const wf::touch::gesture_event_t gesture_event = {
         .type   = wf::touch::EVENT_TYPE_TOUCH_DOWN,
         .time   = ev->time_msec,
         .finger = ev->touch_id,
-        .pos    = maybePos.value(),
+        .pos    = pos,
     };
 
     IGestureManager::onTouchDown(gesture_event);
@@ -254,16 +251,13 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
-    auto maybePos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
-
-    if (!maybePos.has_value())
-        return false;
+    auto pos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
 
     const wf::touch::gesture_event_t gesture_event = {
         .type   = wf::touch::EVENT_TYPE_MOTION,
         .time   = ev->time_msec,
         .finger = ev->touch_id,
-        .pos    = maybePos.value(),
+        .pos    = pos,
     };
 
     IGestureManager::onTouchMove(gesture_event);
@@ -278,7 +272,7 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
     return false;
 }
 
-std::optional<SMonitorArea> CGestures::getMonitorArea() const {
+SMonitorArea CGestures::getMonitorArea() const {
     if (!m_pLastTouchedMonitor) {
         Debug::log(ERR, "[touch-gestures] m_pLastTouchedMonitor is null!");
         return {};
@@ -287,12 +281,8 @@ std::optional<SMonitorArea> CGestures::getMonitorArea() const {
     return m_sMonitorArea;
 }
 
-std::optional<wf::touch::point_t>
-CGestures::wlrTouchEventPositionAsPixels(double x, double y) {
-    auto monitorArea = getMonitorArea();
-    if (!monitorArea.has_value()) {
-        return {};
-    }
-    auto& area = monitorArea.value();
+wf::touch::point_t CGestures::wlrTouchEventPositionAsPixels(double x,
+                                                            double y) const {
+    auto area = getMonitorArea();
     return wf::touch::point_t{x * area.w, y * area.h};
 }

@@ -132,13 +132,7 @@ bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
 
 // swiping from left edge will result in GESTURE_DIRECTION_RIGHT etc.
 gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
-    if (!getMonitorArea().has_value()) {
-        return 0;
-    }
-    auto mon = getMonitorArea().value();
-
-    // auto position = m_pLastTouchedMonitor->vecPosition;
-    // auto geometry = m_pLastTouchedMonitor->vecSize;
+    auto mon = getMonitorArea();
 
     gestureDirection edge_directions = 0;
 

@@ -27,7 +27,7 @@ class CMockGestureManager : public IGestureManager {
     }
 
   protected:
-    std::optional<SMonitorArea> getMonitorArea() const override {
+    SMonitorArea getMonitorArea() const override {
         return SMonitorArea{0, 0, 1080, 1920};
     }
 

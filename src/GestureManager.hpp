@@ -35,7 +35,7 @@ class CGestures : public IGestureManager {
     // void deleteTouchGesture()
 
   protected:
-    std::optional<SMonitorArea> getMonitorArea() const override;
+    SMonitorArea getMonitorArea() const override;
 
   private:
     // std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
@@ -50,8 +50,7 @@ class CGestures : public IGestureManager {
     CMonitor* m_pLastTouchedMonitor;
 
     void addDefaultGestures();
-    std::optional<wf::touch::point_t> wlrTouchEventPositionAsPixels(double x,
-                                                                    double y);
+    wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
 };
 
 inline std::unique_ptr<CGestures> g_pGestureManager;
