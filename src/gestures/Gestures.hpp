@@ -92,9 +92,9 @@ newEdgeSwipeGesture(const double sensitivity, edge_swipe_callback completed_cb,
 class IGestureManager {
   public:
     virtual ~IGestureManager() {}
-    virtual bool onTouchDown(const wf::touch::gesture_event_t&);
-    virtual bool onTouchUp(const wf::touch::gesture_event_t&);
-    virtual bool onTouchMove(const wf::touch::gesture_event_t&);
+    bool onTouchDown(const wf::touch::gesture_event_t&);
+    bool onTouchUp(const wf::touch::gesture_event_t&);
+    bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
 
