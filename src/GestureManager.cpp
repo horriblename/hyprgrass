@@ -173,6 +173,21 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(
         ev->touch->output_name ? ev->touch->output_name : "");
 
+    const auto PDEVIT = std::find_if(
+        g_pInputManager->m_lTouchDevices.begin(),
+        g_pInputManager->m_lTouchDevices.end(), [&](const STouchDevice& other) {
+            return other.pWlrDevice == &ev->touch->base;
+        });
+
+    if (PDEVIT != g_pInputManager->m_lTouchDevices.end() &&
+        !PDEVIT->boundOutput.empty()) {
+        m_pLastTouchedMonitor =
+            g_pCompositor->getMonitorFromName(PDEVIT->boundOutput);
+    }
+    m_pLastTouchedMonitor = m_pLastTouchedMonitor
+                                ? m_pLastTouchedMonitor
+                                : g_pCompositor->m_pLastMonitor;
+
     const auto& position = m_pLastTouchedMonitor->vecPosition;
     const auto& geometry = m_pLastTouchedMonitor->vecSize;
     m_sMonitorArea       = {position.x, position.y, geometry.x, geometry.y};
