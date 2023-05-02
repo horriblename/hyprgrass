@@ -125,8 +125,10 @@ void CGestures::emulateSwipeUpdate(uint32_t time) {
         .pointer   = nullptr,
         .time_msec = time,
         .fingers   = (uint32_t)m_sGestureState.fingers.size(),
-        .dx        = (currentCenter.x - m_vGestureLastCenter.x) * *PSWIPEDIST,
-        .dy        = (currentCenter.y - m_vGestureLastCenter.y) * *PSWIPEDIST};
+        .dx = (currentCenter.x - m_vGestureLastCenter.x) / m_sMonitorArea.w *
+              *PSWIPEDIST,
+        .dy = (currentCenter.y - m_vGestureLastCenter.y) / m_sMonitorArea.h *
+              *PSWIPEDIST};
 
     g_pInputManager->onSwipeUpdate(&emulated_swipe);
     m_vGestureLastCenter = currentCenter;
