@@ -216,7 +216,7 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
     return false;
 }
 
-std::optional<SMonitorArea> CGestures::getMonitorArea() {
+std::optional<SMonitorArea> CGestures::getMonitorArea() const {
     if (!m_pLastTouchedMonitor) {
         Debug::log(ERR, "[touch-gestures] m_pLastTouchedMonitor is null!");
         return {};

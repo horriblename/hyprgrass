@@ -35,7 +35,7 @@ class CGestures : public IGestureManager {
     // void deleteTouchGesture()
 
   protected:
-    std::optional<SMonitorArea> getMonitorArea() override;
+    std::optional<SMonitorArea> getMonitorArea() const override;
 
   private:
     // std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
