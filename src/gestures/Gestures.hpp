@@ -4,7 +4,6 @@
 #include <memory>
 #include <optional>
 #include <wayfire/touch/touch.hpp>
-#include <wlr/types/wlr_touch.h>
 
 // Swipe params
 constexpr static int EDGE_SWIPE_THRESHOLD              = 10;
@@ -93,9 +92,9 @@ newEdgeSwipeGesture(const double sensitivity, edge_swipe_callback completed_cb,
 class IGestureManager {
   public:
     virtual ~IGestureManager() {}
-    virtual bool onTouchDown(wlr_touch_down_event*);
-    virtual bool onTouchUp(wlr_touch_up_event*);
-    virtual bool onTouchMove(wlr_touch_motion_event*);
+    virtual bool onTouchDown(const wf::touch::gesture_event_t&);
+    virtual bool onTouchUp(const wf::touch::gesture_event_t&);
+    virtual bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
 

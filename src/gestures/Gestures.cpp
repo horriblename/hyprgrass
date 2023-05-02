@@ -115,43 +115,18 @@ void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
 }
 
 // @return whether or not to inhibit further actions
-bool IGestureManager::onTouchDown(wlr_touch_down_event* ev) {
-    wf::touch::gesture_event_t gesture_event = {
-        .type   = wf::touch::EVENT_TYPE_TOUCH_DOWN,
-        .time   = ev->time_msec,
-        .finger = ev->touch_id,
-        .pos    = {ev->x, ev->y}};
-
-
-    updateGestures(gesture_event);
-
+bool IGestureManager::onTouchDown(const wf::touch::gesture_event_t& ev) {
+    updateGestures(ev);
     return false;
 }
 
-bool IGestureManager::onTouchUp(wlr_touch_up_event* ev) {
-    const auto lift_off_pos = m_sGestureState.fingers[ev->touch_id].current;
-
-    const wf::touch::gesture_event_t gesture_event = {
-        .type   = wf::touch::EVENT_TYPE_TOUCH_UP,
-        .time   = ev->time_msec,
-        .finger = ev->touch_id,
-        .pos    = {lift_off_pos.x, lift_off_pos.y},
-    };
-
-    updateGestures(gesture_event);
+bool IGestureManager::onTouchUp(const wf::touch::gesture_event_t& ev) {
+    updateGestures(ev);
     return false;
 }
 
-bool IGestureManager::onTouchMove(wlr_touch_motion_event* ev) {
-    const wf::touch::gesture_event_t gesture_event = {
-        .type   = wf::touch::EVENT_TYPE_MOTION,
-        .time   = ev->time_msec,
-        .finger = ev->touch_id,
-        .pos    = {ev->x, ev->y},
-    };
-
-    updateGestures(gesture_event);
-
+bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
+    updateGestures(ev);
     return false;
 }
 

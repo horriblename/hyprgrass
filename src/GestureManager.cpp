@@ -173,11 +173,30 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(
         ev->touch->output_name ? ev->touch->output_name : "");
 
+    const auto& position = m_pLastTouchedMonitor->vecPosition;
+    const auto& geometry = m_pLastTouchedMonitor->vecSize;
+    m_sMonitorArea       = {position.x, position.y, geometry.x, geometry.y};
+
     if (m_bWorkspaceSwipeActive) {
         emulateSwipeEnd(ev->time_msec, false);
     }
 
-    IGestureManager::onTouchDown(ev);
+    // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
+    // represent "how many percent of screen" whereas
+    // @wf::touch::gesture_event_t uses PIXELS as unit
+    auto maybePos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
+
+    if (!maybePos.has_value())
+        return false;
+
+    const wf::touch::gesture_event_t gesture_event = {
+        .type   = wf::touch::EVENT_TYPE_TOUCH_DOWN,
+        .time   = ev->time_msec,
+        .finger = ev->touch_id,
+        .pos    = maybePos.value(),
+    };
+
+    IGestureManager::onTouchDown(gesture_event);
 
     // TODO handle m_bDispatcherFound
     m_bDispatcherFound = false;
@@ -188,7 +207,16 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
-    IGestureManager::onTouchUp(ev);
+    const auto lift_off_pos = m_sGestureState.fingers[ev->touch_id].current;
+
+    const wf::touch::gesture_event_t gesture_event = {
+        .type   = wf::touch::EVENT_TYPE_TOUCH_UP,
+        .time   = ev->time_msec,
+        .finger = ev->touch_id,
+        .pos    = {lift_off_pos.x, lift_off_pos.y},
+    };
+
+    IGestureManager::onTouchUp(gesture_event);
 
     // TODO where do I put this, before or after IGestureManager::onTouchUp...?
     if (m_bWorkspaceSwipeActive) {
@@ -204,7 +232,19 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
-    IGestureManager::onTouchMove(ev);
+    auto maybePos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
+
+    if (!maybePos.has_value())
+        return false;
+
+    const wf::touch::gesture_event_t gesture_event = {
+        .type   = wf::touch::EVENT_TYPE_MOTION,
+        .time   = ev->time_msec,
+        .finger = ev->touch_id,
+        .pos    = maybePos.value(),
+    };
+
+    IGestureManager::onTouchMove(gesture_event);
 
     // TODO where do I put this
     if (m_bWorkspaceSwipeActive) {
@@ -221,8 +261,16 @@ std::optional<SMonitorArea> CGestures::getMonitorArea() const {
         Debug::log(ERR, "[touch-gestures] m_pLastTouchedMonitor is null!");
         return {};
     }
-    auto& position = m_pLastTouchedMonitor->vecPosition;
-    auto& geometry = m_pLastTouchedMonitor->vecSize;
 
-    return SMonitorArea{position.x, position.y, geometry.x, geometry.y};
+    return m_sMonitorArea;
+}
+
+std::optional<wf::touch::point_t>
+CGestures::wlrTouchEventPositionAsPixels(double x, double y) {
+    auto monitorArea = getMonitorArea();
+    if (!monitorArea.has_value()) {
+        return {};
+    }
+    auto& area = monitorArea.value();
+    return wf::touch::point_t{x * area.w, y * area.h};
 }

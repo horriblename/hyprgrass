@@ -70,22 +70,24 @@ bool testFile(CMockGestureManager* mockGM, std::string fname) {
             assert(only_one(running, mockGM->triggered, mockGM->cancelled));
             linestream >> time >> id >> x >> y;
 
-            wlr_touch_down_event ev = {
-                .time_msec = time, .touch_id = id, .x = x, .y = y};
-            mockGM->onTouchDown(&ev);
+            const wf::touch::gesture_event_t ev = {
+                wf::touch::EVENT_TYPE_TOUCH_DOWN, time, id, {x, y}};
+            mockGM->onTouchDown(ev);
         } else if (type == "UP") {
             assert(only_one(running, mockGM->triggered, mockGM->cancelled));
             linestream >> time >> id;
 
-            wlr_touch_up_event ev = {.time_msec = time, .touch_id = id};
-            mockGM->onTouchUp(&ev);
+            auto lift_off_pos = mockGM->getLastPositionOfFinger(id);
+            const wf::touch::gesture_event_t ev = {
+                wf::touch::EVENT_TYPE_TOUCH_UP, time, id, lift_off_pos};
+            mockGM->onTouchUp(ev);
         } else if (type == "MOVE") {
             assert(only_one(running, mockGM->triggered, mockGM->cancelled));
             linestream >> time >> id >> x >> y;
 
-            wlr_touch_motion_event ev = {
-                .time_msec = time, .touch_id = id, .x = x, .y = y};
-            mockGM->onTouchMove(&ev);
+            const wf::touch::gesture_event_t ev = {
+                wf::touch::EVENT_TYPE_MOTION, time, id, {x, y}};
+            mockGM->onTouchMove(ev);
         } else if (type == "CHECK") {
             linestream >> type;
             if (type == "complete") {

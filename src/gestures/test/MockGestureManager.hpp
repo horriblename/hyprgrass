@@ -2,7 +2,6 @@
 #include "../Gestures.hpp"
 #include "wayfire/touch/touch.hpp"
 #include <vector>
-#include <wlr/types/wlr_touch.h>
 
 class CMockGestureManager : public IGestureManager {
   public:
@@ -20,6 +19,11 @@ class CMockGestureManager : public IGestureManager {
 
     auto getGestureAt(int index) const {
         return &this->m_vGestures.at(index);
+    }
+
+    wf::touch::point_t getLastPositionOfFinger(int id) {
+        auto pos = &this->m_sGestureState.fingers[id].current;
+        return {pos->x, pos->y};
     }
 
   protected:

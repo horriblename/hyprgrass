@@ -22,9 +22,9 @@ struct TouchGesture {
 class CGestures : public IGestureManager {
   public:
     CGestures();
-    bool onTouchDown(wlr_touch_down_event*) override;
-    bool onTouchUp(wlr_touch_up_event*) override;
-    bool onTouchMove(wlr_touch_motion_event*) override;
+    bool onTouchDown(wlr_touch_down_event*);
+    bool onTouchUp(wlr_touch_up_event*);
+    bool onTouchMove(wlr_touch_motion_event*);
 
     void emulateSwipeBegin(uint32_t time);
     void emulateSwipeEnd(uint32_t time, bool cancelled);
@@ -44,11 +44,14 @@ class CGestures : public IGestureManager {
     // Vector2D m_vTouchGestureLastCenter;
     bool m_bWorkspaceSwipeActive = false;
     bool m_bDispatcherFound      = false;
+    SMonitorArea m_sMonitorArea;
     wf::touch::point_t m_vGestureLastCenter;
 
     CMonitor* m_pLastTouchedMonitor;
 
     void addDefaultGestures();
+    std::optional<wf::touch::point_t> wlrTouchEventPositionAsPixels(double x,
+                                                                    double y);
 };
 
 inline std::unique_ptr<CGestures> g_pGestureManager;
