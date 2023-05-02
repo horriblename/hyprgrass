@@ -41,12 +41,25 @@ enum eTouchGestureDirection {
     // GESTURE_DIRECTION_OUT = (1 << 5),
 };
 
+// can be one of @eTouchGestureDirection or a combination of them
+using gestureDirection = uint32_t;
+
+/**
+ * Represents a touch gesture.
+ *
+ * Finger count can be arbitrary (might be a good idea to limit to >3)
+ */
+struct TouchGesture {
+    eTouchGestureType type;
+    gestureDirection direction;
+    int finger_count;
+
+    std::string to_string() const;
+};
+
 struct SMonitorArea {
     double x, y, w, h;
 };
-
-// can be one of @eTouchGestureDirection or a combination of them
-using gestureDirection = uint32_t;
 
 // swipe and with multiple fingers and directions
 class CMultiAction : public wf::touch::gesture_action_t {

@@ -1,6 +1,41 @@
 #include "Gestures.hpp"
 #include <glm/glm.hpp>
 
+std::string TouchGesture::to_string() const {
+    std::string bind = "";
+    switch (type) {
+        case GESTURE_TYPE_EDGE_SWIPE:
+            bind += "edge";
+            break;
+        case GESTURE_TYPE_SWIPE:
+            bind += "swipe";
+            break;
+        case GESTURE_TYPE_NONE:
+            return "";
+            break;
+    }
+
+    bind += finger_count;
+    bind += direction;
+    if (direction & GESTURE_DIRECTION_LEFT) {
+        bind += 'l';
+    }
+
+    if (direction & GESTURE_DIRECTION_RIGHT) {
+        bind += 'r';
+    }
+
+    if (direction & GESTURE_DIRECTION_UP) {
+        bind += 'u';
+    }
+
+    if (direction & GESTURE_DIRECTION_DOWN) {
+        bind += 'd';
+    }
+
+    return bind;
+}
+
 // The action is completed if any number of fingers is moved enough,
 // and can be later cancelled if a new finger touches down
 wf::touch::action_status_t

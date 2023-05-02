@@ -6,19 +6,6 @@
 #include <vector>
 #include <wayfire/touch/touch.hpp>
 
-/**
- * Represents a touch gesture.
- *
- * Finger count can be arbitrary (might be a good idea to limit to >3)
- */
-struct TouchGesture {
-    eTouchGestureType type;
-    gestureDirection direction;
-    int finger_count;
-
-    std::string to_string() const;
-};
-
 class CGestures : public IGestureManager {
   public:
     CGestures();
