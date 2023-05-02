@@ -103,6 +103,7 @@ newEdgeSwipeGesture(const double sensitivity, edge_swipe_callback completed_cb,
 }
 
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
+    m_sGestureState.update(ev);
     for (auto& gesture : m_vGestures) {
         if (m_sGestureState.fingers.size() == 1 &&
             ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
@@ -121,7 +122,6 @@ bool IGestureManager::onTouchDown(wlr_touch_down_event* ev) {
         .finger = ev->touch_id,
         .pos    = {ev->x, ev->y}};
 
-    m_sGestureState.update(gesture_event);
 
     updateGestures(gesture_event);
 
@@ -138,7 +138,6 @@ bool IGestureManager::onTouchUp(wlr_touch_up_event* ev) {
         .pos    = {lift_off_pos.x, lift_off_pos.y},
     };
 
-    m_sGestureState.update(gesture_event);
     updateGestures(gesture_event);
     return false;
 }
@@ -151,7 +150,6 @@ bool IGestureManager::onTouchMove(wlr_touch_motion_event* ev) {
         .pos    = {ev->x, ev->y},
     };
 
-    m_sGestureState.update(gesture_event);
     updateGestures(gesture_event);
 
     return false;
