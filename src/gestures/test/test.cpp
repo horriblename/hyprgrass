@@ -112,6 +112,8 @@ bool testFile(CMockGestureManager* mockGM, std::string fname) {
                 std::cout << "unknown argument to CHECK: " << type;
                 assert(false);
             }
+        } else if (type == "#") {
+            // comment
         } else {
             std::cout << "invalid COMMAND in test file " << fname << ": "
                       << type << "\n";
