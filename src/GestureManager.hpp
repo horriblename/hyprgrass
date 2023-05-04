@@ -1,5 +1,6 @@
 #pragma once
-#include "./gestures/Gestures.hpp"
+#include "WorkspaceSwipe.hpp"
+#include "gestures/Gestures.hpp"
 #include "globals.hpp"
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/helpers/Monitor.hpp>
@@ -14,10 +15,6 @@ class CGestures : public IGestureManager {
     bool onTouchUp(wlr_touch_up_event*);
     bool onTouchMove(wlr_touch_motion_event*);
 
-    void emulateSwipeBegin(uint32_t time);
-    void emulateSwipeEnd(uint32_t time, bool cancelled);
-    void emulateSwipeUpdate(uint32_t time);
-
     // TODO how to refer to gesture?
     // void deleteTouchGesture()
 
@@ -31,14 +28,9 @@ class CGestures : public IGestureManager {
     };
 
   private:
-    // std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
-    // wf::touch::gesture_state_t m_sGestureState;
-
-    // Vector2D m_vTouchGestureLastCenter;
-    bool m_bWorkspaceSwipeActive = false;
-    bool m_bDispatcherFound      = false;
+    bool m_bDispatcherFound = false;
     SMonitorArea m_sMonitorArea;
-    wf::touch::point_t m_vGestureLastCenter;
+    WorkspaceSwipeManager workspaceSwipe;
 
     CMonitor* m_pLastTouchedMonitor;
 

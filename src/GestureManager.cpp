@@ -21,67 +21,19 @@ CGestures::CGestures() {
 
     // FIXME time arg of @emulateSwipeBegin should probably be assigned
     // something useful (though its not really used later)
-    auto workspaceSwipeBegin = [this]() { this->emulateSwipeBegin(0); };
+    auto workspaceSwipeBegin = [this]() {
+        auto origin_in_px = this->m_sGestureState.get_center().origin;
+        wf::touch::point_t origin_in_percent = {
+            origin_in_px.x / m_sMonitorArea.w,
+            origin_in_px.y / m_sMonitorArea.h};
+
+        this->workspaceSwipe.beginSwipe(0, origin_in_percent);
+    };
     // TODO make sensitivity and workspace_swipe_fingers dynamic
     addTouchGesture(newWorkspaceSwipeStartGesture(
         *PSENSITIVITY, *PTOUCHSWIPEFINGERS, workspaceSwipeBegin, []() {}));
 
     addEdgeSwipeGesture(PSENSITIVITY);
-}
-
-void CGestures::emulateSwipeBegin(uint32_t time) {
-    static auto* const PSWIPEFINGERS =
-        &HyprlandAPI::getConfigValue(PHANDLE,
-                                     "gestures:workspace_swipe_fingers")
-             ->intValue;
-
-    // HACK .pointer is not used by g_pInputManager->onSwipeBegin so it's fine I
-    // think
-    auto emulated_swipe =
-        wlr_pointer_swipe_begin_event{.pointer   = nullptr,
-                                      .time_msec = time,
-                                      .fingers   = (uint32_t)*PSWIPEFINGERS};
-    g_pInputManager->onSwipeBegin(&emulated_swipe);
-
-    m_vGestureLastCenter    = m_sGestureState.get_center().current;
-    m_bWorkspaceSwipeActive = true;
-}
-
-void CGestures::emulateSwipeEnd(uint32_t time, bool cancelled) {
-    auto emulated_swipe = wlr_pointer_swipe_end_event{
-        .pointer = nullptr, .time_msec = time, .cancelled = cancelled};
-    g_pInputManager->onSwipeEnd(&emulated_swipe);
-
-    m_bWorkspaceSwipeActive = false;
-}
-
-void CGestures::emulateSwipeUpdate(uint32_t time) {
-    static auto* const PSWIPEDIST =
-        &HyprlandAPI::getConfigValue(PHANDLE,
-                                     "gestures:workspace_swipe_distance")
-             ->intValue;
-
-    if (!g_pInputManager->m_sActiveSwipe.pMonitor) {
-        Debug::log(
-            ERR, "ignoring touch gesture motion event due to missing monitor!");
-        return;
-    }
-
-    auto currentCenter = m_sGestureState.get_center().current;
-
-    // touch coords are within 0 to 1, we need to scale it with PSWIPEDIST for
-    // one to one gesture
-    auto emulated_swipe = wlr_pointer_swipe_update_event{
-        .pointer   = nullptr,
-        .time_msec = time,
-        .fingers   = (uint32_t)m_sGestureState.fingers.size(),
-        .dx = (currentCenter.x - m_vGestureLastCenter.x) / m_sMonitorArea.w *
-              *PSWIPEDIST,
-        .dy = (currentCenter.y - m_vGestureLastCenter.y) / m_sMonitorArea.h *
-              *PSWIPEDIST};
-
-    g_pInputManager->onSwipeUpdate(&emulated_swipe);
-    m_vGestureLastCenter = currentCenter;
 }
 
 void CGestures::handleGesture(const TouchGesture& gev) {
@@ -143,8 +95,8 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     const auto& geometry = m_pLastTouchedMonitor->vecSize;
     m_sMonitorArea       = {position.x, position.y, geometry.x, geometry.y};
 
-    if (m_bWorkspaceSwipeActive) {
-        emulateSwipeEnd(ev->time_msec, false);
+    if (workspaceSwipe.isActive()) {
+        workspaceSwipe.endSwipe(ev->time_msec, false);
     }
 
     // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
@@ -188,9 +140,8 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
 
     IGestureManager::onTouchUp(gesture_event);
 
-    // TODO where do I put this, before or after IGestureManager::onTouchUp...?
-    if (m_bWorkspaceSwipeActive) {
-        emulateSwipeEnd(ev->time_msec, false);
+    if (workspaceSwipe.isActive()) {
+        workspaceSwipe.endSwipe(ev->time_msec, false);
     }
 
     // TODO handle m_bDispatcherFound
@@ -213,9 +164,9 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
 
     IGestureManager::onTouchMove(gesture_event);
 
-    // TODO where do I put this
-    if (m_bWorkspaceSwipeActive) {
-        emulateSwipeUpdate(ev->time_msec);
+    if (workspaceSwipe.isActive()) {
+        workspaceSwipe.moveSwipe(ev->time_msec,
+                                 wf::touch::point_t(ev->x, ev->y));
     }
 
     // TODO handle m_bDispatcherFound
