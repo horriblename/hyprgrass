@@ -1,6 +1,7 @@
 #pragma once
 #include "gestures/Gestures.hpp"
 #include "globals.hpp"
+#include "src/debug/Log.hpp"
 #include "src/helpers/Monitor.hpp"
 #include <src/includes.hpp>
 #include <vector>
@@ -23,7 +24,11 @@ class CGestures : public IGestureManager {
   protected:
     SMonitorArea getMonitorArea() const override;
     void handleGesture(const TouchGesture& gev) override;
-    void handleCancelledGesture() override{};
+    void handleCancelledGesture() override {
+        // DEBUG
+        Debug::log(INFO, "gesture cancelled, last progress: %.2f",
+                   debug_gestureProgressBeforeUpdate);
+    };
 
   private:
     // std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;

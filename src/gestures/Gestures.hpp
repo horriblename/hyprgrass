@@ -122,6 +122,8 @@ class IGestureManager {
     virtual void handleGesture(const TouchGesture& gev) = 0;
     virtual void handleCancelledGesture()               = 0;
 
+    double debug_gestureProgressBeforeUpdate = 0; // DEBUG
+
   private:
     void updateGestures(const wf::touch::gesture_event_t&);
 };

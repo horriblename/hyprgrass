@@ -140,6 +140,9 @@ newEdgeSwipeGesture(const double sensitivity, edge_swipe_callback completed_cb,
 
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
     for (auto& gesture : m_vGestures) {
+
+        debug_gestureProgressBeforeUpdate = gesture->get_progress(); // DEBUG
+
         if (m_sGestureState.fingers.size() == 1 &&
             ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
             gesture->reset(ev.time);
