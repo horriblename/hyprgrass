@@ -1,5 +1,6 @@
 #include "Gestures.hpp"
 #include <glm/glm.hpp>
+#include <utility>
 
 std::string TouchGesture::to_string() const {
     std::string bind = "";
@@ -193,4 +194,47 @@ gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
 void IGestureManager::addTouchGesture(
     std::unique_ptr<wf::touch::gesture_t> gesture) {
     m_vGestures.emplace_back(std::move(gesture));
+}
+
+void IGestureManager::addEdgeSwipeGesture() {
+    // TODO make this adjustable
+    const double sensitivity = 1;
+
+    // Edge swipe needs a quick release to be considered edge swipe
+    auto edge =
+        std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE / sensitivity);
+    auto edge_release = std::make_unique<wf::touch::touch_action_t>(1, false);
+    edge->set_duration(GESTURE_BASE_DURATION * sensitivity);
+    edge->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE * sensitivity);
+
+    // The release action needs longer duration to handle the case where the
+    // gesture is actually longer than the max distance.
+    edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * sensitivity);
+
+    // FIXME proper memory management pls
+    auto edge_ptr = edge.get();
+
+    std::vector<std::unique_ptr<wf::touch::gesture_action_t>>
+        edge_swipe_actions;
+    edge_swipe_actions.emplace_back(std::move(edge));
+    edge_swipe_actions.emplace_back(std::move(edge_release));
+
+    auto ack = [edge_ptr, this]() {
+        auto possible_edges =
+            find_swipe_edges(m_sGestureState.get_center().origin);
+        auto direction = edge_ptr->target_direction;
+
+        possible_edges &= direction;
+        if (!possible_edges) {
+            return;
+        }
+        auto gesture = TouchGesture{GESTURE_TYPE_EDGE_SWIPE, direction,
+                                    edge_ptr->finger_count};
+        this->handleGesture(gesture);
+    };
+    auto cancel = [this]() { this->handleCancelledGesture(); };
+
+    auto gesture = std::make_unique<wf::touch::gesture_t>(
+        std::move(edge_swipe_actions), ack, cancel);
+    addTouchGesture(std::move(gesture));
 }

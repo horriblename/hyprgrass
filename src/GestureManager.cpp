@@ -26,22 +26,7 @@ CGestures::CGestures() {
     addTouchGesture(newWorkspaceSwipeStartGesture(
         *PSENSITIVITY, *PTOUCHSWIPEFINGERS, workspaceSwipeBegin, []() {}));
 
-    auto edgeSwipeTrigger = [this](CMultiAction* edge_ptr) {
-        auto possible_edges =
-            find_swipe_edges(m_sGestureState.get_center().origin);
-        auto target_direction = edge_ptr->target_direction;
-
-        possible_edges &= target_direction;
-        if (!possible_edges) {
-            return;
-        }
-
-        auto gesture = TouchGesture{GESTURE_TYPE_EDGE_SWIPE, target_direction,
-                                    edge_ptr->finger_count};
-        handleGesture(gesture);
-    };
-    addTouchGesture(newEdgeSwipeGesture(
-        TEMP_CONFIG_SENSITIVITY, edgeSwipeTrigger, [](CMultiAction*) {}));
+    addEdgeSwipeGesture();
 }
 
 void CGestures::emulateSwipeBegin(uint32_t time) {
