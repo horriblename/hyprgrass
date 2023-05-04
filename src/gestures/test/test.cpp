@@ -125,6 +125,12 @@ bool testFile(CMockGestureManager* mockGM, std::string fname) {
 }
 
 int main() {
+    Tester tester;
+    if (tester.testFindSwipeEdges())
+        std::cout << "passed test for find_swipe_edges()\n";
+    else
+        return 1;
+
     if (testWorkspaceSwipeBegin())
         std::cout << "passed test #1\n";
     else

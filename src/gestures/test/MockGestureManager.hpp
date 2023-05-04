@@ -8,6 +8,11 @@ constexpr double MONITOR_Y      = 0;
 constexpr double MONITOR_WIDTH  = 1920;
 constexpr double MONITOR_HEIGHT = 1080;
 
+class Tester {
+  public:
+    bool testFindSwipeEdges();
+};
+
 class CMockGestureManager : public IGestureManager {
   public:
     CMockGestureManager();
@@ -40,4 +45,5 @@ class CMockGestureManager : public IGestureManager {
     }
 
   private:
+    friend Tester;
 };
