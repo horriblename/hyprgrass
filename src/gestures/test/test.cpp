@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 #include <variant>
+#include <vector>
 
 inline bool only_one(bool a, bool b, bool c) {
     return (a && !b && !c) || (!a && b && !c) || (!a && !b && c);
@@ -50,6 +51,12 @@ bool testEdgeReleaseTimeout() {
     CMockGestureManager mockGM;
     mockGM.addEdgeSwipeGesture();
     return testFile(&mockGM, "test/cases/edgeReleaseTimeout.csv");
+}
+
+bool testEdgeInvalidStart() {
+    CMockGestureManager mockGM;
+    mockGM.addEdgeSwipeGesture();
+    return testFile(&mockGM, "test/cases/edgeInvalidStart.csv");
 }
 
 // @return true if passed
@@ -155,6 +162,11 @@ int main() {
         std::cout << "passed test #5\n";
     else
         return 5;
+
+    if (testEdgeInvalidStart())
+        std::cout << "passed test #6\n";
+    else
+        return 6;
 
     return 0;
 }
