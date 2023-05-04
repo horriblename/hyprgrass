@@ -139,7 +139,6 @@ newEdgeSwipeGesture(const double sensitivity, edge_swipe_callback completed_cb,
 }
 
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
-    m_sGestureState.update(ev);
     for (auto& gesture : m_vGestures) {
         if (m_sGestureState.fingers.size() == 1 &&
             ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
@@ -152,17 +151,23 @@ void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
 
 // @return whether or not to inhibit further actions
 bool IGestureManager::onTouchDown(const wf::touch::gesture_event_t& ev) {
+    // NOTE @m_sGestureState is used in gesture-completed callbacks
+    // during touch down it must be updated before updating the gestures
+    // in touch up and motion, it must be updated AFTER updating the gestures
+    m_sGestureState.update(ev);
     updateGestures(ev);
     return false;
 }
 
 bool IGestureManager::onTouchUp(const wf::touch::gesture_event_t& ev) {
     updateGestures(ev);
+    m_sGestureState.update(ev);
     return false;
 }
 
 bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
     updateGestures(ev);
+    m_sGestureState.update(ev);
     return false;
 }
 
