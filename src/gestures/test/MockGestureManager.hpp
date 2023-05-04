@@ -3,6 +3,11 @@
 #include "wayfire/touch/touch.hpp"
 #include <vector>
 
+constexpr double MONITOR_X      = 0;
+constexpr double MONITOR_Y      = 0;
+constexpr double MONITOR_WIDTH  = 1920;
+constexpr double MONITOR_HEIGHT = 1080;
+
 class CMockGestureManager : public IGestureManager {
   public:
     CMockGestureManager();
@@ -31,7 +36,8 @@ class CMockGestureManager : public IGestureManager {
 
   protected:
     SMonitorArea getMonitorArea() const override {
-        return SMonitorArea{0, 0, 1080, 1920};
+        return SMonitorArea{MONITOR_X, MONITOR_Y, MONITOR_WIDTH,
+                            MONITOR_HEIGHT};
     }
 
   private:
