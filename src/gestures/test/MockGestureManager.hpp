@@ -26,6 +26,9 @@ class CMockGestureManager : public IGestureManager {
         return {pos->x, pos->y};
     }
 
+    void handleGesture(const TouchGesture& gev) override;
+    void handleCancelledGesture() override;
+
   protected:
     SMonitorArea getMonitorArea() const override {
         return SMonitorArea{0, 0, 1080, 1920};

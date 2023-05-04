@@ -62,6 +62,7 @@ struct SMonitorArea {
 };
 
 // swipe and with multiple fingers and directions
+// TODO make threshold dynamic so we can adjust it at runtime
 class CMultiAction : public wf::touch::gesture_action_t {
   public:
     CMultiAction(double threshold) : threshold(threshold){};
@@ -110,13 +111,16 @@ class IGestureManager {
     bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
+    void addEdgeSwipeGesture();
 
   protected:
     std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
     wf::touch::gesture_state_t m_sGestureState;
 
     gestureDirection find_swipe_edges(wf::touch::point_t point);
-    virtual SMonitorArea getMonitorArea() const = 0;
+    virtual SMonitorArea getMonitorArea() const         = 0;
+    virtual void handleGesture(const TouchGesture& gev) = 0;
+    virtual void handleCancelledGesture()               = 0;
 
   private:
     void updateGestures(const wf::touch::gesture_event_t&);

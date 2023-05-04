@@ -17,12 +17,13 @@ class CGestures : public IGestureManager {
     void emulateSwipeEnd(uint32_t time, bool cancelled);
     void emulateSwipeUpdate(uint32_t time);
 
-    void handleGesture(const TouchGesture& gev);
     // TODO how to refer to gesture?
     // void deleteTouchGesture()
 
   protected:
     SMonitorArea getMonitorArea() const override;
+    void handleGesture(const TouchGesture& gev) override;
+    void handleCancelledGesture() override{};
 
   private:
     // std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
