@@ -107,37 +107,6 @@ newWorkspaceSwipeStartGesture(const double sensitivity, const int fingers,
                                                   completed_cb, cancel_cb);
 }
 
-std::unique_ptr<wf::touch::gesture_t>
-newEdgeSwipeGesture(const double sensitivity, edge_swipe_callback completed_cb,
-                    edge_swipe_callback cancel_cb) {
-
-    // Edge swipe needs a quick release to be considered edge swipe
-    auto edge =
-        std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE / sensitivity);
-    auto edge_release = std::make_unique<wf::touch::touch_action_t>(1, false);
-    edge->set_duration(GESTURE_BASE_DURATION * sensitivity);
-    edge->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE * sensitivity);
-
-    // The release action needs longer duration to handle the case where the
-    // gesture is actually longer than the max distance.
-    edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * sensitivity);
-
-    // FIXME proper memory management pls
-    auto edge_ptr = edge.get();
-
-    std::vector<std::unique_ptr<wf::touch::gesture_action_t>>
-        edge_swipe_actions;
-    edge_swipe_actions.emplace_back(std::move(edge));
-    edge_swipe_actions.emplace_back(std::move(edge_release));
-
-    // TODO this is so convoluted i hate it
-    auto ack    = [edge_ptr, completed_cb]() { completed_cb(edge_ptr); };
-    auto cancel = [edge_ptr, cancel_cb]() { cancel_cb(edge_ptr); };
-
-    return std::make_unique<wf::touch::gesture_t>(std::move(edge_swipe_actions),
-                                                  ack, cancel);
-}
-
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
     for (auto& gesture : m_vGestures) {
 

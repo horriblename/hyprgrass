@@ -83,16 +83,10 @@ class CMultiAction : public wf::touch::gesture_action_t {
     };
 };
 
-using edge_swipe_callback = std::function<void(CMultiAction*)>;
-
 std::unique_ptr<wf::touch::gesture_t>
 newWorkspaceSwipeStartGesture(const double sensitivity, const int fingers,
                               wf::touch::gesture_callback_t completed_cb,
                               wf::touch::gesture_callback_t cancel_cb);
-
-std::unique_ptr<wf::touch::gesture_t>
-newEdgeSwipeGesture(const double sensitivity, edge_swipe_callback completed_cb,
-                    edge_swipe_callback cancel_cb);
 
 /*
  * Interface; there's only @CGestures and the mock gesture manager for testing
