@@ -105,8 +105,7 @@ void CGestures::handleGesture(const TouchGesture& gev) {
         }
 
         // call the dispatcher
-        Debug::log(LOG,
-                   "[touch-gesture] Gesture triggered, calling dispatcher (%s)",
+        Debug::log(LOG, "[touch-gesture] calling dispatcher (%s)",
                    bind.c_str());
 
         if (k.handler == "pass")
