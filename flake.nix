@@ -41,6 +41,7 @@
         ];
 
         buildInputs = with pkgs; [
+          hyprpkgs.hyprland
           hyprpkgs.wlroots-hyprland
           libdrm
           pixman
