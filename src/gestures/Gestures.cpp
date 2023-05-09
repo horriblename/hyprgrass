@@ -1,5 +1,6 @@
 #include "Gestures.hpp"
 #include <glm/glm.hpp>
+#include <string>
 #include <utility>
 
 std::string TouchGesture::to_string() const {
@@ -16,8 +17,7 @@ std::string TouchGesture::to_string() const {
             break;
     }
 
-    bind += finger_count;
-    bind += direction;
+    bind += std::to_string(finger_count);
     if (direction & GESTURE_DIRECTION_LEFT) {
         bind += 'l';
     }
