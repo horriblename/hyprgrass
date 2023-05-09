@@ -2,8 +2,8 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <wayfire/touch/touch.hpp>
-#include <wlr/types/wlr_touch.h>
 
 // Swipe params
 constexpr static int EDGE_SWIPE_THRESHOLD              = 10;
@@ -44,13 +44,35 @@ enum eTouchGestureDirection {
 // can be one of @eTouchGestureDirection or a combination of them
 using gestureDirection = uint32_t;
 
+/**
+ * Represents a touch gesture.
+ *
+ * Finger count can be arbitrary (might be a good idea to limit to >3)
+ */
+struct TouchGesture {
+    eTouchGestureType type;
+    gestureDirection direction;
+    int finger_count;
+
+    std::string to_string() const;
+};
+
+struct SMonitorArea {
+    double x, y, w, h;
+};
+
 // swipe and with multiple fingers and directions
+// TODO make threshold dynamic so we can adjust it at runtime
 class CMultiAction : public wf::touch::gesture_action_t {
   public:
-    CMultiAction(double threshold) : threshold(threshold){};
-    // bool pinch;
-    // bool last_pinch_was_pinch_in = false;
-    double threshold;
+    //   threshold = base_threshold / sensitivity
+    // if the threshold needs to be adjusted dynamically, the sensitivity
+    // pointer is used
+    CMultiAction(double base_threshold, const float* sensitivity)
+        : base_threshold(base_threshold), sensitivity(sensitivity){};
+
+    double base_threshold;
+    const float* sensitivity;
 
     gestureDirection target_direction = 0;
     int finger_count                  = 0;
@@ -65,32 +87,41 @@ class CMultiAction : public wf::touch::gesture_action_t {
     };
 };
 
-using edge_swipe_callback = std::function<void(CMultiAction*)>;
-
 std::unique_ptr<wf::touch::gesture_t>
 newWorkspaceSwipeStartGesture(const double sensitivity, const int fingers,
                               wf::touch::gesture_callback_t completed_cb,
                               wf::touch::gesture_callback_t cancel_cb);
 
-std::unique_ptr<wf::touch::gesture_t>
-newEdgeSwipeGesture(const double sensitivity, edge_swipe_callback completed_cb,
-                    edge_swipe_callback cancel_cb);
-
 /*
  * Interface; there's only @CGestures and the mock gesture manager for testing
  * that implements this
+ *
+ * New gesture_t are added with @addTouchGesture(). Callbacks are triggered
+ * during updateGestures if all actions within a geture_t is completed (actions
+ * are chained serially, i.e. one action must be "completed" before the next
+ * can start "running")
  */
 class IGestureManager {
   public:
     virtual ~IGestureManager() {}
-    virtual bool onTouchDown(wlr_touch_down_event*);
-    virtual bool onTouchUp(wlr_touch_up_event*);
-    virtual bool onTouchMove(wlr_touch_motion_event*);
+    bool onTouchDown(const wf::touch::gesture_event_t&);
+    bool onTouchUp(const wf::touch::gesture_event_t&);
+    bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
+    void addEdgeSwipeGesture(const float* sensitivity);
 
   protected:
     std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
     wf::touch::gesture_state_t m_sGestureState;
+
+    gestureDirection find_swipe_edges(wf::touch::point_t point);
+    virtual SMonitorArea getMonitorArea() const         = 0;
+    virtual void handleGesture(const TouchGesture& gev) = 0;
+    virtual void handleCancelledGesture()               = 0;
+
+    double debug_gestureProgressBeforeUpdate = 0; // DEBUG
+
+  private:
     void updateGestures(const wf::touch::gesture_event_t&);
 };

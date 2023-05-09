@@ -1,5 +1,41 @@
 #include "Gestures.hpp"
 #include <glm/glm.hpp>
+#include <string>
+#include <utility>
+
+std::string TouchGesture::to_string() const {
+    std::string bind = "";
+    switch (type) {
+        case GESTURE_TYPE_EDGE_SWIPE:
+            bind += "edge";
+            break;
+        case GESTURE_TYPE_SWIPE:
+            bind += "swipe";
+            break;
+        case GESTURE_TYPE_NONE:
+            return "";
+            break;
+    }
+
+    bind += std::to_string(finger_count);
+    if (direction & GESTURE_DIRECTION_LEFT) {
+        bind += 'l';
+    }
+
+    if (direction & GESTURE_DIRECTION_RIGHT) {
+        bind += 'r';
+    }
+
+    if (direction & GESTURE_DIRECTION_UP) {
+        bind += 'u';
+    }
+
+    if (direction & GESTURE_DIRECTION_DOWN) {
+        bind += 'd';
+    }
+
+    return bind;
+}
 
 // The action is completed if any number of fingers is moved enough,
 // and can be later cancelled if a new finger touches down
@@ -45,7 +81,8 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state,
         }
     }
 
-    if (state.get_center().get_drag_distance(target_direction) >= threshold) {
+    if (state.get_center().get_drag_distance(target_direction) >=
+        base_threshold / *sensitivity) {
         return wf::touch::ACTION_STATUS_COMPLETED;
     }
     return wf::touch::ACTION_STATUS_RUNNING;
@@ -71,39 +108,11 @@ newWorkspaceSwipeStartGesture(const double sensitivity, const int fingers,
                                                   completed_cb, cancel_cb);
 }
 
-std::unique_ptr<wf::touch::gesture_t>
-newEdgeSwipeGesture(const double sensitivity, edge_swipe_callback completed_cb,
-                    edge_swipe_callback cancel_cb) {
-
-    // Edge swipe needs a quick release to be considered edge swipe
-    auto edge =
-        std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE / sensitivity);
-    auto edge_release = std::make_unique<wf::touch::touch_action_t>(1, false);
-    edge->set_duration(GESTURE_BASE_DURATION * sensitivity);
-    edge->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE * sensitivity);
-
-    // The release action needs longer duration to handle the case where the
-    // gesture is actually longer than the max distance.
-    edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * sensitivity);
-
-    // FIXME proper memory management pls
-    auto edge_ptr = edge.get();
-
-    std::vector<std::unique_ptr<wf::touch::gesture_action_t>>
-        edge_swipe_actions;
-    edge_swipe_actions.emplace_back(std::move(edge));
-    edge_swipe_actions.emplace_back(std::move(edge_release));
-
-    // TODO this is so convoluted i hate it
-    auto ack    = [edge_ptr, completed_cb]() { completed_cb(edge_ptr); };
-    auto cancel = [edge_ptr, cancel_cb]() { cancel_cb(edge_ptr); };
-
-    return std::make_unique<wf::touch::gesture_t>(std::move(edge_swipe_actions),
-                                                  ack, cancel);
-}
-
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
     for (auto& gesture : m_vGestures) {
+
+        debug_gestureProgressBeforeUpdate = gesture->get_progress(); // DEBUG
+
         if (m_sGestureState.fingers.size() == 1 &&
             ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
             gesture->reset(ev.time);
@@ -114,50 +123,96 @@ void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
 }
 
 // @return whether or not to inhibit further actions
-bool IGestureManager::onTouchDown(wlr_touch_down_event* ev) {
-    wf::touch::gesture_event_t gesture_event = {
-        .type   = wf::touch::EVENT_TYPE_TOUCH_DOWN,
-        .time   = ev->time_msec,
-        .finger = ev->touch_id,
-        .pos    = {ev->x, ev->y}};
-
-    m_sGestureState.update(gesture_event);
-
-    updateGestures(gesture_event);
-
+bool IGestureManager::onTouchDown(const wf::touch::gesture_event_t& ev) {
+    // NOTE @m_sGestureState is used in gesture-completed callbacks
+    // during touch down it must be updated before updating the gestures
+    // in touch up and motion, it must be updated AFTER updating the gestures
+    m_sGestureState.update(ev);
+    updateGestures(ev);
     return false;
 }
 
-bool IGestureManager::onTouchUp(wlr_touch_up_event* ev) {
-    const auto lift_off_pos = m_sGestureState.fingers[ev->touch_id].current;
-
-    const wf::touch::gesture_event_t gesture_event = {
-        .type   = wf::touch::EVENT_TYPE_TOUCH_UP,
-        .time   = ev->time_msec,
-        .finger = ev->touch_id,
-        .pos    = {lift_off_pos.x, lift_off_pos.y},
-    };
-
-    m_sGestureState.update(gesture_event);
-    updateGestures(gesture_event);
+bool IGestureManager::onTouchUp(const wf::touch::gesture_event_t& ev) {
+    updateGestures(ev);
+    m_sGestureState.update(ev);
     return false;
 }
 
-bool IGestureManager::onTouchMove(wlr_touch_motion_event* ev) {
-    const wf::touch::gesture_event_t gesture_event = {
-        .type   = wf::touch::EVENT_TYPE_MOTION,
-        .time   = ev->time_msec,
-        .finger = ev->touch_id,
-        .pos    = {ev->x, ev->y},
-    };
-
-    m_sGestureState.update(gesture_event);
-    updateGestures(gesture_event);
-
+bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
+    updateGestures(ev);
+    m_sGestureState.update(ev);
     return false;
+}
+
+// swiping from left edge will result in GESTURE_DIRECTION_RIGHT etc.
+gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
+    auto mon = getMonitorArea();
+
+    gestureDirection edge_directions = 0;
+
+    if (point.x <= mon.x + EDGE_SWIPE_THRESHOLD) {
+        edge_directions |= GESTURE_DIRECTION_RIGHT;
+    }
+
+    if (point.x >= mon.x + mon.w - EDGE_SWIPE_THRESHOLD) {
+        edge_directions |= GESTURE_DIRECTION_LEFT;
+    }
+
+    if (point.y <= mon.y + EDGE_SWIPE_THRESHOLD) {
+        edge_directions |= GESTURE_DIRECTION_DOWN;
+    }
+
+    if (point.y >= mon.y + mon.h - EDGE_SWIPE_THRESHOLD) {
+        edge_directions |= GESTURE_DIRECTION_UP;
+    }
+
+    return edge_directions;
 }
 
 void IGestureManager::addTouchGesture(
     std::unique_ptr<wf::touch::gesture_t> gesture) {
     m_vGestures.emplace_back(std::move(gesture));
+}
+
+void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {
+    // Edge swipe needs a quick release to be considered edge swipe
+    auto edge = std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE, sensitivity);
+    auto edge_release = std::make_unique<wf::touch::touch_action_t>(1, false);
+
+    // FIXME make this adjustable:
+    edge->set_duration(GESTURE_BASE_DURATION * *sensitivity);
+    // TODO do I really need this:
+    // edge->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE * *sensitivity);
+
+    // The release action needs longer duration to handle the case where the
+    // gesture is actually longer than the max distance.
+    // TODO make this adjustable:
+    edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * *sensitivity);
+
+    // FIXME proper memory management pls
+    auto edge_ptr = edge.get();
+
+    std::vector<std::unique_ptr<wf::touch::gesture_action_t>>
+        edge_swipe_actions;
+    edge_swipe_actions.emplace_back(std::move(edge));
+    edge_swipe_actions.emplace_back(std::move(edge_release));
+
+    auto ack = [edge_ptr, this]() {
+        auto possible_edges =
+            find_swipe_edges(m_sGestureState.get_center().origin);
+        auto direction = edge_ptr->target_direction;
+
+        possible_edges &= direction;
+        if (!possible_edges) {
+            return;
+        }
+        auto gesture = TouchGesture{GESTURE_TYPE_EDGE_SWIPE, direction,
+                                    edge_ptr->finger_count};
+        this->handleGesture(gesture);
+    };
+    auto cancel = [this]() { this->handleCancelledGesture(); };
+
+    auto gesture = std::make_unique<wf::touch::gesture_t>(
+        std::move(edge_swipe_actions), ack, cancel);
+    addTouchGesture(std::move(gesture));
 }
