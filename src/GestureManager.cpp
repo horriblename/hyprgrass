@@ -6,12 +6,7 @@
 #include <cstdint>
 #include <memory>
 
-constexpr double SWIPE_THRESHOLD = 30.;
-
-// wayfire allows values between 0.1 ~ 5
-constexpr double TEMP_CONFIG_SENSITIVITY          = 1;
-constexpr int TEMP_CONFIG_WORKSPACE_SWIPE_FINGERS = 3;
-constexpr double TEMP_CONFIG_HOLD_DELAY           = 500;
+// constexpr double SWIPE_THRESHOLD = 30.;
 
 CGestures::CGestures() {
     static auto* const PSENSITIVITY =
