@@ -53,6 +53,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
                 HyprlandAPI::addConfigValue(
                     PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers",
                     SConfigValue{.intValue = 3});
+    cfgStatus = cfgStatus && HyprlandAPI::addConfigValue(
+                                 PHANDLE, "plugin:touch_gestures:sensitivity",
+                                 SConfigValue{.floatValue = 1.0});
 
     if (!cfgStatus) {
         HyprlandAPI::addNotification(PHANDLE,
