@@ -28,7 +28,8 @@ CGestures::CGestures() {
 
 void CGestures::emulateSwipeBegin(uint32_t time) {
     static auto* const PSWIPEFINGERS =
-        &g_pConfigManager->getConfigValuePtr("gestures:workspace_swipe_fingers")
+        &HyprlandAPI::getConfigValue(PHANDLE,
+                                     "gestures:workspace_swipe_fingers")
              ->intValue;
 
     // HACK .pointer is not used by g_pInputManager->onSwipeBegin so it's fine I
@@ -53,8 +54,8 @@ void CGestures::emulateSwipeEnd(uint32_t time, bool cancelled) {
 
 void CGestures::emulateSwipeUpdate(uint32_t time) {
     static auto* const PSWIPEDIST =
-        &g_pConfigManager
-             ->getConfigValuePtr("gestures:workspace_swipe_distance")
+        &HyprlandAPI::getConfigValue(PHANDLE,
+                                     "gestures:workspace_swipe_distance")
              ->intValue;
 
     if (!g_pInputManager->m_sActiveSwipe.pMonitor) {
