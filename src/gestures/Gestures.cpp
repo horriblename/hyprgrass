@@ -81,7 +81,8 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state,
         }
     }
 
-    if (state.get_center().get_drag_distance(target_direction) >= threshold) {
+    if (state.get_center().get_drag_distance(target_direction) >=
+        base_threshold / *sensitivity) {
         return wf::touch::ACTION_STATUS_COMPLETED;
     }
     return wf::touch::ACTION_STATUS_RUNNING;
@@ -173,20 +174,20 @@ void IGestureManager::addTouchGesture(
     m_vGestures.emplace_back(std::move(gesture));
 }
 
-void IGestureManager::addEdgeSwipeGesture() {
-    // TODO make this adjustable
-    const double sensitivity = 1;
-
+void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {
     // Edge swipe needs a quick release to be considered edge swipe
-    auto edge =
-        std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE / sensitivity);
+    auto edge = std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE, sensitivity);
     auto edge_release = std::make_unique<wf::touch::touch_action_t>(1, false);
-    edge->set_duration(GESTURE_BASE_DURATION * sensitivity);
-    edge->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE * sensitivity);
+
+    // FIXME make this adjustable:
+    edge->set_duration(GESTURE_BASE_DURATION * *sensitivity);
+    // TODO do I really need this:
+    // edge->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE * *sensitivity);
 
     // The release action needs longer duration to handle the case where the
     // gesture is actually longer than the max distance.
-    edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * sensitivity);
+    // TODO make this adjustable:
+    edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * *sensitivity);
 
     // FIXME proper memory management pls
     auto edge_ptr = edge.get();

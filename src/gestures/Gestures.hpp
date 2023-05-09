@@ -65,10 +65,14 @@ struct SMonitorArea {
 // TODO make threshold dynamic so we can adjust it at runtime
 class CMultiAction : public wf::touch::gesture_action_t {
   public:
-    CMultiAction(double threshold) : threshold(threshold){};
-    // bool pinch;
-    // bool last_pinch_was_pinch_in = false;
-    double threshold;
+    //   threshold = base_threshold / sensitivity
+    // if the threshold needs to be adjusted dynamically, the sensitivity
+    // pointer is used
+    CMultiAction(double base_threshold, const float* sensitivity)
+        : base_threshold(base_threshold), sensitivity(sensitivity){};
+
+    double base_threshold;
+    const float* sensitivity;
 
     gestureDirection target_direction = 0;
     int finger_count                  = 0;
@@ -105,7 +109,7 @@ class IGestureManager {
     bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
-    void addEdgeSwipeGesture();
+    void addEdgeSwipeGesture(const float* sensitivity);
 
   protected:
     std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;

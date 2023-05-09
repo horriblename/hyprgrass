@@ -15,6 +15,8 @@
 #include <variant>
 #include <vector>
 
+constexpr float DEFAULT_SENSITIVITY = 1.0;
+
 inline bool only_one(bool a, bool b, bool c) {
     return (a && !b && !c) || (!a && b && !c) || (!a && !b && c);
 }
@@ -37,25 +39,25 @@ bool testWorkspaceSwipeTimeout() {
 
 bool testEdgeSwipe() {
     CMockGestureManager mockGM;
-    mockGM.addEdgeSwipeGesture();
+    mockGM.addEdgeSwipeGesture(&DEFAULT_SENSITIVITY);
     return testFile(&mockGM, "test/cases/edgeLeft.csv");
 }
 
 bool testEdgeSwipeTimeout() {
     CMockGestureManager mockGM;
-    mockGM.addEdgeSwipeGesture();
+    mockGM.addEdgeSwipeGesture(&DEFAULT_SENSITIVITY);
     return testFile(&mockGM, "test/cases/edgeSwipeTimeout.csv");
 }
 
 bool testEdgeReleaseTimeout() {
     CMockGestureManager mockGM;
-    mockGM.addEdgeSwipeGesture();
+    mockGM.addEdgeSwipeGesture(&DEFAULT_SENSITIVITY);
     return testFile(&mockGM, "test/cases/edgeReleaseTimeout.csv");
 }
 
 bool testEdgeInvalidStart() {
     CMockGestureManager mockGM;
-    mockGM.addEdgeSwipeGesture();
+    mockGM.addEdgeSwipeGesture(&DEFAULT_SENSITIVITY);
     return testFile(&mockGM, "test/cases/edgeInvalidStart.csv");
 }
 

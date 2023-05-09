@@ -26,7 +26,7 @@ CGestures::CGestures() {
     addTouchGesture(newWorkspaceSwipeStartGesture(
         *PSENSITIVITY, *PTOUCHSWIPEFINGERS, workspaceSwipeBegin, []() {}));
 
-    addEdgeSwipeGesture();
+    addEdgeSwipeGesture(PSENSITIVITY);
 }
 
 void CGestures::emulateSwipeBegin(uint32_t time) {
