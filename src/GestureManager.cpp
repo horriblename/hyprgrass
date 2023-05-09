@@ -13,18 +13,6 @@ constexpr double TEMP_CONFIG_SENSITIVITY          = 1;
 constexpr int TEMP_CONFIG_WORKSPACE_SWIPE_FINGERS = 3;
 constexpr double TEMP_CONFIG_HOLD_DELAY           = 500;
 
-    }
-
-    }
-
-    }
-
-    }
-
-    }
-
-}
-
 CGestures::CGestures() {
     // FIXME time arg of @emulateSwipeBegin should probably be assigned
     // something useful (though its not really used later)
