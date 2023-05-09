@@ -10,11 +10,22 @@
 - [ ] Swipe From Edge
 - [ ] _n_-Finger swipe
 
-## Configuring
+## Configuration
 
-There is no plugin-specific options at the moment, however, I recommend you adjust the settings of the builtin gesture to make it easier to switch workspaces:
+```
+plugin {
+  touch_gestures {
+    workspace_swipe_fingers = 3
+    # default sensitivity is probably too low on tablet screens,
+    # I recommend turning it up to 5.0
+    sensitivity = 1.0
+  }
+}
+```
 
-```config
+I also recommend you adjust the settings of the builtin gesture to make it easier to switch workspaces:
+
+```
 gestures {
   workspace_swipe = true
   workspace_swipe_cancel_ratio = 0.15
