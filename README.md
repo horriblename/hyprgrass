@@ -6,8 +6,8 @@
 
 - [x] Workspace Swipe (currently only 3 finger allowed)
   - [ ] Configurable finger count
-- [ ] Custom commands
-- [ ] Swipe From Edge
+- [x] Custom commands
+- [x] Swipe From Edge
 - [ ] _n_-Finger swipe
 
 ## Configuration
@@ -17,7 +17,6 @@
 ```
 plugin {
   touch_gestures {
-    workspace_swipe_fingers = 3
     # default sensitivity is probably too low on tablet screens,
     # I recommend turning it up to 4.0
     sensitivity = 1.0
