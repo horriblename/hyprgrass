@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <wayfire/touch/touch.hpp>
 #include <wlr/types/wlr_touch.h>
@@ -40,10 +41,40 @@ enum eTouchGestureDirection {
     // GESTURE_DIRECTION_OUT = (1 << 5),
 };
 
+// can be one of @eTouchGestureDirection or a combination of them
+using gestureDirection = uint32_t;
+
+// swipe and with multiple fingers and directions
+class CMultiAction : public wf::touch::gesture_action_t {
+  public:
+    CMultiAction(double threshold) : threshold(threshold){};
+    // bool pinch;
+    // bool last_pinch_was_pinch_in = false;
+    double threshold;
+
+    gestureDirection target_direction = 0;
+    int finger_count                  = 0;
+
+    wf::touch::action_status_t
+    update_state(const wf::touch::gesture_state_t& state,
+                 const wf::touch::gesture_event_t& event) override;
+
+    void reset(uint32_t time) override {
+        gesture_action_t::reset(time);
+        target_direction = 0;
+    };
+};
+
+using edge_swipe_callback = std::function<void(CMultiAction*)>;
+
 std::unique_ptr<wf::touch::gesture_t>
 newWorkspaceSwipeStartGesture(const double sensitivity, const int fingers,
                               wf::touch::gesture_callback_t completed_cb,
                               wf::touch::gesture_callback_t cancel_cb);
+
+std::unique_ptr<wf::touch::gesture_t>
+newEdgeSwipeGesture(const double sensitivity, edge_swipe_callback completed_cb,
+                    edge_swipe_callback cancel_cb);
 
 /*
  * Interface; there's only @CGestures and the mock gesture manager for testing
