@@ -14,13 +14,21 @@ constexpr int TEMP_CONFIG_WORKSPACE_SWIPE_FINGERS = 3;
 constexpr double TEMP_CONFIG_HOLD_DELAY           = 500;
 
 CGestures::CGestures() {
+    static auto* const PSENSITIVITY =
+        &HyprlandAPI::getConfigValue(PHANDLE,
+                                     "plugin:touch_gestures:sensitivity")
+             ->floatValue;
+    static auto* const PTOUCHSWIPEFINGERS =
+        &HyprlandAPI::getConfigValue(
+             PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
+             ->intValue;
+
     // FIXME time arg of @emulateSwipeBegin should probably be assigned
     // something useful (though its not really used later)
     auto workspaceSwipeBegin = [this]() { this->emulateSwipeBegin(0); };
-    // auto workspaceSwipeEnd   = [this]() { this->emulateSwipeEnd(); };
+    // TODO make sensitivity and workspace_swipe_fingers dynamic
     addTouchGesture(newWorkspaceSwipeStartGesture(
-        TEMP_CONFIG_SENSITIVITY, TEMP_CONFIG_WORKSPACE_SWIPE_FINGERS,
-        workspaceSwipeBegin, []() {}));
+        *PSENSITIVITY, *PTOUCHSWIPEFINGERS, workspaceSwipeBegin, []() {}));
 }
 
 void CGestures::emulateSwipeBegin(uint32_t time) {
