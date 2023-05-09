@@ -6,26 +6,30 @@
 #include <cstdint>
 #include <memory>
 
-constexpr double SWIPE_THRESHOLD = 30.;
-
-// wayfire allows values between 0.1 ~ 5
-constexpr double TEMP_CONFIG_SENSITIVITY          = 1;
-constexpr int TEMP_CONFIG_WORKSPACE_SWIPE_FINGERS = 3;
-constexpr double TEMP_CONFIG_HOLD_DELAY           = 500;
+// constexpr double SWIPE_THRESHOLD = 30.;
 
 CGestures::CGestures() {
+    static auto* const PSENSITIVITY =
+        &HyprlandAPI::getConfigValue(PHANDLE,
+                                     "plugin:touch_gestures:sensitivity")
+             ->floatValue;
+    static auto* const PTOUCHSWIPEFINGERS =
+        &HyprlandAPI::getConfigValue(
+             PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
+             ->intValue;
+
     // FIXME time arg of @emulateSwipeBegin should probably be assigned
     // something useful (though its not really used later)
     auto workspaceSwipeBegin = [this]() { this->emulateSwipeBegin(0); };
-    // auto workspaceSwipeEnd   = [this]() { this->emulateSwipeEnd(); };
+    // TODO make sensitivity and workspace_swipe_fingers dynamic
     addTouchGesture(newWorkspaceSwipeStartGesture(
-        TEMP_CONFIG_SENSITIVITY, TEMP_CONFIG_WORKSPACE_SWIPE_FINGERS,
-        workspaceSwipeBegin, []() {}));
+        *PSENSITIVITY, *PTOUCHSWIPEFINGERS, workspaceSwipeBegin, []() {}));
 }
 
 void CGestures::emulateSwipeBegin(uint32_t time) {
     static auto* const PSWIPEFINGERS =
-        &g_pConfigManager->getConfigValuePtr("gestures:workspace_swipe_fingers")
+        &HyprlandAPI::getConfigValue(PHANDLE,
+                                     "gestures:workspace_swipe_fingers")
              ->intValue;
 
     // HACK .pointer is not used by g_pInputManager->onSwipeBegin so it's fine I
@@ -50,8 +54,8 @@ void CGestures::emulateSwipeEnd(uint32_t time, bool cancelled) {
 
 void CGestures::emulateSwipeUpdate(uint32_t time) {
     static auto* const PSWIPEDIST =
-        &g_pConfigManager
-             ->getConfigValuePtr("gestures:workspace_swipe_distance")
+        &HyprlandAPI::getConfigValue(PHANDLE,
+                                     "gestures:workspace_swipe_distance")
              ->intValue;
 
     if (!g_pInputManager->m_sActiveSwipe.pMonitor) {
