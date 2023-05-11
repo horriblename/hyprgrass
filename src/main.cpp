@@ -86,7 +86,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
                                  "[touch-gestures] Initialized successfully!",
                                  s_pluginColor, 5000);
 
-    return {"touch-gestures", "Touchscreen gestures", "horriblename", "1.0"};
+    return {"touch-gestures", "Touchscreen gestures", "horriblename", "0.2"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
