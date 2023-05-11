@@ -1,8 +1,8 @@
 #include "GestureManager.hpp"
-#include "src/Compositor.hpp"
-#include "src/debug/Log.hpp"
-#include "src/managers/KeybindManager.hpp"
-#include "src/managers/input/InputManager.hpp"
+#include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/debug/Log.hpp>
+#include <hyprland/src/managers/KeybindManager.hpp>
+#include <hyprland/src/managers/input/InputManager.hpp>
 #include <algorithm>
 #include <cstdint>
 #include <memory>

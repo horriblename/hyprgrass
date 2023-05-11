@@ -1,9 +1,9 @@
 #pragma once
-#include "gestures/Gestures.hpp"
+#include "./gestures/Gestures.hpp"
 #include "globals.hpp"
-#include "src/debug/Log.hpp"
-#include "src/helpers/Monitor.hpp"
-#include <src/includes.hpp>
+#include <hyprland/src/debug/Log.hpp>
+#include <hyprland/src/helpers/Monitor.hpp>
+#include <hyprland/src/includes.hpp>
 #include <vector>
 #include <wayfire/touch/touch.hpp>
 
