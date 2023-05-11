@@ -1,6 +1,7 @@
 project('hyprland-touch-gestures', 'cpp', 'c',
   version: '0.0.1',
-  default_options: [])
+  default_options: ['buildtype=release'],
+)
 
 cpp_compiler = meson.get_compiler('cpp')
 if cpp_compiler.has_argument('-std=c++23')
