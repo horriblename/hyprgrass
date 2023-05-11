@@ -3,8 +3,8 @@
 
 #include "globals.hpp"
 
-#include <src/config/ConfigManager.hpp>
-#include <src/managers/input/InputManager.hpp>
+#include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/managers/input/InputManager.hpp>
 // #include <wlr/types/wlr_touch.h>
 
 const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f,
