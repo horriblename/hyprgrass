@@ -28,11 +28,7 @@ class CGestures : public IGestureManager {
   protected:
     SMonitorArea getMonitorArea() const override;
     void handleGesture(const TouchGesture& gev) override;
-    void handleCancelledGesture() override {
-        // DEBUG
-        Debug::log(INFO, "gesture cancelled, last progress: %.2f",
-                   debug_gestureProgressBeforeUpdate);
-    };
+    void handleCancelledGesture() override{};
 
   private:
     bool m_bDispatcherFound = false;
