@@ -85,33 +85,13 @@ std::vector<int> CGestures::getAllFingerIds() {
 }
 
 void CGestures::handleGesture(const TouchGesture& gev) {
-    static auto* const PWORKSPACEFINGERS =
-        &HyprlandAPI::getConfigValue(
-             PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
-             ->intValue;
-    const auto VERTANIMS =
-        g_pCompositor
-            ->getWorkspaceByID(g_pCompositor->m_pLastMonitor->activeWorkspace)
-            ->m_vRenderOffset.getConfig()
-            ->pValues->internalStyle == "slidevert";
+    if (gev.type == GESTURE_TYPE_SWIPE_HOLD) {
+        this->handleWorkspaceSwipe(gev);
+        return;
+    }
 
     auto bind = gev.to_string();
     Debug::log(LOG, "[touch-gesture] Gesture Triggered: %s", bind.c_str());
-
-    // TODO if (touch_down)
-    if (gev.type == GESTURE_TYPE_SWIPE_HOLD &&
-        gev.finger_count == *PWORKSPACEFINGERS) {
-        auto workspace_directions =
-            VERTANIMS ? GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN
-                      : GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
-
-        if (gev.direction & workspace_directions) {
-            // FIXME time arg of @emulateSwipeBegin should probably be assigned
-            // something useful (though its not really used later)
-            this->emulateSwipeBegin(0);
-            m_bDispatcherFound = true;
-        }
-    }
 
     for (const auto& k : g_pKeybindManager->m_lKeybinds) {
         if (k.key != bind)
@@ -138,6 +118,35 @@ void CGestures::handleGesture(const TouchGesture& gev) {
 
         DISPATCHER->second(k.arg);
         m_bDispatcherFound = true;
+    }
+}
+
+void CGestures::handleWorkspaceSwipe(const TouchGesture& gev) {
+    static auto* const PWORKSPACEFINGERS =
+        &HyprlandAPI::getConfigValue(
+             PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
+             ->intValue;
+    const auto VERTANIMS =
+        g_pCompositor
+            ->getWorkspaceByID(g_pCompositor->m_pLastMonitor->activeWorkspace)
+            ->m_vRenderOffset.getConfig()
+            ->pValues->internalStyle == "slidevert";
+
+    if (gev.type == GESTURE_TYPE_SWIPE_HOLD &&
+        gev.finger_count == *PWORKSPACEFINGERS) {
+        const auto horizontal =
+            GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
+        const auto vertical = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
+        const auto workspace_directions = VERTANIMS ? horizontal : vertical;
+        const auto anti_directions      = VERTANIMS ? vertical : horizontal;
+
+        if (gev.direction & workspace_directions &&
+            !(gev.direction & anti_directions)) {
+            // FIXME time arg of @emulateSwipeBegin should probably be assigned
+            // something useful (though its not really used later)
+            this->emulateSwipeBegin(0);
+            m_bDispatcherFound = true;
+        }
     }
 }
 
