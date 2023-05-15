@@ -10,16 +10,20 @@
 class CGestures : public IGestureManager {
   public:
     CGestures();
+    // @return whether a gesture was triggered after this event
     bool onTouchDown(wlr_touch_down_event*);
+
+    // @return whether a gesture was triggered after this event
     bool onTouchUp(wlr_touch_up_event*);
+
+    // @return whether a gesture was triggered after this event
     bool onTouchMove(wlr_touch_motion_event*);
 
     void emulateSwipeBegin(uint32_t time);
     void emulateSwipeEnd(uint32_t time, bool cancelled);
     void emulateSwipeUpdate(uint32_t time);
 
-    // TODO how to refer to gesture?
-    // void deleteTouchGesture()
+    std::vector<int> getAllFingerIds();
 
   protected:
     SMonitorArea getMonitorArea() const override;
