@@ -14,17 +14,6 @@ CGestures::CGestures() {
         &HyprlandAPI::getConfigValue(PHANDLE,
                                      "plugin:touch_gestures:sensitivity")
              ->floatValue;
-    static auto* const PTOUCHSWIPEFINGERS =
-        &HyprlandAPI::getConfigValue(
-             PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
-             ->intValue;
-
-    // FIXME time arg of @emulateSwipeBegin should probably be assigned
-    // something useful (though its not really used later)
-    auto workspaceSwipeBegin = [this]() { this->emulateSwipeBegin(0); };
-    // TODO make sensitivity and workspace_swipe_fingers dynamic
-    addTouchGesture(newWorkspaceSwipeStartGesture(
-        *PSENSITIVITY, *PTOUCHSWIPEFINGERS, workspaceSwipeBegin, []() {}));
 
     addMultiFingerSwipeGesture(PSENSITIVITY);
     addMultiFingerSwipeThenLiftoffGesture(PSENSITIVITY);
