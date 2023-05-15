@@ -80,9 +80,10 @@ void CGestures::handleGesture(const TouchGesture& gev) {
         &HyprlandAPI::getConfigValue(
              PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
              ->intValue;
-    const bool VERTANIMS =
-        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset
-            .getConfig()
+    const auto VERTANIMS =
+        g_pCompositor
+            ->getWorkspaceByID(g_pCompositor->m_pLastMonitor->activeWorkspace)
+            ->m_vRenderOffset.getConfig()
             ->pValues->internalStyle == "slidevert";
 
     auto bind = gev.to_string();
