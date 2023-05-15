@@ -37,8 +37,11 @@ std::string TouchGesture::to_string() const {
     return bind;
 }
 
-// The action is completed if any number of fingers is moved enough,
-// and can be later cancelled if a new finger touches down
+// The action is completed if any number of fingers is moved enough.
+//
+// This action should be followed by another that completes upon lifting a
+// finger to achieve a gesture that completes after a multi-finger swipe is done
+// and lifted.
 wf::touch::action_status_t
 CMultiAction::update_state(const wf::touch::gesture_state_t& state,
                            const wf::touch::gesture_event_t& event) {
