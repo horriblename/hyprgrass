@@ -109,6 +109,7 @@ class IGestureManager {
     bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
+    void addMultiFingerSwipeGesture(const float* sensitivity);
     void addEdgeSwipeGesture(const float* sensitivity);
 
   protected:

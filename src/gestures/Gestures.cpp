@@ -52,8 +52,9 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state,
 
     if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
         // cancel if previous fingers moved too much
-        finger_count = state.fingers.size();
+        this->finger_count = state.fingers.size();
         for (auto& finger : state.fingers) {
+            // TODO multiply tolerance by sensitivity?
             if (glm::length(finger.second.delta()) >
                 GESTURE_INITIAL_TOLERANCE) {
                 return wf::touch::ACTION_STATUS_CANCELLED;
@@ -62,8 +63,6 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state,
 
         return wf::touch::ACTION_STATUS_RUNNING;
     }
-
-    // swipe case
 
     if ((glm::length(state.get_center().delta()) >= MIN_SWIPE_DISTANCE) &&
         (this->target_direction == 0)) {
@@ -172,6 +171,31 @@ gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
 void IGestureManager::addTouchGesture(
     std::unique_ptr<wf::touch::gesture_t> gesture) {
     m_vGestures.emplace_back(std::move(gesture));
+}
+
+// Multi fingered swipe, triggers once whenever you swipe more than the
+// threshold.
+void IGestureManager::addMultiFingerSwipeGesture(const float* sensitivity) {
+    auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE,
+                                                sensitivity);
+    // swipe->set_duration(GESTURE_BASE_DURATION * *sensitivity);
+
+    // FIXME memory management be damned
+    auto swipe_ptr = swipe.get();
+
+    std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
+    swipe_actions.emplace_back(std::move(swipe));
+
+    auto ack = [swipe_ptr, this]() {
+        const auto gesture =
+            TouchGesture{GESTURE_TYPE_SWIPE, swipe_ptr->target_direction,
+                         swipe_ptr->finger_count};
+        this->handleGesture(gesture);
+    };
+    auto cancel = [this]() { this->handleCancelledGesture(); };
+
+    addTouchGesture(std::make_unique<wf::touch::gesture_t>(
+        std::move(swipe_actions), ack, cancel));
 }
 
 void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {
