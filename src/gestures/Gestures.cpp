@@ -12,6 +12,9 @@ std::string TouchGesture::to_string() const {
         case GESTURE_TYPE_SWIPE:
             bind += "swipe";
             break;
+        case GESTURE_TYPE_SWIPE_HOLD:
+            // this gesture is only used internally for workspace swipe
+            return "workspace_swipe";
         case GESTURE_TYPE_NONE:
             return "";
             break;
@@ -37,8 +40,11 @@ std::string TouchGesture::to_string() const {
     return bind;
 }
 
-// The action is completed if any number of fingers is moved enough,
-// and can be later cancelled if a new finger touches down
+// The action is completed if any number of fingers is moved enough.
+//
+// This action should be followed by another that completes upon lifting a
+// finger to achieve a gesture that completes after a multi-finger swipe is done
+// and lifted.
 wf::touch::action_status_t
 CMultiAction::update_state(const wf::touch::gesture_state_t& state,
                            const wf::touch::gesture_event_t& event) {
@@ -52,8 +58,9 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state,
 
     if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
         // cancel if previous fingers moved too much
-        finger_count = state.fingers.size();
+        this->finger_count = state.fingers.size();
         for (auto& finger : state.fingers) {
+            // TODO multiply tolerance by sensitivity?
             if (glm::length(finger.second.delta()) >
                 GESTURE_INITIAL_TOLERANCE) {
                 return wf::touch::ACTION_STATUS_CANCELLED;
@@ -62,8 +69,6 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state,
 
         return wf::touch::ACTION_STATUS_RUNNING;
     }
-
-    // swipe case
 
     if ((glm::length(state.get_center().delta()) >= MIN_SWIPE_DISTANCE) &&
         (this->target_direction == 0)) {
@@ -87,6 +92,21 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state,
     }
     return wf::touch::ACTION_STATUS_RUNNING;
 }
+
+wf::touch::action_status_t
+LiftoffAction::update_state(const wf::touch::gesture_state_t& state,
+                            const wf::touch::gesture_event_t& event) {
+    if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP) {
+        return wf::touch::ACTION_STATUS_COMPLETED;
+    }
+
+    if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
+        return wf::touch::ACTION_STATUS_CANCELLED;
+    }
+
+    return wf::touch::ACTION_STATUS_RUNNING;
+}
+
 // FIXME move this into CGestures / abstract class coz its bad
 //
 // Create a new Gesture that triggers when @fingers amount of fingers touch
@@ -126,7 +146,8 @@ void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
 bool IGestureManager::onTouchDown(const wf::touch::gesture_event_t& ev) {
     // NOTE @m_sGestureState is used in gesture-completed callbacks
     // during touch down it must be updated before updating the gestures
-    // in touch up and motion, it must be updated AFTER updating the gestures
+    // in touch up and motion, it must be updated AFTER updating the
+    // gestures
     m_sGestureState.update(ev);
     updateGestures(ev);
     return false;
@@ -172,6 +193,59 @@ gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
 void IGestureManager::addTouchGesture(
     std::unique_ptr<wf::touch::gesture_t> gesture) {
     m_vGestures.emplace_back(std::move(gesture));
+}
+
+// Multi fingered swipe, triggers once whenever you swipe more than the
+// threshold.
+void IGestureManager::addMultiFingerSwipeGesture(const float* sensitivity) {
+    auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE,
+                                                sensitivity);
+    // swipe->set_duration(GESTURE_BASE_DURATION * *sensitivity);
+
+    // FIXME memory management be damned
+    auto swipe_ptr = swipe.get();
+
+    std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
+    swipe_actions.emplace_back(std::move(swipe));
+
+    auto ack = [swipe_ptr, this]() {
+        const auto gesture =
+            TouchGesture{GESTURE_TYPE_SWIPE_HOLD, swipe_ptr->target_direction,
+                         swipe_ptr->finger_count};
+        this->handleGesture(gesture);
+    };
+    auto cancel = [this]() { this->handleCancelledGesture(); };
+
+    addTouchGesture(std::make_unique<wf::touch::gesture_t>(
+        std::move(swipe_actions), ack, cancel));
+}
+
+// Multi fingered swipe + liftoff
+void IGestureManager::addMultiFingerSwipeThenLiftoffGesture(
+    const float* sensitivity) {
+    auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE,
+                                                sensitivity);
+    // swipe->set_duration(GESTURE_BASE_DURATION * *sensitivity);
+    auto swipe_liftoff = std::make_unique<LiftoffAction>();
+    swipe_liftoff->set_duration(GESTURE_BASE_DURATION);
+
+    // FIXME memory management be damned
+    auto swipe_ptr = swipe.get();
+
+    std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
+    swipe_actions.emplace_back(std::move(swipe));
+    swipe_actions.emplace_back(std::move(swipe_liftoff));
+
+    auto ack = [swipe_ptr, this]() {
+        const auto gesture =
+            TouchGesture{GESTURE_TYPE_SWIPE, swipe_ptr->target_direction,
+                         swipe_ptr->finger_count};
+        this->handleGesture(gesture);
+    };
+    auto cancel = [this]() { this->handleCancelledGesture(); };
+
+    addTouchGesture(std::make_unique<wf::touch::gesture_t>(
+        std::move(swipe_actions), ack, cancel));
 }
 
 void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {

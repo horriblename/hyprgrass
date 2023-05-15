@@ -14,18 +14,9 @@ CGestures::CGestures() {
         &HyprlandAPI::getConfigValue(PHANDLE,
                                      "plugin:touch_gestures:sensitivity")
              ->floatValue;
-    static auto* const PTOUCHSWIPEFINGERS =
-        &HyprlandAPI::getConfigValue(
-             PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
-             ->intValue;
 
-    // FIXME time arg of @emulateSwipeBegin should probably be assigned
-    // something useful (though its not really used later)
-    auto workspaceSwipeBegin = [this]() { this->emulateSwipeBegin(0); };
-    // TODO make sensitivity and workspace_swipe_fingers dynamic
-    addTouchGesture(newWorkspaceSwipeStartGesture(
-        *PSENSITIVITY, *PTOUCHSWIPEFINGERS, workspaceSwipeBegin, []() {}));
-
+    addMultiFingerSwipeGesture(PSENSITIVITY);
+    addMultiFingerSwipeThenLiftoffGesture(PSENSITIVITY);
     addEdgeSwipeGesture(PSENSITIVITY);
 }
 
@@ -43,7 +34,7 @@ void CGestures::emulateSwipeBegin(uint32_t time) {
                                       .fingers   = (uint32_t)*PSWIPEFINGERS};
     g_pInputManager->onSwipeBegin(&emulated_swipe);
 
-    m_vGestureLastCenter    = m_sGestureState.get_center().current;
+    m_vGestureLastCenter    = m_sGestureState.get_center().origin;
     m_bWorkspaceSwipeActive = true;
 }
 
@@ -85,8 +76,32 @@ void CGestures::emulateSwipeUpdate(uint32_t time) {
 }
 
 void CGestures::handleGesture(const TouchGesture& gev) {
+    static auto* const PWORKSPACEFINGERS =
+        &HyprlandAPI::getConfigValue(
+             PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
+             ->intValue;
+    const auto VERTANIMS =
+        g_pCompositor
+            ->getWorkspaceByID(g_pCompositor->m_pLastMonitor->activeWorkspace)
+            ->m_vRenderOffset.getConfig()
+            ->pValues->internalStyle == "slidevert";
+
     auto bind = gev.to_string();
     Debug::log(LOG, "[touch-gesture] Gesture Triggered: %s", bind.c_str());
+
+    // TODO if (touch_down)
+    if (gev.type == GESTURE_TYPE_SWIPE_HOLD &&
+        gev.finger_count == *PWORKSPACEFINGERS) {
+        auto workspace_directions =
+            VERTANIMS ? GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN
+                      : GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
+
+        if (gev.direction & workspace_directions) {
+            // FIXME time arg of @emulateSwipeBegin should probably be assigned
+            // something useful (though its not really used later)
+            this->emulateSwipeBegin(0);
+        }
+    }
 
     for (const auto& k : g_pKeybindManager->m_lKeybinds) {
         if (k.key != bind)
@@ -230,5 +245,6 @@ SMonitorArea CGestures::getMonitorArea() const {
 wf::touch::point_t CGestures::wlrTouchEventPositionAsPixels(double x,
                                                             double y) const {
     auto area = getMonitorArea();
+    // TODO do I need to add area.x and area.y respectively?
     return wf::touch::point_t{x * area.w, y * area.h};
 }

@@ -26,6 +26,7 @@ enum eTouchGestureType {
     // Invalid Gesture
     GESTURE_TYPE_NONE,
     GESTURE_TYPE_SWIPE,
+    GESTURE_TYPE_SWIPE_HOLD, // same as SWIPE but fingers were not lifted
     GESTURE_TYPE_EDGE_SWIPE,
     // GESTURE_TYPE_PINCH,
 };
@@ -87,6 +88,14 @@ class CMultiAction : public wf::touch::gesture_action_t {
     };
 };
 
+// Completes upon receiving a touch up event and cancels upon receiving a touch
+// down event.
+class LiftoffAction : public wf::touch::gesture_action_t {
+    wf::touch::action_status_t
+    update_state(const wf::touch::gesture_state_t& state,
+                 const wf::touch::gesture_event_t& event) override;
+};
+
 std::unique_ptr<wf::touch::gesture_t>
 newWorkspaceSwipeStartGesture(const double sensitivity, const int fingers,
                               wf::touch::gesture_callback_t completed_cb,
@@ -109,6 +118,8 @@ class IGestureManager {
     bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
+    void addMultiFingerSwipeGesture(const float* sensitivity);
+    void addMultiFingerSwipeThenLiftoffGesture(const float* sensitivity);
     void addEdgeSwipeGesture(const float* sensitivity);
 
   protected:

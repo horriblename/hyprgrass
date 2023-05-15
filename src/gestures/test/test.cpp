@@ -37,6 +37,27 @@ bool testWorkspaceSwipeTimeout() {
     return testFile(&mockGM, "test/cases/swipeTimeout.csv");
 }
 
+bool testMultiFingerSwipe() {
+    CMockGestureManager mockGM;
+    mockGM.addMultiFingerSwipeGesture(&DEFAULT_SENSITIVITY);
+
+    return testFile(&mockGM, "test/cases/swipe3.csv");
+}
+
+bool testMultiFingerMovedTooMuch() {
+    CMockGestureManager mockGM;
+    mockGM.addMultiFingerSwipeGesture(&DEFAULT_SENSITIVITY);
+
+    return testFile(&mockGM, "test/cases/swipe3MovedTooMuch.csv");
+}
+
+bool testMultiFingerLiftoff() {
+    CMockGestureManager mockGM;
+    mockGM.addMultiFingerSwipeThenLiftoffGesture(&DEFAULT_SENSITIVITY);
+
+    return testFile(&mockGM, "test/cases/swipeThenLiftoff.csv");
+}
+
 bool testEdgeSwipe() {
     CMockGestureManager mockGM;
     mockGM.addEdgeSwipeGesture(&DEFAULT_SENSITIVITY);
@@ -150,25 +171,40 @@ int main() {
     else
         return 2;
 
-    if (testEdgeSwipe())
+    if (testMultiFingerSwipe())
         std::cout << "passed test #3\n";
     else
         return 3;
 
-    if (testEdgeSwipeTimeout())
+    if (testMultiFingerMovedTooMuch())
         std::cout << "passed test #4\n";
     else
         return 4;
 
-    if (testEdgeReleaseTimeout())
-        std::cout << "passed test #5\n";
+    if (testMultiFingerLiftoff())
+        std::cout << "passed test #4\n";
     else
         return 5;
 
-    if (testEdgeInvalidStart())
-        std::cout << "passed test #6\n";
+    if (testEdgeSwipe())
+        std::cout << "passed test #5\n";
     else
         return 6;
+
+    if (testEdgeSwipeTimeout())
+        std::cout << "passed test #6\n";
+    else
+        return 7;
+
+    if (testEdgeReleaseTimeout())
+        std::cout << "passed test #7\n";
+    else
+        return 8;
+
+    if (testEdgeInvalidStart())
+        std::cout << "passed test #8\n";
+    else
+        return 9;
 
     return 0;
 }
