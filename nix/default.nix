@@ -31,10 +31,6 @@ stdenv.mkDerivation {
 
   outputs = ["out"];
 
-  patches = [
-    ./meson-build.patch
-  ];
-
   nativeBuildInputs = [pkg-config ninja meson];
 
   buildInputs = [
