@@ -137,8 +137,8 @@ void CGestures::handleWorkspaceSwipe(const TouchGesture& gev) {
         const auto horizontal =
             GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
         const auto vertical = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
-        const auto workspace_directions = VERTANIMS ? horizontal : vertical;
-        const auto anti_directions      = VERTANIMS ? vertical : horizontal;
+        const auto workspace_directions = VERTANIMS ? vertical : horizontal;
+        const auto anti_directions      = VERTANIMS ? horizontal : vertical;
 
         if (gev.direction & workspace_directions &&
             !(gev.direction & anti_directions)) {
