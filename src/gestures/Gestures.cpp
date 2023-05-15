@@ -12,6 +12,9 @@ std::string TouchGesture::to_string() const {
         case GESTURE_TYPE_SWIPE:
             bind += "swipe";
             break;
+        case GESTURE_TYPE_SWIPE_HOLD:
+            // this gesture is only used internally for workspace swipe
+            return "workspace_swipe";
         case GESTURE_TYPE_NONE:
             return "";
             break;
@@ -207,7 +210,7 @@ void IGestureManager::addMultiFingerSwipeGesture(const float* sensitivity) {
 
     auto ack = [swipe_ptr, this]() {
         const auto gesture =
-            TouchGesture{GESTURE_TYPE_SWIPE, swipe_ptr->target_direction,
+            TouchGesture{GESTURE_TYPE_SWIPE_HOLD, swipe_ptr->target_direction,
                          swipe_ptr->finger_count};
         this->handleGesture(gesture);
     };

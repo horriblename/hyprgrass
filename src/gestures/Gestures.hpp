@@ -26,6 +26,7 @@ enum eTouchGestureType {
     // Invalid Gesture
     GESTURE_TYPE_NONE,
     GESTURE_TYPE_SWIPE,
+    GESTURE_TYPE_SWIPE_HOLD, // same as SWIPE but fingers were not lifted
     GESTURE_TYPE_EDGE_SWIPE,
     // GESTURE_TYPE_PINCH,
 };
