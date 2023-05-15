@@ -230,5 +230,6 @@ SMonitorArea CGestures::getMonitorArea() const {
 wf::touch::point_t CGestures::wlrTouchEventPositionAsPixels(double x,
                                                             double y) const {
     auto area = getMonitorArea();
+    // TODO do I need to add area.x and area.y respectively?
     return wf::touch::point_t{x * area.w, y * area.h};
 }
