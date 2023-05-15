@@ -109,6 +109,7 @@ void CGestures::handleGesture(const TouchGesture& gev) {
             // FIXME time arg of @emulateSwipeBegin should probably be assigned
             // something useful (though its not really used later)
             this->emulateSwipeBegin(0);
+            m_bDispatcherFound = true;
         }
     }
 
@@ -185,8 +186,10 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
 
     IGestureManager::onTouchDown(gesture_event);
 
-    // TODO handle m_bDispatcherFound
-    m_bDispatcherFound = false;
+    if (m_bDispatcherFound) {
+        m_bDispatcherFound = false;
+        return true;
+    }
     return false;
 }
 
@@ -217,8 +220,10 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
         emulateSwipeEnd(ev->time_msec, false);
     }
 
-    // TODO handle m_bDispatcherFound
-    m_bDispatcherFound = false;
+    if (m_bDispatcherFound) {
+        m_bDispatcherFound = false;
+        return true;
+    }
     return false;
 }
 
@@ -242,8 +247,10 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
         emulateSwipeUpdate(ev->time_msec);
     }
 
-    // TODO handle m_bDispatcherFound
-    m_bDispatcherFound = false;
+    if (m_bDispatcherFound) {
+        m_bDispatcherFound = false;
+        return true;
+    }
     return false;
 }
 
