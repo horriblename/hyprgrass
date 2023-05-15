@@ -31,16 +31,13 @@ class CGestures : public IGestureManager {
     };
 
   private:
-    // std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
-    // wf::touch::gesture_state_t m_sGestureState;
-
-    // Vector2D m_vTouchGestureLastCenter;
-    bool m_bWorkspaceSwipeActive = false;
-    bool m_bDispatcherFound      = false;
-    SMonitorArea m_sMonitorArea;
-    wf::touch::point_t m_vGestureLastCenter;
-
+    bool m_bDispatcherFound = false;
     CMonitor* m_pLastTouchedMonitor;
+    SMonitorArea m_sMonitorArea;
+
+    // for workspace swipe
+    bool m_bWorkspaceSwipeActive = false;
+    wf::touch::point_t m_vGestureLastCenter;
 
     void addDefaultGestures();
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;

@@ -1,10 +1,10 @@
 #include "GestureManager.hpp"
+#include <algorithm>
+#include <cstdint>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
-#include <algorithm>
-#include <cstdint>
 #include <memory>
 
 // constexpr double SWIPE_THRESHOLD = 30.;
