@@ -96,11 +96,6 @@ class LiftoffAction : public wf::touch::gesture_action_t {
                  const wf::touch::gesture_event_t& event) override;
 };
 
-std::unique_ptr<wf::touch::gesture_t>
-newWorkspaceSwipeStartGesture(const double sensitivity, const int fingers,
-                              wf::touch::gesture_callback_t completed_cb,
-                              wf::touch::gesture_callback_t cancel_cb);
-
 /*
  * Interface; there's only @CGestures and the mock gesture manager for testing
  * that implements this

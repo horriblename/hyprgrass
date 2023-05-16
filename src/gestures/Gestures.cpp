@@ -107,27 +107,6 @@ LiftoffAction::update_state(const wf::touch::gesture_state_t& state,
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 
-// FIXME move this into CGestures / abstract class coz its bad
-//
-// Create a new Gesture that triggers when @fingers amount of fingers touch
-// down on the screen. For the purpose of workspace swipe, cancelling the
-// swipe must be handled separately when a finger is lifted or when another
-// finger is added
-std::unique_ptr<wf::touch::gesture_t>
-newWorkspaceSwipeStartGesture(const double sensitivity, const int fingers,
-                              wf::touch::gesture_callback_t completed_cb,
-                              wf::touch::gesture_callback_t cancel_cb) {
-    auto swipe = std::make_unique<wf::touch::touch_action_t>(fingers, true);
-    swipe->set_duration(GESTURE_BASE_DURATION * sensitivity);
-
-    // auto swipe_ptr = swipe.get();
-    std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
-    swipe_actions.emplace_back(std::move(swipe));
-
-    return std::make_unique<wf::touch::gesture_t>(std::move(swipe_actions),
-                                                  completed_cb, cancel_cb);
-}
-
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
     for (auto& gesture : m_vGestures) {
         if (m_sGestureState.fingers.size() == 1 &&

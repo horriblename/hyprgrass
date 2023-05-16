@@ -23,20 +23,6 @@ inline bool only_one(bool a, bool b, bool c) {
 
 bool testFile(CMockGestureManager* mockGM, std::string fname);
 
-bool testWorkspaceSwipeBegin() {
-    CMockGestureManager mockGM;
-    mockGM.addWorkspaceSwipeBeginGesture();
-
-    return testFile(&mockGM, "test/cases/swipeLeft.csv");
-}
-
-bool testWorkspaceSwipeTimeout() {
-    CMockGestureManager mockGM;
-    mockGM.addWorkspaceSwipeBeginGesture();
-
-    return testFile(&mockGM, "test/cases/swipeTimeout.csv");
-}
-
 bool testMultiFingerSwipe() {
     CMockGestureManager mockGM;
     mockGM.addMultiFingerSwipeGesture(&DEFAULT_SENSITIVITY);
@@ -161,50 +147,40 @@ int main() {
     else
         return 1;
 
-    if (testWorkspaceSwipeBegin())
-        std::cout << "passed test #1\n";
-    else
-        return 1;
-
-    if (testWorkspaceSwipeTimeout())
+    if (testMultiFingerSwipe())
         std::cout << "passed test #2\n";
     else
         return 2;
 
-    if (testMultiFingerSwipe())
+    if (testMultiFingerMovedTooMuch())
         std::cout << "passed test #3\n";
     else
         return 3;
 
-    if (testMultiFingerMovedTooMuch())
-        std::cout << "passed test #4\n";
+    if (testMultiFingerLiftoff())
+        std::cout << "passed test #3\n";
     else
         return 4;
 
-    if (testMultiFingerLiftoff())
+    if (testEdgeSwipe())
         std::cout << "passed test #4\n";
     else
         return 5;
 
-    if (testEdgeSwipe())
+    if (testEdgeSwipeTimeout())
         std::cout << "passed test #5\n";
     else
         return 6;
 
-    if (testEdgeSwipeTimeout())
+    if (testEdgeReleaseTimeout())
         std::cout << "passed test #6\n";
     else
         return 7;
 
-    if (testEdgeReleaseTimeout())
+    if (testEdgeInvalidStart())
         std::cout << "passed test #7\n";
     else
         return 8;
-
-    if (testEdgeInvalidStart())
-        std::cout << "passed test #8\n";
-    else
-        return 9;
 
     return 0;
 }
