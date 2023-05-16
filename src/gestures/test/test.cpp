@@ -150,37 +150,37 @@ int main() {
     if (testMultiFingerSwipe())
         std::cout << "passed test #2\n";
     else
-        return 2;
+        return 1;
 
     if (testMultiFingerMovedTooMuch())
         std::cout << "passed test #3\n";
     else
-        return 3;
+        return 1;
 
     if (testMultiFingerLiftoff())
         std::cout << "passed test #3\n";
     else
-        return 4;
+        return 1;
 
     if (testEdgeSwipe())
         std::cout << "passed test #4\n";
     else
-        return 5;
+        return 1;
 
     if (testEdgeSwipeTimeout())
         std::cout << "passed test #5\n";
     else
-        return 6;
+        return 1;
 
     if (testEdgeReleaseTimeout())
         std::cout << "passed test #6\n";
     else
-        return 7;
+        return 1;
 
     if (testEdgeInvalidStart())
         std::cout << "passed test #7\n";
     else
-        return 8;
+        return 1;
 
     return 0;
 }
