@@ -128,17 +128,10 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     g_pGestureManager = std::make_unique<CGestures>();
 
-    HyprlandAPI::addNotification(PHANDLE,
-                                 "[touch-gestures] Initialized successfully!",
-                                 s_pluginColor, 5000);
-
     return {"touch-gestures", "Touchscreen gestures", "horriblename", "0.2"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
     // idk if I should do this, but just in case
     g_pGestureManager.reset();
-    HyprlandAPI::addNotification(PHANDLE,
-                                 "[touch-gestures] Unloaded successfully!",
-                                 s_pluginColor, 5000);
 }
