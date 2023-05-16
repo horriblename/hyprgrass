@@ -96,6 +96,11 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state,
 wf::touch::action_status_t
 LiftoffAction::update_state(const wf::touch::gesture_state_t& state,
                             const wf::touch::gesture_event_t& event) {
+
+    if (event.time - this->start_time > this->get_duration()) {
+        return wf::touch::ACTION_STATUS_CANCELLED;
+    }
+
     if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP) {
         return wf::touch::ACTION_STATUS_COMPLETED;
     }
