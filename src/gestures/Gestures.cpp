@@ -208,9 +208,9 @@ void IGestureManager::addMultiFingerSwipeThenLiftoffGesture(
     const float* sensitivity) {
     auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE,
                                                 sensitivity);
-    // swipe->set_duration(GESTURE_BASE_DURATION * *sensitivity);
+    swipe->set_duration(GESTURE_BASE_DURATION);
     auto swipe_liftoff = std::make_unique<LiftoffAction>();
-    swipe_liftoff->set_duration(GESTURE_BASE_DURATION);
+    swipe_liftoff->set_duration(GESTURE_BASE_DURATION / 2);
 
     // FIXME memory management be damned
     auto swipe_ptr = swipe.get();
