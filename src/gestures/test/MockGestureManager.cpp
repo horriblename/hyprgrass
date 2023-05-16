@@ -7,7 +7,7 @@
 
 CMockGestureManager::CMockGestureManager() {}
 
-void CMockGestureManager::handleGesture(const TouchGesture& gev) {
+void CMockGestureManager::handleGesture(const CompletedGesture& gev) {
     std::cout << "gesture triggered: " << gev.to_string() << "\n";
     this->triggered = true;
 }

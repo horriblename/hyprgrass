@@ -3,7 +3,7 @@
 #include <string>
 #include <utility>
 
-std::string TouchGesture::to_string() const {
+std::string CompletedGesture::to_string() const {
     std::string bind = "";
     switch (type) {
         case GESTURE_TYPE_EDGE_SWIPE:
@@ -178,7 +178,7 @@ void IGestureManager::addTouchGesture(
 
 // Multi fingered swipe, triggers once whenever you swipe more than the
 // threshold.
-void IGestureManager::addMultiFingerSwipeGesture(const float* sensitivity) {
+void IGestureManager::addMultiFingerDragGesture(const float* sensitivity) {
     auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE,
                                                 sensitivity);
     // swipe->set_duration(GESTURE_BASE_DURATION * *sensitivity);
@@ -190,9 +190,9 @@ void IGestureManager::addMultiFingerSwipeGesture(const float* sensitivity) {
     swipe_actions.emplace_back(std::move(swipe));
 
     auto ack = [swipe_ptr, this]() {
-        const auto gesture =
-            TouchGesture{GESTURE_TYPE_SWIPE_HOLD, swipe_ptr->target_direction,
-                         swipe_ptr->finger_count};
+        const auto gesture = CompletedGesture{GESTURE_TYPE_SWIPE_HOLD,
+                                              swipe_ptr->target_direction,
+                                              swipe_ptr->finger_count};
         this->handleGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
@@ -201,7 +201,9 @@ void IGestureManager::addMultiFingerSwipeGesture(const float* sensitivity) {
         std::move(swipe_actions), ack, cancel));
 }
 
-// Multi fingered swipe + liftoff
+// Multi fingered swipe, triggers on liftoff
+//
+// TODO rename
 void IGestureManager::addMultiFingerSwipeThenLiftoffGesture(
     const float* sensitivity) {
     auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE,
@@ -219,8 +221,8 @@ void IGestureManager::addMultiFingerSwipeThenLiftoffGesture(
 
     auto ack = [swipe_ptr, this]() {
         const auto gesture =
-            TouchGesture{GESTURE_TYPE_SWIPE, swipe_ptr->target_direction,
-                         swipe_ptr->finger_count};
+            CompletedGesture{GESTURE_TYPE_SWIPE, swipe_ptr->target_direction,
+                             swipe_ptr->finger_count};
         this->handleGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
@@ -261,8 +263,8 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {
         if (!possible_edges) {
             return;
         }
-        auto gesture = TouchGesture{GESTURE_TYPE_EDGE_SWIPE, direction,
-                                    edge_ptr->finger_count};
+        auto gesture = CompletedGesture{GESTURE_TYPE_EDGE_SWIPE, direction,
+                                        edge_ptr->finger_count};
         this->handleGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };

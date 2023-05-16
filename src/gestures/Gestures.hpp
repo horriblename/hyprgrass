@@ -50,7 +50,7 @@ using gestureDirection = uint32_t;
  *
  * Finger count can be arbitrary (might be a good idea to limit to >3)
  */
-struct TouchGesture {
+struct CompletedGesture {
     eTouchGestureType type;
     gestureDirection direction;
     int finger_count;
@@ -113,7 +113,7 @@ class IGestureManager {
     bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
-    void addMultiFingerSwipeGesture(const float* sensitivity);
+    void addMultiFingerDragGesture(const float* sensitivity);
     void addMultiFingerSwipeThenLiftoffGesture(const float* sensitivity);
     void addEdgeSwipeGesture(const float* sensitivity);
 
@@ -122,9 +122,9 @@ class IGestureManager {
     wf::touch::gesture_state_t m_sGestureState;
 
     gestureDirection find_swipe_edges(wf::touch::point_t point);
-    virtual SMonitorArea getMonitorArea() const         = 0;
-    virtual void handleGesture(const TouchGesture& gev) = 0;
-    virtual void handleCancelledGesture()               = 0;
+    virtual SMonitorArea getMonitorArea() const             = 0;
+    virtual void handleGesture(const CompletedGesture& gev) = 0;
+    virtual void handleCancelledGesture()                   = 0;
 
   private:
     void updateGestures(const wf::touch::gesture_event_t&);

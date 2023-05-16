@@ -15,7 +15,7 @@ CGestures::CGestures() {
                                      "plugin:touch_gestures:sensitivity")
              ->floatValue;
 
-    addMultiFingerSwipeGesture(PSENSITIVITY);
+    addMultiFingerDragGesture(PSENSITIVITY);
     addMultiFingerSwipeThenLiftoffGesture(PSENSITIVITY);
     addEdgeSwipeGesture(PSENSITIVITY);
 }
@@ -84,7 +84,7 @@ std::vector<int> CGestures::getAllFingerIds() {
     return ret;
 }
 
-void CGestures::handleGesture(const TouchGesture& gev) {
+void CGestures::handleGesture(const CompletedGesture& gev) {
     if (gev.type == GESTURE_TYPE_SWIPE_HOLD) {
         this->handleWorkspaceSwipe(gev);
         return;
@@ -121,7 +121,7 @@ void CGestures::handleGesture(const TouchGesture& gev) {
     }
 }
 
-void CGestures::handleWorkspaceSwipe(const TouchGesture& gev) {
+void CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
     static auto* const PWORKSPACEFINGERS =
         &HyprlandAPI::getConfigValue(
              PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")

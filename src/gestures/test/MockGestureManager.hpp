@@ -34,7 +34,7 @@ class CMockGestureManager : public IGestureManager {
         return {pos->x, pos->y};
     }
 
-    void handleGesture(const TouchGesture& gev) override;
+    void handleGesture(const CompletedGesture& gev) override;
     void handleCancelledGesture() override;
 
   protected:

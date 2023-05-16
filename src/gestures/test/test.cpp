@@ -25,14 +25,14 @@ bool testFile(CMockGestureManager* mockGM, std::string fname);
 
 bool testMultiFingerSwipe() {
     CMockGestureManager mockGM;
-    mockGM.addMultiFingerSwipeGesture(&DEFAULT_SENSITIVITY);
+    mockGM.addMultiFingerDragGesture(&DEFAULT_SENSITIVITY);
 
     return testFile(&mockGM, "test/cases/swipe3.csv");
 }
 
 bool testMultiFingerMovedTooMuch() {
     CMockGestureManager mockGM;
-    mockGM.addMultiFingerSwipeGesture(&DEFAULT_SENSITIVITY);
+    mockGM.addMultiFingerDragGesture(&DEFAULT_SENSITIVITY);
 
     return testFile(&mockGM, "test/cases/swipe3MovedTooMuch.csv");
 }

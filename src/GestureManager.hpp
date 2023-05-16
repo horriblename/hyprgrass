@@ -27,7 +27,7 @@ class CGestures : public IGestureManager {
 
   protected:
     SMonitorArea getMonitorArea() const override;
-    void handleGesture(const TouchGesture& gev) override;
+    void handleGesture(const CompletedGesture& gev) override;
     void handleCancelledGesture() override{};
 
   private:
@@ -41,7 +41,7 @@ class CGestures : public IGestureManager {
 
     void addDefaultGestures();
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
-    void handleWorkspaceSwipe(const TouchGesture& gev);
+    void handleWorkspaceSwipe(const CompletedGesture& gev);
 };
 
 inline std::unique_ptr<CGestures> g_pGestureManager;
