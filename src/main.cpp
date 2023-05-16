@@ -62,7 +62,7 @@ void hkOnTouchUp(void* thisptr, wlr_touch_up_event* e) {
 
     if (BLOCK) {
         liftAllFingers(thisptr, e->touch, e->time_msec);
-        return;
+        // NOTE e->finger_id is not handled by liftAllFingers(), do not return
     }
 
     (*(origTouchUp)g_pTouchUpHook->m_pOriginal)(thisptr, e);
