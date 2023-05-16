@@ -22,18 +22,19 @@ bool Tester::testFindSwipeEdges() {
         wf::touch::point_t origin;
         gestureDirection result;
     };
+    const auto L = GESTURE_DIRECTION_LEFT;
+    const auto R = GESTURE_DIRECTION_RIGHT;
+    const auto U = GESTURE_DIRECTION_UP;
+    const auto D = GESTURE_DIRECTION_DOWN;
+
     Test tests[] = {
-        {{MONITOR_X + 10, MONITOR_Y + 10},
-         GESTURE_DIRECTION_DOWN | GESTURE_DIRECTION_RIGHT},
-        {{MONITOR_X, MONITOR_Y + 11}, GESTURE_DIRECTION_RIGHT},
-        {{MONITOR_X + 11, MONITOR_Y}, GESTURE_DIRECTION_DOWN},
+        {{MONITOR_X + 10, MONITOR_Y + 10}, D | R},
+        {{MONITOR_X, MONITOR_Y + 11}, R},
+        {{MONITOR_X + 11, MONITOR_Y}, D},
         {{MONITOR_X + 11, MONITOR_Y + 11}, 0},
-        {{MONITOR_X + MONITOR_WIDTH, MONITOR_Y + MONITOR_HEIGHT},
-         GESTURE_DIRECTION_UP | GESTURE_DIRECTION_LEFT},
-        {{MONITOR_X + MONITOR_WIDTH - 11, MONITOR_Y + MONITOR_HEIGHT},
-         GESTURE_DIRECTION_UP},
-        {{MONITOR_X + MONITOR_WIDTH, MONITOR_Y + MONITOR_HEIGHT - 11},
-         GESTURE_DIRECTION_LEFT},
+        {{MONITOR_X + MONITOR_WIDTH, MONITOR_Y + MONITOR_HEIGHT}, U | L},
+        {{MONITOR_X + MONITOR_WIDTH - 11, MONITOR_Y + MONITOR_HEIGHT}, U},
+        {{MONITOR_X + MONITOR_WIDTH, MONITOR_Y + MONITOR_HEIGHT - 11}, L},
         {{MONITOR_X + MONITOR_WIDTH - 11, MONITOR_Y + MONITOR_HEIGHT - 11}, 0},
     };
 
