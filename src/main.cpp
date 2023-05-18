@@ -1,11 +1,10 @@
 #include "GestureManager.hpp"
-#include <memory>
-
 #include "globals.hpp"
 
+#include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
-// #include <wlr/types/wlr_touch.h>
+#include <memory>
 
 const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f,
                               1.0f};
@@ -19,17 +18,9 @@ typedef void (*origTouchMove)(void*, wlr_touch_motion_event*);
 // Inhibit all calls to Hyprland's original touch event handlers.
 bool g_bInhibitHyprlandTouchHandlers = false;
 
-inline void liftAllFingers(void* thisptr, wlr_touch* touch,
-                           uint32_t time_msec) {
-    for (const auto& finger_id : g_pGestureManager->getAllFingerIds()) {
-        auto up_event = wlr_touch_up_event{
-            .touch     = touch,
-            .time_msec = time_msec,
-            .touch_id  = finger_id,
-        };
-
-        (*(origTouchUp)g_pTouchUpHook->m_pOriginal)(thisptr, &up_event);
-    }
+inline void cancelAllFingers() {
+    const auto SURFACE = g_pInputManager->m_sTouchData.touchFocusSurface;
+    wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, SURFACE);
 
     g_bInhibitHyprlandTouchHandlers = true;
 }
@@ -46,7 +37,7 @@ void hkOnTouchDown(void* thisptr, wlr_touch_down_event* e) {
     }
 
     if (BLOCK) {
-        liftAllFingers(thisptr, e->touch, e->time_msec);
+        cancelAllFingers();
         return;
     }
 
@@ -61,8 +52,8 @@ void hkOnTouchUp(void* thisptr, wlr_touch_up_event* e) {
     }
 
     if (BLOCK) {
-        liftAllFingers(thisptr, e->touch, e->time_msec);
-        // NOTE e->finger_id is not handled by liftAllFingers(), do not return
+        cancelAllFingers();
+        // e->finger_id is not handled by liftAllFingers(), do not return
     }
 
     (*(origTouchUp)g_pTouchUpHook->m_pOriginal)(thisptr, e);
@@ -76,7 +67,7 @@ void hkOnTouchMove(void* thisptr, wlr_touch_motion_event* e) {
     }
 
     if (BLOCK) {
-        liftAllFingers(thisptr, e->touch, e->time_msec);
+        cancelAllFingers();
         return;
     }
 
