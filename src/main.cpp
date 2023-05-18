@@ -3,10 +3,8 @@
 
 #include <algorithm>
 #include <hyprland/src/Compositor.hpp>
-#include <hyprland/src/Window.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
-#include <memory>
 #include <vector>
 
 const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f,
