@@ -1,10 +1,13 @@
 #include "GestureManager.hpp"
 #include "globals.hpp"
 
+#include <algorithm>
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/Window.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <memory>
+#include <vector>
 
 const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f,
                               1.0f};
@@ -16,12 +19,23 @@ typedef void (*origTouchUp)(void*, wlr_touch_up_event*);
 typedef void (*origTouchMove)(void*, wlr_touch_motion_event*);
 
 // Inhibit all calls to Hyprland's original touch event handlers.
-bool g_bInhibitHyprlandTouchHandlers = false;
+inline bool g_bInhibitHyprlandTouchHandlers = false;
+inline std::vector<wlr_surface*> g_vTouchedSurfaces;
+
+inline void markSurfaceAsTouched(wlr_surface* surface) {
+    const auto TOUCHED = std::find(g_vTouchedSurfaces.begin(),
+                                   g_vTouchedSurfaces.end(), surface);
+    if (TOUCHED == g_vTouchedSurfaces.end()) {
+        g_vTouchedSurfaces.push_back(surface);
+    }
+}
 
 inline void cancelAllFingers() {
-    const auto SURFACE = g_pInputManager->m_sTouchData.touchFocusSurface;
-    wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, SURFACE);
+    for (const auto& window : g_vTouchedSurfaces) {
+        wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, window);
+    }
 
+    g_vTouchedSurfaces.clear();
     g_bInhibitHyprlandTouchHandlers = true;
 }
 
@@ -42,6 +56,10 @@ void hkOnTouchDown(void* thisptr, wlr_touch_down_event* e) {
     }
 
     (*(origTouchDown)g_pTouchDownHook->m_pOriginal)(thisptr, e);
+
+    if (g_pInputManager->m_sTouchData.touchFocusSurface) {
+        markSurfaceAsTouched(g_pInputManager->m_sTouchData.touchFocusSurface);
+    }
 }
 
 void hkOnTouchUp(void* thisptr, wlr_touch_up_event* e) {
