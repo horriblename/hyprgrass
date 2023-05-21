@@ -20,16 +20,20 @@ typedef void (*origTouchMove)(void*, wlr_touch_motion_event*);
 inline bool g_bInhibitHyprlandTouchHandlers = false;
 inline std::vector<wlr_surface*> g_vTouchedSurfaces;
 
-inline void markSurfaceAsTouched(wlr_surface* surface) {
+inline void markSurfaceAsTouched(wlr_surface& surface) {
     const auto TOUCHED = std::find(g_vTouchedSurfaces.begin(),
-                                   g_vTouchedSurfaces.end(), surface);
+                                   g_vTouchedSurfaces.end(), &surface);
     if (TOUCHED == g_vTouchedSurfaces.end()) {
-        g_vTouchedSurfaces.push_back(surface);
+        g_vTouchedSurfaces.push_back(&surface);
     }
 }
 
 inline void cancelAllFingers() {
     for (const auto& window : g_vTouchedSurfaces) {
+        if (!window) {
+            continue;
+        }
+
         wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, window);
     }
 
@@ -40,6 +44,7 @@ inline void cancelAllFingers() {
 void hkOnTouchDown(void* thisptr, wlr_touch_down_event* e) {
     if (e->touch_id == 0) {
         g_bInhibitHyprlandTouchHandlers = false;
+        g_vTouchedSurfaces.clear();
     }
 
     const auto BLOCK = g_pGestureManager->onTouchDown(e);
@@ -56,7 +61,7 @@ void hkOnTouchDown(void* thisptr, wlr_touch_down_event* e) {
     (*(origTouchDown)g_pTouchDownHook->m_pOriginal)(thisptr, e);
 
     if (g_pInputManager->m_sTouchData.touchFocusSurface) {
-        markSurfaceAsTouched(g_pInputManager->m_sTouchData.touchFocusSurface);
+        markSurfaceAsTouched(*g_pInputManager->m_sTouchData.touchFocusSurface);
     }
 }
 
