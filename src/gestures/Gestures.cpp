@@ -146,26 +146,25 @@ bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
     return false;
 }
 
-// swiping from left edge will result in GESTURE_DIRECTION_RIGHT etc.
 gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
     auto mon = getMonitorArea();
 
     gestureDirection edge_directions = 0;
 
     if (point.x <= mon.x + EDGE_SWIPE_THRESHOLD) {
-        edge_directions |= GESTURE_DIRECTION_RIGHT;
-    }
-
-    if (point.x >= mon.x + mon.w - EDGE_SWIPE_THRESHOLD) {
         edge_directions |= GESTURE_DIRECTION_LEFT;
     }
 
+    if (point.x >= mon.x + mon.w - EDGE_SWIPE_THRESHOLD) {
+        edge_directions |= GESTURE_DIRECTION_RIGHT;
+    }
+
     if (point.y <= mon.y + EDGE_SWIPE_THRESHOLD) {
-        edge_directions |= GESTURE_DIRECTION_DOWN;
+        edge_directions |= GESTURE_DIRECTION_UP;
     }
 
     if (point.y >= mon.y + mon.h - EDGE_SWIPE_THRESHOLD) {
-        edge_directions |= GESTURE_DIRECTION_UP;
+        edge_directions |= GESTURE_DIRECTION_DOWN;
     }
 
     return edge_directions;
@@ -255,15 +254,14 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {
     edge_swipe_actions.emplace_back(std::move(edge_release));
 
     auto ack = [edge_ptr, this]() {
-        auto possible_edges =
+        auto origin_edges =
             find_swipe_edges(m_sGestureState.get_center().origin);
-        auto direction = edge_ptr->target_direction;
 
-        possible_edges &= direction;
-        if (!possible_edges) {
+        if (!origin_edges) {
             return;
         }
-        auto gesture = CompletedGesture{GESTURE_TYPE_EDGE_SWIPE, direction,
+        auto direction = edge_ptr->target_direction;
+        auto gesture   = CompletedGesture{GESTURE_TYPE_EDGE_SWIPE, direction,
                                         edge_ptr->finger_count};
         this->handleGesture(gesture);
     };
