@@ -4,56 +4,32 @@
   # the dependencies of Hyprland here as well
   description = "Hyprland plugin for touch gestures";
 
-  inputs = {
-    hyprland.url = "github:hyprwm/Hyprland";
-    nixpkgs.follows = "hyprland/nixpkgs";
-    flake-utils.url = "github:numtide/flake-utils";
-  };
+  inputs.hyprland.url = "github:hyprwm/Hyprland";
 
   outputs = {
-    nixpkgs,
+    self,
     hyprland,
-    flake-utils,
-    ...
-  }:
-    flake-utils.lib.eachDefaultSystem (system: let
-      pkgs = import nixpkgs {inherit system;};
-      hyprpkgs = hyprland.packages.${system};
-    in rec {
-      packages.default = pkgs.callPackage ./nix/default.nix {
-        stdenv = pkgs.gcc12Stdenv;
-        hyprland = hyprpkgs.hyprland;
-        wf-touch = packages.wf-touch;
-        wlroots = hyprpkgs.wlroots-hyprland;
+  }: let
+    inherit (hyprland.inputs) nixpkgs;
+    withPkgsFor = fn: nixpkgs.lib.genAttrs (builtins.attrNames hyprland.packages) (system: fn system nixpkgs.legacyPackages.${system});
+  in {
+    packages = withPkgsFor (system: pkgs: {
+      default = pkgs.callPackage ./nix/default.nix {
+        inherit (hyprland.packages.${system}) hyprland;
+        inherit (self.packages.${system}) wf-touch;
       };
-      packages.wf-touch = pkgs.callPackage ./nix/wf-touch.nix {};
+      wf-touch = pkgs.callPackage ./nix/wf-touch.nix {};
+    });
 
-      formatter = pkgs.alejandra;
-      devShells.default = pkgs.mkShell.override {stdenv = pkgs.gcc12Stdenv;} {
-        name = "hyprland-plugin-shell";
-        nativeBuildInputs = with pkgs; [
-          meson
-          ninja
-          pkg-config
-          doctest
-
-          clang-tools_15
-        ];
-
-        buildInputs = with pkgs; [
-          hyprpkgs.hyprland
-          hyprpkgs.wlroots-hyprland
-          libdrm
-          pixman
-          packages.wf-touch
-        ];
-
-        inputsFrom = [
-          hyprpkgs.hyprland
-          hyprpkgs.wlroots-hyprland
-        ];
-
-        #HYPRLAND_HEADERS = hyprpkgs.hyprland.src; - TODO
+    devShells = withPkgsFor (system: pkgs: {
+      default = pkgs.mkShell {
+        name = "hyprland-touch-gesture-shell";
+        nativeBuildInputs = with pkgs; [cpplint];
+        buildInputs = [hyprland.packages.${system}.hyprland self.packages.${system}.wf-touch];
+        inputsFrom = [hyprland.packages.${system}.hyprland];
       };
     });
+
+    formatter = withPkgsFor (system: pkgs: pkgs.alejandra);
+  };
 }
