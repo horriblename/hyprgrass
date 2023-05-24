@@ -3,24 +3,8 @@
 #include <string>
 #include <utility>
 
-std::string CompletedGesture::to_string() const {
-    std::string bind = "";
-    switch (type) {
-        case GESTURE_TYPE_EDGE_SWIPE:
-            bind += "edge";
-            break;
-        case GESTURE_TYPE_SWIPE:
-            bind += "swipe";
-            break;
-        case GESTURE_TYPE_SWIPE_HOLD:
-            // this gesture is only used internally for workspace swipe
-            return "workspace_swipe";
-        case GESTURE_TYPE_NONE:
-            return "";
-            break;
-    }
-
-    bind += std::to_string(finger_count);
+std::string stringifyDirection(gestureDirection direction) {
+    std::string bind;
     if (direction & GESTURE_DIRECTION_LEFT) {
         bind += 'l';
     }
@@ -37,6 +21,30 @@ std::string CompletedGesture::to_string() const {
         bind += 'd';
     }
 
+    return bind;
+}
+
+std::string CompletedGesture::to_string() const {
+    std::string bind = "";
+    switch (type) {
+        case GESTURE_TYPE_EDGE_SWIPE:
+            bind += "edge";
+            break;
+        case GESTURE_TYPE_SWIPE:
+            bind += "swipe";
+            break;
+        case GESTURE_TYPE_SWIPE_HOLD:
+            // this gesture is only used internally for workspace swipe
+            return "workspace_swipe";
+    }
+
+    if (type == GESTURE_TYPE_EDGE_SWIPE) {
+        bind += stringifyDirection(this->edge_origin);
+    } else {
+        bind += std::to_string(finger_count);
+    }
+
+    bind += stringifyDirection(this->direction);
     return bind;
 }
 
