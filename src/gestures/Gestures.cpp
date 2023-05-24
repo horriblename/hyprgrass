@@ -164,10 +164,6 @@ gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
     gestureDirection edge_directions = 0;
 
     if (point.x <= mon.x + EDGE_SWIPE_THRESHOLD) {
-        edge_directions |= GESTURE_DIRECTION_RIGHT;
-    }
-
-    if (point.x >= mon.x + mon.w - EDGE_SWIPE_THRESHOLD) {
         edge_directions |= GESTURE_DIRECTION_LEFT;
     }
 
@@ -176,11 +172,11 @@ gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
     }
 
     if (point.y <= mon.y + EDGE_SWIPE_THRESHOLD) {
-        edge_directions |= GESTURE_DIRECTION_DOWN;
+        edge_directions |= GESTURE_DIRECTION_UP;
     }
 
     if (point.y >= mon.y + mon.h - EDGE_SWIPE_THRESHOLD) {
-        edge_directions |= GESTURE_DIRECTION_UP;
+        edge_directions |= GESTURE_DIRECTION_DOWN;
     }
 
     return edge_directions;
