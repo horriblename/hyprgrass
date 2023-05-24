@@ -29,12 +29,14 @@ bool Tester::testFindSwipeEdges() {
 
     Test tests[] = {
         {{MONITOR_X + 10, MONITOR_Y + 10}, D | R},
-        {{MONITOR_X, MONITOR_Y + 11}, R},
-        {{MONITOR_X + 11, MONITOR_Y}, D},
+        {{MONITOR_X, MONITOR_Y + 11}, R | U | D},
+        {{MONITOR_X + 11, MONITOR_Y}, D | L | R},
         {{MONITOR_X + 11, MONITOR_Y + 11}, 0},
         {{MONITOR_X + MONITOR_WIDTH, MONITOR_Y + MONITOR_HEIGHT}, U | L},
-        {{MONITOR_X + MONITOR_WIDTH - 11, MONITOR_Y + MONITOR_HEIGHT}, U},
-        {{MONITOR_X + MONITOR_WIDTH, MONITOR_Y + MONITOR_HEIGHT - 11}, L},
+        {{MONITOR_X + MONITOR_WIDTH - 11, MONITOR_Y + MONITOR_HEIGHT},
+         U | L | R},
+        {{MONITOR_X + MONITOR_WIDTH, MONITOR_Y + MONITOR_HEIGHT - 11},
+         L | U | D},
         {{MONITOR_X + MONITOR_WIDTH - 11, MONITOR_Y + MONITOR_HEIGHT - 11}, 0},
     };
 
