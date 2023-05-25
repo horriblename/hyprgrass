@@ -25,8 +25,11 @@
       default = pkgs.mkShell {
         name = "hyprland-touch-gesture-shell";
         nativeBuildInputs = with pkgs; [cpplint];
-        buildInputs = [hyprland.packages.${system}.hyprland self.packages.${system}.wf-touch];
-        inputsFrom = [hyprland.packages.${system}.hyprland];
+        buildInputs = [hyprland.packages.${system}.hyprland];
+        inputsFrom = [
+          hyprland.packages.${system}.hyprland
+          (self.packages.${system}.default)
+        ];
       };
     });
 
