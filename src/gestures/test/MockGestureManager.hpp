@@ -10,7 +10,7 @@ constexpr double MONITOR_HEIGHT = 1080;
 
 class Tester {
   public:
-    bool testFindSwipeEdges();
+    static void testFindSwipeEdges();
 };
 
 class CMockGestureManager : public IGestureManager {
