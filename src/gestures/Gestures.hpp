@@ -24,7 +24,6 @@ constexpr static uint32_t GESTURE_BASE_DURATION   = 400;
 
 enum eTouchGestureType {
     // Invalid Gesture
-    GESTURE_TYPE_NONE,
     GESTURE_TYPE_SWIPE,
     GESTURE_TYPE_SWIPE_HOLD, // same as SWIPE but fingers were not lifted
     GESTURE_TYPE_EDGE_SWIPE,
@@ -54,6 +53,10 @@ struct CompletedGesture {
     eTouchGestureType type;
     gestureDirection direction;
     int finger_count;
+
+    // TODO turn this whole struct into a sum type?
+    // edge swipe specific
+    gestureDirection edge_origin;
 
     std::string to_string() const;
 };

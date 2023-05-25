@@ -3,24 +3,8 @@
 #include <string>
 #include <utility>
 
-std::string CompletedGesture::to_string() const {
-    std::string bind = "";
-    switch (type) {
-        case GESTURE_TYPE_EDGE_SWIPE:
-            bind += "edge";
-            break;
-        case GESTURE_TYPE_SWIPE:
-            bind += "swipe";
-            break;
-        case GESTURE_TYPE_SWIPE_HOLD:
-            // this gesture is only used internally for workspace swipe
-            return "workspace_swipe";
-        case GESTURE_TYPE_NONE:
-            return "";
-            break;
-    }
-
-    bind += std::to_string(finger_count);
+std::string stringifyDirection(gestureDirection direction) {
+    std::string bind;
     if (direction & GESTURE_DIRECTION_LEFT) {
         bind += 'l';
     }
@@ -37,6 +21,30 @@ std::string CompletedGesture::to_string() const {
         bind += 'd';
     }
 
+    return bind;
+}
+
+std::string CompletedGesture::to_string() const {
+    std::string bind = "";
+    switch (type) {
+        case GESTURE_TYPE_EDGE_SWIPE:
+            bind += "edge";
+            break;
+        case GESTURE_TYPE_SWIPE:
+            bind += "swipe";
+            break;
+        case GESTURE_TYPE_SWIPE_HOLD:
+            // this gesture is only used internally for workspace swipe
+            return "workspace_swipe";
+    }
+
+    if (type == GESTURE_TYPE_EDGE_SWIPE) {
+        bind += stringifyDirection(this->edge_origin);
+    } else {
+        bind += std::to_string(finger_count);
+    }
+
+    bind += stringifyDirection(this->direction);
     return bind;
 }
 
@@ -146,40 +154,25 @@ bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
     return false;
 }
 
-// swiping from left edge will result in GESTURE_DIRECTION_RIGHT etc.
 gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
     auto mon = getMonitorArea();
 
-    const auto LEFT  = GESTURE_DIRECTION_LEFT;
-    const auto RIGHT = GESTURE_DIRECTION_RIGHT;
-    const auto UP    = GESTURE_DIRECTION_UP;
-    const auto DOWN  = GESTURE_DIRECTION_DOWN;
-
-    gestureDirection edge_directions = LEFT | RIGHT | UP | DOWN;
-    bool is_edge                     = false;
+    gestureDirection edge_directions = 0;
 
     if (point.x <= mon.x + EDGE_SWIPE_THRESHOLD) {
-        is_edge = true;
-        edge_directions &= RIGHT | UP | DOWN;
+        edge_directions |= GESTURE_DIRECTION_LEFT;
     }
 
     if (point.x >= mon.x + mon.w - EDGE_SWIPE_THRESHOLD) {
-        is_edge = true;
-        edge_directions &= LEFT | UP | DOWN;
+        edge_directions |= GESTURE_DIRECTION_RIGHT;
     }
 
     if (point.y <= mon.y + EDGE_SWIPE_THRESHOLD) {
-        is_edge = true;
-        edge_directions &= DOWN | LEFT | RIGHT;
+        edge_directions |= GESTURE_DIRECTION_UP;
     }
 
     if (point.y >= mon.y + mon.h - EDGE_SWIPE_THRESHOLD) {
-        is_edge = true;
-        edge_directions &= UP | LEFT | RIGHT;
-    }
-
-    if (!is_edge) {
-        return 0;
+        edge_directions |= GESTURE_DIRECTION_DOWN;
     }
 
     return edge_directions;
@@ -269,15 +262,14 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {
     edge_swipe_actions.emplace_back(std::move(edge_release));
 
     auto ack = [edge_ptr, this]() {
-        auto possible_edges =
+        auto origin_edges =
             find_swipe_edges(m_sGestureState.get_center().origin);
-        auto direction = edge_ptr->target_direction;
 
-        possible_edges &= direction;
-        if (!possible_edges) {
+        if (!origin_edges) {
             return;
         }
-        auto gesture = CompletedGesture{GESTURE_TYPE_EDGE_SWIPE, direction,
+        auto direction = edge_ptr->target_direction;
+        auto gesture   = CompletedGesture{GESTURE_TYPE_EDGE_SWIPE, direction,
                                         edge_ptr->finger_count};
         this->handleGesture(gesture);
     };
