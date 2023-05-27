@@ -270,7 +270,7 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {
         }
         auto direction = edge_ptr->target_direction;
         auto gesture   = CompletedGesture{GESTURE_TYPE_EDGE_SWIPE, direction,
-                                        edge_ptr->finger_count};
+                                        edge_ptr->finger_count, origin_edges};
         this->handleGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
