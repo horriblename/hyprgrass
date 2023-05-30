@@ -4,6 +4,7 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
+#include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <memory>
 
@@ -39,8 +40,8 @@ void CGestures::emulateSwipeBegin(uint32_t time) {
                                       .fingers   = (uint32_t)*PSWIPEFINGERS};
     g_pInputManager->onSwipeBegin(&emulated_swipe);
 
-    m_vGestureLastCenter    = m_sGestureState.get_center().origin;
-    m_bWorkspaceSwipeActive = true;
+    m_vGestureLastCenter     = m_sGestureState.get_center().origin;
+    this->active_drag_action = DragActionType::WORKSPACE_SWIPE;
 }
 
 void CGestures::emulateSwipeEnd(uint32_t time, bool cancelled) {
@@ -48,7 +49,7 @@ void CGestures::emulateSwipeEnd(uint32_t time, bool cancelled) {
         .pointer = nullptr, .time_msec = time, .cancelled = cancelled};
     g_pInputManager->onSwipeEnd(&emulated_swipe);
 
-    m_bWorkspaceSwipeActive = false;
+    active_drag_action = std::nullopt;
 }
 
 void CGestures::emulateSwipeUpdate(uint32_t time) {
@@ -80,6 +81,27 @@ void CGestures::emulateSwipeUpdate(uint32_t time) {
     m_vGestureLastCenter = currentCenter;
 }
 
+void CGestures::moveWindowBegin() {
+    this->active_drag_action = DragActionType::MOVE_WINDOW;
+    wlr_cursor_warp(g_pCompositor->m_sWLRCursor, nullptr,
+                    this->m_sGestureState.get_center().current.x,
+                    this->m_sGestureState.get_center().current.y);
+    g_pKeybindManager->m_mDispatchers["mouse"]("1movewindow");
+}
+
+void CGestures::moveWindowUpdate() {
+    wlr_cursor_warp(g_pCompositor->m_sWLRCursor, nullptr,
+                    this->m_sGestureState.get_center().current.x,
+                    this->m_sGestureState.get_center().current.y);
+    g_pLayoutManager->getCurrentLayout()->onMouseMove(
+        g_pInputManager->getMouseCoordsInternal());
+}
+
+void CGestures::moveWindowEnd() {
+    this->active_drag_action = std::nullopt;
+    g_pKeybindManager->m_mDispatchers["mouse"]("0movewindow");
+}
+
 std::vector<int> CGestures::getAllFingerIds() {
     auto ret = std::vector<int>();
     for (const auto& finger : m_sGestureState.fingers) {
@@ -90,8 +112,12 @@ std::vector<int> CGestures::getAllFingerIds() {
 }
 
 void CGestures::handleGesture(const CompletedGesture& gev) {
-    if (gev.type == GESTURE_TYPE_SWIPE_HOLD) {
+    if (gev.type == GESTURE_TYPE_SWIPE_DRAG) {
         this->handleWorkspaceSwipe(gev);
+        return;
+    }
+    if (gev.type == GESTURE_TYPE_HOLD) {
+        this->handleHoldGesture(gev);
         return;
     }
 
@@ -136,7 +162,7 @@ void CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
             ->m_vRenderOffset.getConfig()
             ->pValues->internalStyle == "slidevert";
 
-    if (gev.type == GESTURE_TYPE_SWIPE_HOLD &&
+    if (gev.type == GESTURE_TYPE_SWIPE_DRAG &&
         gev.finger_count == *PWORKSPACEFINGERS) {
         const auto horizontal =
             GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
@@ -152,6 +178,19 @@ void CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
             m_bDispatcherFound = true;
         }
     }
+}
+
+void CGestures::handleHoldGesture(const CompletedGesture& gev) {
+    static auto* const PHOLDFINGERS =
+        &HyprlandAPI::getConfigValue(
+             PHANDLE, "plugin:touch_gestures:move_window_hold_fingers")
+             ->intValue;
+    if (gev.type != GESTURE_TYPE_HOLD || gev.finger_count != *PHOLDFINGERS) {
+        return;
+    }
+
+    this->moveWindowBegin();
+    m_bDispatcherFound = true;
 }
 
 // @return whether or not to inhibit further actions
@@ -181,8 +220,15 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     const auto& geometry = m_pLastTouchedMonitor->vecSize;
     m_sMonitorArea       = {position.x, position.y, geometry.x, geometry.y};
 
-    if (m_bWorkspaceSwipeActive) {
-        emulateSwipeEnd(ev->time_msec, false);
+    if (this->active_drag_action) {
+        switch (*this->active_drag_action) {
+            case DragActionType::WORKSPACE_SWIPE:
+                emulateSwipeEnd(ev->time_msec, false);
+                break;
+            case DragActionType::MOVE_WINDOW:
+                moveWindowEnd();
+                break;
+        }
     }
 
     // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
@@ -229,8 +275,15 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
     IGestureManager::onTouchUp(gesture_event);
 
     // TODO where do I put this, before or after IGestureManager::onTouchUp...?
-    if (m_bWorkspaceSwipeActive) {
-        emulateSwipeEnd(ev->time_msec, false);
+    if (this->active_drag_action) {
+        switch (*this->active_drag_action) {
+            case DragActionType::WORKSPACE_SWIPE:
+                emulateSwipeEnd(ev->time_msec, false);
+                break;
+            case DragActionType::MOVE_WINDOW:
+                moveWindowEnd();
+                break;
+        }
     }
 
     if (m_bDispatcherFound) {
@@ -255,9 +308,15 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
 
     IGestureManager::onTouchMove(gesture_event);
 
-    // TODO where do I put this
-    if (m_bWorkspaceSwipeActive) {
-        emulateSwipeUpdate(ev->time_msec);
+    if (this->active_drag_action) {
+        switch (*this->active_drag_action) {
+            case DragActionType::WORKSPACE_SWIPE:
+                emulateSwipeUpdate(ev->time_msec);
+                break;
+            case DragActionType::MOVE_WINDOW:
+                moveWindowUpdate();
+                break;
+        }
     }
 
     if (m_bDispatcherFound) {

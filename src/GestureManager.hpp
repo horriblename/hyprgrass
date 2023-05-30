@@ -4,8 +4,14 @@
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/helpers/Monitor.hpp>
 #include <hyprland/src/includes.hpp>
+#include <optional>
 #include <vector>
 #include <wayfire/touch/touch.hpp>
+
+enum class DragActionType {
+    WORKSPACE_SWIPE,
+    MOVE_WINDOW,
+};
 
 class CGestures : public IGestureManager {
   public:
@@ -36,11 +42,16 @@ class CGestures : public IGestureManager {
     SMonitorArea m_sMonitorArea;
 
     // for workspace swipe
-    bool m_bWorkspaceSwipeActive = false;
+    std::optional<DragActionType> active_drag_action = std::nullopt;
     wf::touch::point_t m_vGestureLastCenter;
 
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
     void handleWorkspaceSwipe(const CompletedGesture& gev);
+    void handleHoldGesture(const CompletedGesture& gev);
+
+    void moveWindowBegin();
+    void moveWindowEnd();
+    void moveWindowUpdate();
 };
 
 inline std::unique_ptr<CGestures> g_pGestureManager;
