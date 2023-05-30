@@ -38,11 +38,15 @@ std::string CompletedGesture::to_string() const {
             return "workspace_swipe";
     }
 
+    bind += ":";
+
     if (type == GESTURE_TYPE_EDGE_SWIPE) {
         bind += stringifyDirection(this->edge_origin);
     } else {
         bind += std::to_string(finger_count);
     }
+
+    bind += ":";
 
     bind += stringifyDirection(this->direction);
     return bind;
