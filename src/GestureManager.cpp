@@ -6,8 +6,19 @@
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <memory>
+#include <string>
 
-// constexpr double SWIPE_THRESHOLD = 30.;
+// HACK setting window transparency dynamically is not officially supported
+void setWindowTransparency(CWindow* window, float transparency) {
+    if (!g_pInputManager->m_sTouchData.touchFocusWindow) {
+        return;
+    }
+
+    auto r = SWindowRule{.szRule = "opacity " + std::to_string(transparency)};
+    g_pInputManager->m_sTouchData.touchFocusWindow->applyDynamicRule(r);
+
+    // g_pHyprRenderer->damageWindow(window);
+}
 
 CGestures::CGestures() {
     static auto* const PSENSITIVITY =
@@ -34,8 +45,8 @@ void CGestures::emulateSwipeBegin(uint32_t time) {
                                       .fingers   = (uint32_t)*PSWIPEFINGERS};
     g_pInputManager->onSwipeBegin(&emulated_swipe);
 
-    m_vGestureLastCenter    = m_sGestureState.get_center().origin;
-    m_bWorkspaceSwipeActive = true;
+    swipe_drag_last_center = m_sGestureState.get_center().origin;
+    active_swipe_drag      = SwipeDragGestureType::WORKSPACE_SWIPE;
 }
 
 void CGestures::emulateSwipeEnd(uint32_t time, bool cancelled) {
@@ -43,7 +54,7 @@ void CGestures::emulateSwipeEnd(uint32_t time, bool cancelled) {
         .pointer = nullptr, .time_msec = time, .cancelled = cancelled};
     g_pInputManager->onSwipeEnd(&emulated_swipe);
 
-    m_bWorkspaceSwipeActive = false;
+    active_swipe_drag = SwipeDragGestureType::NONE;
 }
 
 void CGestures::emulateSwipeUpdate(uint32_t time) {
@@ -66,13 +77,55 @@ void CGestures::emulateSwipeUpdate(uint32_t time) {
         .pointer   = nullptr,
         .time_msec = time,
         .fingers   = (uint32_t)m_sGestureState.fingers.size(),
-        .dx = (currentCenter.x - m_vGestureLastCenter.x) / m_sMonitorArea.w *
+        .dx = (currentCenter.x - swipe_drag_last_center.x) / m_sMonitorArea.w *
               *PSWIPEDIST,
-        .dy = (currentCenter.y - m_vGestureLastCenter.y) / m_sMonitorArea.h *
+        .dy = (currentCenter.y - swipe_drag_last_center.y) / m_sMonitorArea.h *
               *PSWIPEDIST};
 
     g_pInputManager->onSwipeUpdate(&emulated_swipe);
-    m_vGestureLastCenter = currentCenter;
+    swipe_drag_last_center = currentCenter;
+}
+
+void CGestures::closeWindowSwipeBegin() {
+    this->active_swipe_drag = SwipeDragGestureType::WINDOW_CLOSE;
+    this->closeWindowSwipeUpdate();
+}
+
+void CGestures::closeWindowSwipeUpdate() {
+    static auto* const PSENSITIVITY =
+        &HyprlandAPI::getConfigValue(PHANDLE,
+                                     "plugin:touch_gestures:sensitivity")
+             ->floatValue;
+    // const auto MIN_ACCEPT = MIN_SWIPE_DISTANCE / *PSENSITIVITY;
+    const auto max_anim_distance = MAX_SWIPE_DISTANCE / *PSENSITIVITY;
+    const float MIN_TRANSPARENCY = 0.2;
+
+    if (g_pInputManager->m_sTouchData.touchFocusWindow) {
+        // TODO vertical/horizontal anim
+        const auto delta = -m_sGestureState.get_center().delta().y;
+        float transparency =
+            MIN_TRANSPARENCY +
+            std::clamp(delta / max_anim_distance, 0.0, 1.0 - MIN_TRANSPARENCY);
+        setWindowTransparency(g_pInputManager->m_sTouchData.touchFocusWindow,
+                              transparency);
+    }
+}
+
+void CGestures::closeWindowSwipeEnd() {
+    static auto* const PSENSITIVITY =
+        &HyprlandAPI::getConfigValue(PHANDLE,
+                                     "plugin:touch_gestures:sensitivity")
+             ->floatValue;
+    const auto min_accept = MIN_SWIPE_DISTANCE / *PSENSITIVITY;
+    // TODO vertical/horizontal anim
+    const auto delta = -m_sGestureState.get_center().delta().y;
+
+    if (delta > min_accept) {
+        g_pKeybindManager->m_mDispatchers["killactive"];
+    }
+
+    setWindowTransparency(g_pInputManager->m_sTouchData.touchFocusWindow, 1.0);
+    this->active_swipe_drag = SwipeDragGestureType::NONE;
 }
 
 std::vector<int> CGestures::getAllFingerIds() {
@@ -146,6 +199,9 @@ void CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
             // something useful (though its not really used later)
             this->emulateSwipeBegin(0);
             m_bDispatcherFound = true;
+        } else {
+            // TODO make close window swipe customizable
+            this->closeWindowSwipeBegin();
         }
     }
 }
@@ -177,8 +233,15 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     const auto& geometry = m_pLastTouchedMonitor->vecSize;
     m_sMonitorArea       = {position.x, position.y, geometry.x, geometry.y};
 
-    if (m_bWorkspaceSwipeActive) {
-        emulateSwipeEnd(ev->time_msec, false);
+    switch (active_swipe_drag) {
+        case SwipeDragGestureType::NONE:
+            break;
+        case SwipeDragGestureType::WORKSPACE_SWIPE:
+            emulateSwipeEnd(ev->time_msec, false);
+            break;
+        case SwipeDragGestureType::WINDOW_CLOSE:
+            // TODO
+            break;
     }
 
     // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
@@ -224,9 +287,15 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
 
     IGestureManager::onTouchUp(gesture_event);
 
-    // TODO where do I put this, before or after IGestureManager::onTouchUp...?
-    if (m_bWorkspaceSwipeActive) {
-        emulateSwipeEnd(ev->time_msec, false);
+    switch (active_swipe_drag) {
+        case SwipeDragGestureType::NONE:
+            break;
+        case SwipeDragGestureType::WORKSPACE_SWIPE:
+            emulateSwipeEnd(ev->time_msec, false);
+            break;
+        case SwipeDragGestureType::WINDOW_CLOSE:
+            // TODO
+            break;
     }
 
     if (m_bDispatcherFound) {
@@ -251,9 +320,15 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
 
     IGestureManager::onTouchMove(gesture_event);
 
-    // TODO where do I put this
-    if (m_bWorkspaceSwipeActive) {
-        emulateSwipeUpdate(ev->time_msec);
+    switch (active_swipe_drag) {
+        case SwipeDragGestureType::NONE:
+            break;
+        case SwipeDragGestureType::WORKSPACE_SWIPE:
+            emulateSwipeUpdate(ev->time_msec);
+            break;
+        case SwipeDragGestureType::WINDOW_CLOSE:
+            // TODO
+            break;
     }
 
     if (m_bDispatcherFound) {

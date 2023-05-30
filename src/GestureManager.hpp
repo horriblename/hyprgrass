@@ -7,6 +7,12 @@
 #include <vector>
 #include <wayfire/touch/touch.hpp>
 
+enum class SwipeDragGestureType {
+    NONE = 0,
+    WORKSPACE_SWIPE,
+    WINDOW_CLOSE,
+};
+
 class CGestures : public IGestureManager {
   public:
     CGestures();
@@ -35,13 +41,17 @@ class CGestures : public IGestureManager {
     CMonitor* m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
 
-    // for workspace swipe
-    bool m_bWorkspaceSwipeActive = false;
-    wf::touch::point_t m_vGestureLastCenter;
+    // for workspace swipe & close window
+    SwipeDragGestureType active_swipe_drag = SwipeDragGestureType::NONE;
+    wf::touch::point_t swipe_drag_last_center; // for workspace swipe
 
     void addDefaultGestures();
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
     void handleWorkspaceSwipe(const CompletedGesture& gev);
+
+    void closeWindowSwipeBegin();
+    void closeWindowSwipeUpdate();
+    void closeWindowSwipeEnd();
 };
 
 inline std::unique_ptr<CGestures> g_pGestureManager;
