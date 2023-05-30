@@ -2,6 +2,8 @@
 
 ⚠️ WARNING this plugin is very alpha, expect breaking changes!
 
+Please open an issue if you encounter any bugs. Feel free to make a feature request if you have a suggestion.
+
 ## Features/Roadmap
 
 - [x] Workspace Swipe
@@ -77,3 +79,7 @@ bind = , swipe:4:d, killactive
 # l (or r) must come before d and u
 bind = , swipe:3:ld, exec, foot
 ```
+
+# Acknowledgements
+
+Special thanks to wayfire for the awesome [wf-touch](https://github.com/WayfireWM/wf-touch) library!
