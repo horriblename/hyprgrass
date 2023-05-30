@@ -1,11 +1,11 @@
 #include "GestureManager.hpp"
-#include <memory>
-
 #include "globals.hpp"
 
+#include <algorithm>
+#include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
-// #include <wlr/types/wlr_touch.h>
+#include <vector>
 
 const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f,
                               1.0f};
@@ -17,26 +17,34 @@ typedef void (*origTouchUp)(void*, wlr_touch_up_event*);
 typedef void (*origTouchMove)(void*, wlr_touch_motion_event*);
 
 // Inhibit all calls to Hyprland's original touch event handlers.
-bool g_bInhibitHyprlandTouchHandlers = false;
+inline bool g_bInhibitHyprlandTouchHandlers = false;
+inline std::vector<wlr_surface*> g_vTouchedSurfaces;
 
-inline void liftAllFingers(void* thisptr, wlr_touch* touch,
-                           uint32_t time_msec) {
-    for (const auto& finger_id : g_pGestureManager->getAllFingerIds()) {
-        auto up_event = wlr_touch_up_event{
-            .touch     = touch,
-            .time_msec = time_msec,
-            .touch_id  = finger_id,
-        };
+inline void markSurfaceAsTouched(wlr_surface& surface) {
+    const auto TOUCHED = std::find(g_vTouchedSurfaces.begin(),
+                                   g_vTouchedSurfaces.end(), &surface);
+    if (TOUCHED == g_vTouchedSurfaces.end()) {
+        g_vTouchedSurfaces.push_back(&surface);
+    }
+}
 
-        (*(origTouchUp)g_pTouchUpHook->m_pOriginal)(thisptr, &up_event);
+inline void cancelAllFingers() {
+    for (const auto& window : g_vTouchedSurfaces) {
+        if (!window) {
+            continue;
+        }
+
+        wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, window);
     }
 
+    g_vTouchedSurfaces.clear();
     g_bInhibitHyprlandTouchHandlers = true;
 }
 
 void hkOnTouchDown(void* thisptr, wlr_touch_down_event* e) {
     if (e->touch_id == 0) {
         g_bInhibitHyprlandTouchHandlers = false;
+        g_vTouchedSurfaces.clear();
     }
 
     const auto BLOCK = g_pGestureManager->onTouchDown(e);
@@ -46,11 +54,15 @@ void hkOnTouchDown(void* thisptr, wlr_touch_down_event* e) {
     }
 
     if (BLOCK) {
-        liftAllFingers(thisptr, e->touch, e->time_msec);
+        cancelAllFingers();
         return;
     }
 
     (*(origTouchDown)g_pTouchDownHook->m_pOriginal)(thisptr, e);
+
+    if (g_pInputManager->m_sTouchData.touchFocusSurface) {
+        markSurfaceAsTouched(*g_pInputManager->m_sTouchData.touchFocusSurface);
+    }
 }
 
 void hkOnTouchUp(void* thisptr, wlr_touch_up_event* e) {
@@ -61,8 +73,8 @@ void hkOnTouchUp(void* thisptr, wlr_touch_up_event* e) {
     }
 
     if (BLOCK) {
-        liftAllFingers(thisptr, e->touch, e->time_msec);
-        // NOTE e->finger_id is not handled by liftAllFingers(), do not return
+        cancelAllFingers();
+        // e->finger_id is not handled by liftAllFingers(), do not return
     }
 
     (*(origTouchUp)g_pTouchUpHook->m_pOriginal)(thisptr, e);
@@ -76,7 +88,7 @@ void hkOnTouchMove(void* thisptr, wlr_touch_motion_event* e) {
     }
 
     if (BLOCK) {
-        liftAllFingers(thisptr, e->touch, e->time_msec);
+        cancelAllFingers();
         return;
     }
 
