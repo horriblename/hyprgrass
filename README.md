@@ -48,11 +48,12 @@ bind = , <gesture_name>, <dispatcher>, <args>
 
 where (skip to [examples](#examples) if this is confusing):
 
-- `gesture_name` is `[edge|swipe]<finger_count><direction>`
-  - `edge` for edge swipe, `swipe` for multi-finger swipe
-  - `finger_cnumberount` is the number of fingers to use, this is always 1 for `edge`
-  - `direction` is one of `l`, `r`, `u`, `d`, or `ld`, `rd`, `lu`, `ru` for diagonal directions.
-  - e.g. `edge1l` means swipe left from the _right edge_
+- `gesture_name` is one of:
+  1. `swipe:<finger_count>:<direction>`
+     - `direction` is one of `l`, `r`, `u`, `d`, or `ld`, `rd`, `lu`, `ru` for diagonal directions.
+  2. `edge:<from_edge>:<direction>`
+     - `<from_edge>` is from which edge to start (l/r/u/d)
+     - `<direction>` is in which direction to swipe (l/r/u/d/lu/ld/ru/rd)
 
 > :warning: `<gesture_name>` with misspellings will be silently ignored.
 
@@ -60,15 +61,18 @@ where (skip to [examples](#examples) if this is confusing):
 
 ```
 # swipe left from right edge
-bind = , edge1l, workspace, +1
+bind = , edge:r:l, workspace, +1
 
 # swipe up from bottom edge
-bind = , edge1u, exec, firefox
+bind = , edge:d:u, exec, firefox
+
+# swipe down from left edge
+bind = , edge:l:d, exec, pactl set-sink-volume @DEFAULT_SINK@ -4%
 
 # swipe down with 4 fingers
-bind = , swipe4d, killactive
+bind = , swipe:4:d, killactive
 
 # swipe diagonally leftwards and downwards with 3 fingers
 # l (or r) must come before d and u
-bind = , swipe3ld, exec, foot
+bind = , swipe:3:ld, exec, foot
 ```
