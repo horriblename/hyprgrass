@@ -50,7 +50,8 @@ where (skip to [examples](#examples) if this is confusing):
 
 - `gesture_name` is one of:
   1. `swipe:<finger_count>:<direction>`
-     - `direction` is one of `l`, `r`, `u`, `d`, or `ld`, `rd`, `lu`, `ru` for diagonal directions.
+     - `direction` is one of `l`, `r`, `u`, `d`, or `ld`, `rd`, `lu`, `ru` for diagonal directions.  
+       (l, r, u, d stands for left, right, up, down)
   2. `edge:<from_edge>:<direction>`
      - `<from_edge>` is from which edge to start (l/r/u/d)
      - `<direction>` is in which direction to swipe (l/r/u/d/lu/ld/ru/rd)
