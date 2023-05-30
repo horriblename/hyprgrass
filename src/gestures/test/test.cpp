@@ -35,25 +35,8 @@ void Tester::testFindSwipeEdges() {
     }
 }
 
-enum class ExpectResultType {
-    COMPLETED,
-    CANCELLED,
-    CHECK_PROGRESS,
-};
-
-struct ExpectResult {
-    ExpectResultType type;
-
-    // variables below only used when type == CHECK_PROGRESS
-    float progress = 0.0;
-
-    // which of the m_vGestures to use
-    // usually the first (0)
-    int gesture_index = 0;
-};
-
-// NOTE each event implicitly means the gesture has not been triggered/cancelled
-// yet
+// NOTE each event implicitly indicates that the gesture has not been
+// triggered/cancelled yet.
 void ProcessEvent(CMockGestureManager& gm,
                   const wf::touch::gesture_event_t& ev) {
     CHECK_FALSE(gm.triggered);
@@ -71,23 +54,10 @@ void ProcessEvent(CMockGestureManager& gm,
     }
 }
 
-void ProcessEvents(CMockGestureManager& gm, ExpectResult expect,
+void ProcessEvents(CMockGestureManager& gm,
                    const std::vector<wf::touch::gesture_event_t>& events) {
     for (const auto& ev : events) {
         ProcessEvent(gm, ev);
-    }
-
-    switch (expect.type) {
-        case ExpectResultType::COMPLETED:
-            CHECK(gm.triggered);
-            break;
-        case ExpectResultType::CANCELLED:
-            CHECK(gm.cancelled);
-            break;
-        case ExpectResultType::CHECK_PROGRESS:
-            CHECK(
-                gm.getGestureAt(expect.gesture_index)->get()->get_progress() ==
-                expect.progress);
     }
 }
 
@@ -108,7 +78,10 @@ TEST_CASE("Swipe Drag: Complete upon moving more than the threshold") {
         // {wf::touch::EVENT_TYPE_MOTION, 200, 1, point_t{50, 300}},
         // {wf::touch::EVENT_TYPE_MOTION, 200, 2, point_t{100, 290}},
     };
-    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
+    ProcessEvents(gm, events);
+    CHECK(gm.triggered);
+    CHECK(gm.gesture_type);
+    CHECK(*gm.gesture_type == GESTURE_TYPE_SWIPE_DRAG);
 }
 
 TEST_CASE("Swipe Drag: Cancel 2 finger swipe due to moving too much before "
@@ -122,7 +95,8 @@ TEST_CASE("Swipe Drag: Cancel 2 finger swipe due to moving too much before "
         {wf::touch::EVENT_TYPE_MOTION, 110, 1, {459, 300}},
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 150, 2, {401, 290}},
     };
-    ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
+    ProcessEvents(gm, events);
+    CHECK(gm.cancelled);
 }
 
 TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
@@ -141,7 +115,10 @@ TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
         {wf::touch::EVENT_TYPE_MOTION, 200, 2, {100, 290}},
         {wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {100, 290}},
     };
-    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
+    ProcessEvents(gm, events);
+    CHECK(gm.triggered);
+    CHECK(gm.gesture_type);
+    CHECK(*gm.gesture_type == GESTURE_TYPE_SWIPE);
 }
 
 TEST_CASE("Edge Swipe: Complete upon: \n"
@@ -158,7 +135,10 @@ TEST_CASE("Edge Swipe: Complete upon: \n"
         // TODO Check progress == 0.5
         {wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {455, 300}},
     };
-    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
+    ProcessEvents(gm, events);
+    CHECK(gm.triggered);
+    CHECK(gm.gesture_type);
+    CHECK(*gm.gesture_type == GESTURE_TYPE_EDGE_SWIPE);
 }
 
 TEST_CASE("Edge Swipe: Timeout during swiping phase") {
@@ -170,7 +150,8 @@ TEST_CASE("Edge Swipe: Timeout during swiping phase") {
         {wf::touch::EVENT_TYPE_MOTION, 150, 0, {300, 300}},
         {wf::touch::EVENT_TYPE_MOTION, 520, 0, {600, 300}},
     };
-    ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
+    ProcessEvents(gm, events);
+    CHECK(gm.cancelled);
 }
 
 TEST_CASE("Edge Swipe: Timout during liftoff phase: \n"
@@ -186,7 +167,8 @@ TEST_CASE("Edge Swipe: Timout during liftoff phase: \n"
         {wf::touch::EVENT_TYPE_MOTION, 200, 0, {455, 300}},
         {wf::touch::EVENT_TYPE_TOUCH_UP, 801, 0, {455, 300}},
     };
-    ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
+    ProcessEvents(gm, events);
+    CHECK(gm.cancelled);
 }
 
 TEST_CASE(
@@ -206,7 +188,6 @@ TEST_CASE(
         // TODO Check progress == 0.5
         {wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {461, 300}},
     };
-    const ExpectResult expected_result = {ExpectResultType::CHECK_PROGRESS,
-                                          1.0};
-    ProcessEvents(gm, expected_result, events);
+    ProcessEvents(gm, events);
+    CHECK(gm.getGestureAt(0)->get()->get_progress() == 1.0);
 }

@@ -9,7 +9,8 @@ CMockGestureManager::CMockGestureManager() {}
 
 void CMockGestureManager::handleGesture(const CompletedGesture& gev) {
     std::cout << "gesture triggered: " << gev.to_string() << "\n";
-    this->triggered = true;
+    this->triggered    = true;
+    this->gesture_type = gev.type;
 }
 
 void CMockGestureManager::handleCancelledGesture() {

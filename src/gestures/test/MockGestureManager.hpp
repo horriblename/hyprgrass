@@ -20,9 +20,12 @@ class CMockGestureManager : public IGestureManager {
 
     bool triggered = false;
     bool cancelled = false;
+    std::optional<eTouchGestureType> gesture_type;
+
     void resetTestResults() {
-        triggered = false;
-        cancelled = false;
+        triggered    = false;
+        cancelled    = false;
+        gesture_type = {};
     }
 
     auto getGestureAt(int index) const {
