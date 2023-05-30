@@ -1,9 +1,0 @@
-DOWN 100 0 11 300
-MOVE 150 0 250 300
-MOVE 200 0 461 300
-CHECK progress 0.5
-UP 300 0
-# for edge swipes, progress = 1 but not completed nor cancelled means that the
-# action finished but did not meet the requirements, i.e. swipe does not start
-# from an edge
-CHECK progress 1

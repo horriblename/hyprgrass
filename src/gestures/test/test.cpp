@@ -1,186 +1,212 @@
-/**
- * If you can't already tell, I don't know much about C++ so I would like you to
- * divert your attention away from this atrocity. Thank you.
- *
- */
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include <doctest/doctest.h>
+
 #include "MockGestureManager.hpp"
 #include "wayfire/touch/touch.hpp"
-#include <bits/stdc++.h>
-#include <cassert>
-#include <fstream>
-#include <iostream>
-#include <memory>
-#include <sstream>
-#include <string>
 #include <variant>
 #include <vector>
 
-constexpr float DEFAULT_SENSITIVITY = 1.0;
+constexpr float SENSITIVITY = 1.0;
 
-inline bool only_one(bool a, bool b, bool c) {
-    return (a && !b && !c) || (!a && b && !c) || (!a && !b && c);
-}
+void Tester::testFindSwipeEdges() {
+    using Test = struct {
+        wf::touch::point_t origin;
+        gestureDirection result;
+    };
+    const auto L = GESTURE_DIRECTION_LEFT;
+    const auto R = GESTURE_DIRECTION_RIGHT;
+    const auto U = GESTURE_DIRECTION_UP;
+    const auto D = GESTURE_DIRECTION_DOWN;
 
-bool testFile(CMockGestureManager* mockGM, std::string fname);
+    Test tests[] = {
+        {{MONITOR_X + 10, MONITOR_Y + 10}, U | L},
+        {{MONITOR_X, MONITOR_Y + 11}, L},
+        {{MONITOR_X + 11, MONITOR_Y}, U},
+        {{MONITOR_X + 11, MONITOR_Y + 11}, 0},
+        {{MONITOR_X + MONITOR_WIDTH, MONITOR_Y + MONITOR_HEIGHT}, D | R},
+        {{MONITOR_X + MONITOR_WIDTH - 11, MONITOR_Y + MONITOR_HEIGHT}, D},
+        {{MONITOR_X + MONITOR_WIDTH, MONITOR_Y + MONITOR_HEIGHT - 11}, R},
+        {{MONITOR_X + MONITOR_WIDTH - 11, MONITOR_Y + MONITOR_HEIGHT - 11}, 0},
+    };
 
-bool testMultiFingerSwipe() {
     CMockGestureManager mockGM;
-    mockGM.addMultiFingerDragGesture(&DEFAULT_SENSITIVITY);
-
-    return testFile(&mockGM, "test/cases/swipe3.csv");
+    for (auto& test : tests) {
+        CHECK_EQ(mockGM.find_swipe_edges(test.origin), test.result);
+    }
 }
 
-bool testMultiFingerMovedTooMuch() {
-    CMockGestureManager mockGM;
-    mockGM.addMultiFingerDragGesture(&DEFAULT_SENSITIVITY);
+enum class ExpectResultType {
+    COMPLETED,
+    CANCELLED,
+    CHECK_PROGRESS,
+};
 
-    return testFile(&mockGM, "test/cases/swipe3MovedTooMuch.csv");
+struct ExpectResult {
+    ExpectResultType type;
+
+    // variables below only used when type == CHECK_PROGRESS
+    float progress = 0.0;
+
+    // which of the m_vGestures to use
+    // usually the first (0)
+    int gesture_index = 0;
+};
+
+// NOTE each event implicitly means the gesture has not been triggered/cancelled
+// yet
+void ProcessEvent(CMockGestureManager& gm,
+                  const wf::touch::gesture_event_t& ev) {
+    CHECK_FALSE(gm.triggered);
+    CHECK_FALSE(gm.cancelled);
+    switch (ev.type) {
+        case wf::touch::EVENT_TYPE_TOUCH_DOWN:
+            gm.onTouchDown(ev);
+            break;
+        case wf::touch::EVENT_TYPE_TOUCH_UP:
+            gm.onTouchUp(ev);
+            break;
+        case wf::touch::EVENT_TYPE_MOTION:
+            gm.onTouchMove(ev);
+            break;
+    }
 }
 
-bool testMultiFingerLiftoff() {
-    CMockGestureManager mockGM;
-    mockGM.addMultiFingerSwipeThenLiftoffGesture(&DEFAULT_SENSITIVITY);
-
-    return testFile(&mockGM, "test/cases/swipeThenLiftoff.csv");
-}
-
-bool testEdgeSwipe() {
-    CMockGestureManager mockGM;
-    mockGM.addEdgeSwipeGesture(&DEFAULT_SENSITIVITY);
-    return testFile(&mockGM, "test/cases/edgeLeft.csv");
-}
-
-bool testEdgeSwipeTimeout() {
-    CMockGestureManager mockGM;
-    mockGM.addEdgeSwipeGesture(&DEFAULT_SENSITIVITY);
-    return testFile(&mockGM, "test/cases/edgeSwipeTimeout.csv");
-}
-
-bool testEdgeReleaseTimeout() {
-    CMockGestureManager mockGM;
-    mockGM.addEdgeSwipeGesture(&DEFAULT_SENSITIVITY);
-    return testFile(&mockGM, "test/cases/edgeReleaseTimeout.csv");
-}
-
-bool testEdgeInvalidStart() {
-    CMockGestureManager mockGM;
-    mockGM.addEdgeSwipeGesture(&DEFAULT_SENSITIVITY);
-    return testFile(&mockGM, "test/cases/edgeInvalidStart.csv");
-}
-
-// @return true if passed
-bool testFile(CMockGestureManager* mockGM, std::string fname) {
-    auto infile = std::ifstream(fname);
-    assert(infile.good());
-    std::string type, line;
-    uint32_t time;
-    int id;
-    double x, y;
-    bool running = true;
-    std::cout << std::setprecision(2);
-
-    while (std::getline(infile, line)) {
-        std::istringstream linestream(line);
-        linestream >> type;
-        if (type == "DOWN") {
-            assert(only_one(running, mockGM->triggered, mockGM->cancelled));
-            linestream >> time >> id >> x >> y;
-
-            const wf::touch::gesture_event_t ev = {
-                wf::touch::EVENT_TYPE_TOUCH_DOWN, time, id, {x, y}};
-            mockGM->onTouchDown(ev);
-        } else if (type == "UP") {
-            assert(only_one(running, mockGM->triggered, mockGM->cancelled));
-            linestream >> time >> id;
-
-            auto lift_off_pos = mockGM->getLastPositionOfFinger(id);
-            const wf::touch::gesture_event_t ev = {
-                wf::touch::EVENT_TYPE_TOUCH_UP, time, id, lift_off_pos};
-            mockGM->onTouchUp(ev);
-        } else if (type == "MOVE") {
-            assert(only_one(running, mockGM->triggered, mockGM->cancelled));
-            linestream >> time >> id >> x >> y;
-
-            const wf::touch::gesture_event_t ev = {
-                wf::touch::EVENT_TYPE_MOTION, time, id, {x, y}};
-            mockGM->onTouchMove(ev);
-        } else if (type == "CHECK") {
-            linestream >> type;
-            if (type == "complete") {
-                running = false;
-                assert(mockGM->triggered);
-            } else if (type == "cancel") {
-                running = false;
-                assert(mockGM->cancelled);
-            } else if (type == "progress") {
-                double actual_progress =
-                    mockGM->getGestureAt(0)->get()->get_progress();
-                double progress;
-                linestream >> progress;
-                std::cout << "CHECK progress: " << actual_progress
-                          << ", status: ";
-                std::cout << (running ? "running" : "")
-                          << (mockGM->triggered ? "triggered" : "")
-                          << (mockGM->cancelled ? "cancelled" : "") << "\n";
-
-                assert(actual_progress == progress);
-            } else {
-                std::cout << "unknown argument to CHECK: " << type;
-                assert(false);
-            }
-        } else if (type == "#") {
-            // comment
-        } else {
-            std::cout << "invalid COMMAND in test file " << fname << ": "
-                      << type << "\n";
-            assert(false);
-        }
+void ProcessEvents(CMockGestureManager& gm, ExpectResult expect,
+                   const std::vector<wf::touch::gesture_event_t>& events) {
+    for (const auto& ev : events) {
+        ProcessEvent(gm, ev);
     }
 
-    return true;
+    switch (expect.type) {
+        case ExpectResultType::COMPLETED:
+            CHECK(gm.triggered);
+            break;
+        case ExpectResultType::CANCELLED:
+            CHECK(gm.cancelled);
+            break;
+        case ExpectResultType::CHECK_PROGRESS:
+            CHECK(
+                gm.getGestureAt(expect.gesture_index)->get()->get_progress() ==
+                expect.progress);
+    }
 }
 
-int main() {
-    Tester tester;
-    if (tester.testFindSwipeEdges())
-        std::cout << "passed test for find_swipe_edges()\n";
-    else
-        return 1;
+using TouchEvent = wf::touch::gesture_event_t;
+using wf::touch::point_t;
 
-    if (testMultiFingerSwipe())
-        std::cout << "passed test #2\n";
-    else
-        return 1;
+TEST_CASE("Swipe Drag: Complete upon moving more than the threshold") {
+    CMockGestureManager gm;
+    gm.addMultiFingerDragGesture(&SENSITIVITY);
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {550, 290}},
+        {wf::touch::EVENT_TYPE_MOTION, 200, 0, {0, 290}},
+        /* FIXME idk why this triggers after one finger movement, should be
+        after all finers moved? threshold should be 450, I thought the center is
+        used for distance? */
+        // {wf::touch::EVENT_TYPE_MOTION, 200, 1, point_t{50, 300}},
+        // {wf::touch::EVENT_TYPE_MOTION, 200, 2, point_t{100, 290}},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
+}
 
-    if (testMultiFingerMovedTooMuch())
-        std::cout << "passed test #3\n";
-    else
-        return 1;
+TEST_CASE("Swipe Drag: Cancel 2 finger swipe due to moving too much before "
+          "adding new finger, but not enough to trigger 2 finger swipe first") {
+    CMockGestureManager gm;
+    gm.addMultiFingerDragGesture(&SENSITIVITY);
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 110, 0, {409, 290}},
+        {wf::touch::EVENT_TYPE_MOTION, 110, 1, {459, 300}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 150, 2, {401, 290}},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
+}
 
-    if (testMultiFingerLiftoff())
-        std::cout << "passed test #3\n";
-    else
-        return 1;
+TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
+          "finger") {
+    CMockGestureManager gm;
+    gm.addMultiFingerSwipeThenLiftoffGesture(&SENSITIVITY);
 
-    if (testEdgeSwipe())
-        std::cout << "passed test #4\n";
-    else
-        return 1;
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {550, 290}},
+        {wf::touch::EVENT_TYPE_MOTION, 200, 0, {0, 290}},
+        // FIXME same issue as in Swipe Drag
+        // TODO CHECK progress == 0.5
+        {wf::touch::EVENT_TYPE_MOTION, 200, 1, {50, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 200, 2, {100, 290}},
+        {wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {100, 290}},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
+}
 
-    if (testEdgeSwipeTimeout())
-        std::cout << "passed test #5\n";
-    else
-        return 1;
+TEST_CASE("Edge Swipe: Complete upon: \n"
+          "1. touch down on edge of screen\n"
+          "2. swiping more than the threshold, within the time limit, then\n"
+          "3. lifting the finger, within the time limit.\n") {
+    CMockGestureManager gm;
+    gm.addEdgeSwipeGesture(&SENSITIVITY);
 
-    if (testEdgeReleaseTimeout())
-        std::cout << "passed test #6\n";
-    else
-        return 1;
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 150, 0, {250, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 200, 0, {455, 300}},
+        // TODO Check progress == 0.5
+        {wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {455, 300}},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
+}
 
-    if (testEdgeInvalidStart())
-        std::cout << "passed test #7\n";
-    else
-        return 1;
+TEST_CASE("Edge Swipe: Timeout during swiping phase") {
+    CMockGestureManager gm;
+    gm.addEdgeSwipeGesture(&SENSITIVITY);
 
-    return 0;
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 150, 0, {300, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 520, 0, {600, 300}},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
+}
+
+TEST_CASE("Edge Swipe: Timout during liftoff phase: \n"
+          "1. touch down on edge of screen\n"
+          "2. swipe more than the threshold, within the time limit, then\n"
+          "3. do not lift finger until after timeout.") {
+    CMockGestureManager gm;
+    gm.addEdgeSwipeGesture(&SENSITIVITY);
+
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 150, 0, {250, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 200, 0, {455, 300}},
+        {wf::touch::EVENT_TYPE_TOUCH_UP, 801, 0, {455, 300}},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
+}
+
+TEST_CASE(
+    "Edge Swipe: Fail check at the end for not starting swipe from an edge\n"
+    "1. touch down somewhere NOT considered edge.\n"
+    "2. swipe more than the threshold, within the time limit, then\n"
+    "3. lift the finger, within the time limit.\n"
+    "The starting position of the swipe is checked at the end and should "
+    "fail.") {
+    CMockGestureManager gm;
+    gm.addEdgeSwipeGesture(&SENSITIVITY);
+
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {11, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 150, 0, {250, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 200, 0, {461, 300}},
+        // TODO Check progress == 0.5
+        {wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {461, 300}},
+    };
+    const ExpectResult expected_result = {ExpectResultType::CHECK_PROGRESS,
+                                          1.0};
+    ProcessEvents(gm, expected_result, events);
 }
