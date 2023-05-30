@@ -39,7 +39,6 @@ class CGestures : public IGestureManager {
     bool m_bWorkspaceSwipeActive = false;
     wf::touch::point_t m_vGestureLastCenter;
 
-    void addDefaultGestures();
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
     void handleWorkspaceSwipe(const CompletedGesture& gev);
 };
