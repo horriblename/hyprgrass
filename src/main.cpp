@@ -114,6 +114,12 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     cfgStatus = cfgStatus && HyprlandAPI::addConfigValue(
                                  PHANDLE, "plugin:touch_gestures:sensitivity",
                                  SConfigValue{.floatValue = 1.0});
+    cfgStatus &= HyprlandAPI::addConfigValue(
+        PHANDLE, "plugin:touch_gestures:hold_delay_ms",
+        SConfigValue{.intValue = 400});
+    cfgStatus &= HyprlandAPI::addConfigValue(
+        PHANDLE, "plugin:touch_gestures:move_window_hold_fingers",
+        SConfigValue{.intValue = 3});
 
     if (!cfgStatus) {
         HyprlandAPI::addNotification(PHANDLE,
