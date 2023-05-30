@@ -15,17 +15,19 @@ constexpr static double SWIPE_INCORRECT_DRAG_TOLERANCE = 150;
 constexpr static double PINCH_INCORRECT_DRAG_TOLERANCE = 200;
 constexpr static double PINCH_THRESHOLD                = 1.5;
 
-// Hold params
-constexpr static double HOLD_INCORRECT_DRAG_TOLERANCE = 100;
-
 // General
 constexpr static double GESTURE_INITIAL_TOLERANCE = 40;
 constexpr static uint32_t GESTURE_BASE_DURATION   = 400;
 
+// Hold params
+constexpr static double HOLD_INCORRECT_DRAG_TOLERANCE =
+    GESTURE_INITIAL_TOLERANCE;
+
 enum eTouchGestureType {
     // Invalid Gesture
     GESTURE_TYPE_SWIPE,
-    GESTURE_TYPE_SWIPE_HOLD, // same as SWIPE but fingers were not lifted
+    GESTURE_TYPE_SWIPE_DRAG, // same as SWIPE but fingers were not lifted
+    GESTURE_TYPE_HOLD,
     GESTURE_TYPE_EDGE_SWIPE,
     // GESTURE_TYPE_PINCH,
 };
@@ -40,6 +42,8 @@ enum eTouchGestureDirection {
     // GESTURE_DIRECTION_IN = (1 << 4),
     // GESTURE_DIRECTION_OUT = (1 << 5),
 };
+
+using Millisecond = unsigned int;
 
 // can be one of @eTouchGestureDirection or a combination of them
 using gestureDirection = uint32_t;
@@ -65,18 +69,21 @@ struct SMonitorArea {
     double x, y, w, h;
 };
 
-// swipe and with multiple fingers and directions
-// TODO make threshold dynamic so we can adjust it at runtime
+// Implements a multi-finger swipe + hold gesture
 class CMultiAction : public wf::touch::gesture_action_t {
   public:
     //   threshold = base_threshold / sensitivity
     // if the threshold needs to be adjusted dynamically, the sensitivity
     // pointer is used
-    CMultiAction(double base_threshold, const float* sensitivity)
-        : base_threshold(base_threshold), sensitivity(sensitivity){};
+    // FIXME use ref instead of pointer?
+    CMultiAction(double base_threshold, const float* sensitivity,
+                 const Millisecond* hold_delay)
+        : base_threshold(base_threshold), sensitivity(sensitivity),
+          hold_delay(hold_delay){};
 
     double base_threshold;
     const float* sensitivity;
+    const Millisecond* hold_delay;
 
     gestureDirection target_direction = 0;
     int finger_count                  = 0;
@@ -116,9 +123,13 @@ class IGestureManager {
     bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
-    void addMultiFingerDragGesture(const float* sensitivity);
-    void addMultiFingerSwipeThenLiftoffGesture(const float* sensitivity);
-    void addEdgeSwipeGesture(const float* sensitivity);
+    void addMultiFingerDragGesture(const float* sensitivity,
+                                   const Millisecond* hold_delay);
+    void addMultiFingerSwipeThenLiftoffGesture(const float* sensitivity,
+                                               const Millisecond* hold_delay);
+    void addEdgeSwipeGesture(const float* sensitivity,
+                             const Millisecond* hold_delay);
+    // void addHoldGesture(const float* delay);
 
   protected:
     std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;

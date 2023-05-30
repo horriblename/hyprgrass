@@ -96,7 +96,7 @@ using wf::touch::point_t;
 
 TEST_CASE("Swipe Drag: Complete upon moving more than the threshold") {
     CMockGestureManager gm;
-    gm.addMultiFingerDragGesture(&SENSITIVITY);
+    gm.addMultiFingerDragGesture(&SENSITIVITY, &HOLD_DELAY);
     const std::vector<TouchEvent> events{
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
@@ -114,7 +114,7 @@ TEST_CASE("Swipe Drag: Complete upon moving more than the threshold") {
 TEST_CASE("Swipe Drag: Cancel 2 finger swipe due to moving too much before "
           "adding new finger, but not enough to trigger 2 finger swipe first") {
     CMockGestureManager gm;
-    gm.addMultiFingerDragGesture(&SENSITIVITY);
+    gm.addMultiFingerDragGesture(&SENSITIVITY, &HOLD_DELAY);
     const std::vector<TouchEvent> events{
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
@@ -128,7 +128,7 @@ TEST_CASE("Swipe Drag: Cancel 2 finger swipe due to moving too much before "
 TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
           "finger") {
     CMockGestureManager gm;
-    gm.addMultiFingerSwipeThenLiftoffGesture(&SENSITIVITY);
+    gm.addMultiFingerSwipeThenLiftoffGesture(&SENSITIVITY, &HOLD_DELAY);
 
     const std::vector<TouchEvent> events{
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
@@ -149,7 +149,7 @@ TEST_CASE("Edge Swipe: Complete upon: \n"
           "2. swiping more than the threshold, within the time limit, then\n"
           "3. lifting the finger, within the time limit.\n") {
     CMockGestureManager gm;
-    gm.addEdgeSwipeGesture(&SENSITIVITY);
+    gm.addEdgeSwipeGesture(&SENSITIVITY, &HOLD_DELAY);
 
     const std::vector<TouchEvent> events{
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
@@ -163,7 +163,7 @@ TEST_CASE("Edge Swipe: Complete upon: \n"
 
 TEST_CASE("Edge Swipe: Timeout during swiping phase") {
     CMockGestureManager gm;
-    gm.addEdgeSwipeGesture(&SENSITIVITY);
+    gm.addEdgeSwipeGesture(&SENSITIVITY, &HOLD_DELAY);
 
     const std::vector<TouchEvent> events{
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
@@ -178,7 +178,7 @@ TEST_CASE("Edge Swipe: Timout during liftoff phase: \n"
           "2. swipe more than the threshold, within the time limit, then\n"
           "3. do not lift finger until after timeout.") {
     CMockGestureManager gm;
-    gm.addEdgeSwipeGesture(&SENSITIVITY);
+    gm.addEdgeSwipeGesture(&SENSITIVITY, &HOLD_DELAY);
 
     const std::vector<TouchEvent> events{
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
@@ -197,7 +197,7 @@ TEST_CASE(
     "The starting position of the swipe is checked at the end and should "
     "fail.") {
     CMockGestureManager gm;
-    gm.addEdgeSwipeGesture(&SENSITIVITY);
+    gm.addEdgeSwipeGesture(&SENSITIVITY, &HOLD_DELAY);
 
     const std::vector<TouchEvent> events{
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {11, 300}},

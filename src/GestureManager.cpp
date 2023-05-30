@@ -14,10 +14,15 @@ CGestures::CGestures() {
         &HyprlandAPI::getConfigValue(PHANDLE,
                                      "plugin:touch_gestures:sensitivity")
              ->floatValue;
+    static auto* const PHOLDDELAY =
+        &HyprlandAPI::getConfigValue(PHANDLE,
+                                     "plugin:touch_gestures:hold_delay_ms")
+             ->intValue;
 
-    addMultiFingerDragGesture(PSENSITIVITY);
-    addMultiFingerSwipeThenLiftoffGesture(PSENSITIVITY);
-    addEdgeSwipeGesture(PSENSITIVITY);
+    addMultiFingerDragGesture(PSENSITIVITY, (Millisecond*)PHOLDDELAY);
+    addMultiFingerSwipeThenLiftoffGesture(PSENSITIVITY,
+                                          (Millisecond*)PHOLDDELAY);
+    addEdgeSwipeGesture(PSENSITIVITY, (Millisecond*)PHOLDDELAY);
 }
 
 void CGestures::emulateSwipeBegin(uint32_t time) {

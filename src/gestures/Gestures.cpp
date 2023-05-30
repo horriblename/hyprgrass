@@ -1,5 +1,6 @@
 #include "Gestures.hpp"
 #include <glm/glm.hpp>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -33,9 +34,11 @@ std::string CompletedGesture::to_string() const {
         case GESTURE_TYPE_SWIPE:
             bind += "swipe";
             break;
-        case GESTURE_TYPE_SWIPE_HOLD:
+        case GESTURE_TYPE_SWIPE_DRAG:
             // this gesture is only used internally for workspace swipe
             return "workspace_swipe";
+        case GESTURE_TYPE_HOLD:
+            return "hold";
     }
 
     bind += ":";
@@ -60,7 +63,7 @@ std::string CompletedGesture::to_string() const {
 wf::touch::action_status_t
 CMultiAction::update_state(const wf::touch::gesture_state_t& state,
                            const wf::touch::gesture_event_t& event) {
-    if (event.time - this->start_time > this->get_duration()) {
+    if (event.time - this->start_time > *this->hold_delay) {
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
 
@@ -189,9 +192,10 @@ void IGestureManager::addTouchGesture(
 
 // Multi fingered swipe, triggers once whenever you swipe more than the
 // threshold.
-void IGestureManager::addMultiFingerDragGesture(const float* sensitivity) {
+void IGestureManager::addMultiFingerDragGesture(const float* sensitivity,
+                                                const Millisecond* hold_delay) {
     auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE,
-                                                sensitivity);
+                                                sensitivity, hold_delay);
     // swipe->set_duration(GESTURE_BASE_DURATION * *sensitivity);
 
     // FIXME memory management be damned
@@ -201,7 +205,7 @@ void IGestureManager::addMultiFingerDragGesture(const float* sensitivity) {
     swipe_actions.emplace_back(std::move(swipe));
 
     auto ack = [swipe_ptr, this]() {
-        const auto gesture = CompletedGesture{GESTURE_TYPE_SWIPE_HOLD,
+        const auto gesture = CompletedGesture{GESTURE_TYPE_SWIPE_DRAG,
                                               swipe_ptr->target_direction,
                                               swipe_ptr->finger_count};
         this->handleGesture(gesture);
@@ -216,9 +220,9 @@ void IGestureManager::addMultiFingerDragGesture(const float* sensitivity) {
 //
 // TODO rename
 void IGestureManager::addMultiFingerSwipeThenLiftoffGesture(
-    const float* sensitivity) {
+    const float* sensitivity, const Millisecond* hold_delay) {
     auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE,
-                                                sensitivity);
+                                                sensitivity, hold_delay);
     swipe->set_duration(GESTURE_BASE_DURATION);
     auto swipe_liftoff = std::make_unique<LiftoffAction>();
     swipe_liftoff->set_duration(GESTURE_BASE_DURATION / 2);
@@ -242,9 +246,11 @@ void IGestureManager::addMultiFingerSwipeThenLiftoffGesture(
         std::move(swipe_actions), ack, cancel));
 }
 
-void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {
+void IGestureManager::addEdgeSwipeGesture(const float* sensitivity,
+                                          const Millisecond* hold_delay) {
     // Edge swipe needs a quick release to be considered edge swipe
-    auto edge = std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE, sensitivity);
+    auto edge = std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE, sensitivity,
+                                               hold_delay);
     auto edge_release = std::make_unique<wf::touch::touch_action_t>(1, false);
 
     // FIXME make this adjustable:
