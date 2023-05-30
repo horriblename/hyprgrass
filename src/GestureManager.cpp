@@ -17,7 +17,7 @@ void setWindowTransparency(CWindow* window, float transparency) {
     auto r = SWindowRule{.szRule = "opacity " + std::to_string(transparency)};
     g_pInputManager->m_sTouchData.touchFocusWindow->applyDynamicRule(r);
 
-    // g_pHyprRenderer->damageWindow(window);
+    g_pHyprRenderer->damageWindow(window);
 }
 
 CGestures::CGestures() {
