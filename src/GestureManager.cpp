@@ -120,12 +120,12 @@ void CGestures::closeWindowSwipeEnd() {
     // TODO vertical/horizontal anim
     const auto delta = -m_sGestureState.get_center().delta().y;
 
+    setWindowTransparency(g_pInputManager->m_sTouchData.touchFocusWindow, 1.0);
+    this->active_swipe_drag = SwipeDragGestureType::NONE;
+
     if (delta > min_accept) {
         g_pKeybindManager->m_mDispatchers["killactive"];
     }
-
-    setWindowTransparency(g_pInputManager->m_sTouchData.touchFocusWindow, 1.0);
-    this->active_swipe_drag = SwipeDragGestureType::NONE;
 }
 
 std::vector<int> CGestures::getAllFingerIds() {
@@ -240,7 +240,7 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
             emulateSwipeEnd(ev->time_msec, false);
             break;
         case SwipeDragGestureType::WINDOW_CLOSE:
-            // TODO
+            closeWindowSwipeEnd();
             break;
     }
 
@@ -294,7 +294,7 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
             emulateSwipeEnd(ev->time_msec, false);
             break;
         case SwipeDragGestureType::WINDOW_CLOSE:
-            // TODO
+            closeWindowSwipeEnd();
             break;
     }
 
@@ -327,7 +327,7 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
             emulateSwipeUpdate(ev->time_msec);
             break;
         case SwipeDragGestureType::WINDOW_CLOSE:
-            // TODO
+            closeWindowSwipeUpdate();
             break;
     }
 
