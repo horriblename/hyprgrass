@@ -6,7 +6,8 @@
 #include <variant>
 #include <vector>
 
-constexpr float SENSITIVITY = 1.0;
+constexpr float SENSITIVITY      = 1.0;
+constexpr Millisecond HOLD_DELAY = 400;
 
 void Tester::testFindSwipeEdges() {
     using Test = struct {
