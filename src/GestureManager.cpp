@@ -122,7 +122,9 @@ void CGestures::handleGesture(const CompletedGesture& gev) {
     }
 
     auto bind = gev.to_string();
+#ifdef DEBUG
     Debug::log(LOG, "[hyprgrass] Gesture Triggered: %s", bind.c_str());
+#endif // DEBUG
 
     for (const auto& k : g_pKeybindManager->m_lKeybinds) {
         if (k.key != bind)
@@ -188,6 +190,8 @@ void CGestures::handleHoldGesture(const CompletedGesture& gev) {
     if (gev.type != GESTURE_TYPE_HOLD || gev.finger_count != *PHOLDFINGERS) {
         return;
     }
+
+    Debug::log(LOG, "hold gesture detected: calling moveWindowBegin()");
 
     this->moveWindowBegin();
     m_bDispatcherFound = true;
