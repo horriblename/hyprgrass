@@ -7,8 +7,13 @@
 #include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <memory>
+#include <wayland-server-core.h>
 
-// constexpr double SWIPE_THRESHOLD = 30.;
+int holdGestureCallback(void* _data) {
+    Debug::log(INFO, "hold timer: callback triggered");
+
+    return g_pGestureManager->holdTimerCallback();
+}
 
 CGestures::CGestures() {
     static auto* const PSENSITIVITY =
@@ -19,6 +24,9 @@ CGestures::CGestures() {
         &HyprlandAPI::getConfigValue(PHANDLE,
                                      "plugin:touch_gestures:hold_delay_ms")
              ->intValue;
+
+    this->m_pHoldTimer = wl_event_loop_add_timer(g_pCompositor->m_sWLEventLoop,
+                                                 holdGestureCallback, nullptr);
 
     addMultiFingerDragGesture(PSENSITIVITY, (Millisecond*)PHOLDDELAY);
     addMultiFingerSwipeThenLiftoffGesture(PSENSITIVITY,
@@ -109,6 +117,30 @@ std::vector<int> CGestures::getAllFingerIds() {
     }
 
     return ret;
+}
+
+int CGestures::holdTimerCallback() {
+    static auto* const PHOLDDELAY =
+        &HyprlandAPI::getConfigValue(PHANDLE,
+                                     "plugin:touch_gestures:hold_delay_ms")
+             ->intValue;
+
+    if (!this->m_sGestureState.fingers.contains(0))
+        return 0;
+
+    auto pos = this->m_sGestureState.fingers[0].current;
+
+    const wf::touch::gesture_event_t event = {
+        .type = wf::touch::EVENT_TYPE_MOTION,
+        // is there a way to get current time from timer event?
+        .time   = this->last_touch_down_time + (uint32_t)*PHOLDDELAY + 1,
+        .finger = 0,
+        .pos    = pos,
+    };
+
+    this->m_vGestures[0]->update_state(event);
+
+    return 0;
 }
 
 void CGestures::handleGesture(const CompletedGesture& gev) {
@@ -249,6 +281,8 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
 
     IGestureManager::onTouchDown(gesture_event);
 
+    this->reset_hold_event_timer();
+
     if (m_bDispatcherFound) {
         m_bDispatcherFound = false;
         return true;
@@ -289,6 +323,8 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
                 break;
         }
     }
+
+    wl_event_source_timer_update(this->m_pHoldTimer, 0);
 
     if (m_bDispatcherFound) {
         m_bDispatcherFound = false;
@@ -338,4 +374,13 @@ wf::touch::point_t CGestures::wlrTouchEventPositionAsPixels(double x,
                                                             double y) const {
     auto area = getMonitorArea();
     return wf::touch::point_t{x * area.w + area.x, y * area.h + area.y};
+}
+
+void CGestures::reset_hold_event_timer() {
+    static auto* const PHOLDDELAY =
+        &HyprlandAPI::getConfigValue(PHANDLE,
+                                     "plugin:touch_gestures:hold_delay_ms")
+             ->intValue;
+
+    wl_event_source_timer_update(this->m_pHoldTimer, *PHOLDDELAY);
 }

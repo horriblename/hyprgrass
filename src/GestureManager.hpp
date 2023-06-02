@@ -31,6 +31,8 @@ class CGestures : public IGestureManager {
 
     std::vector<int> getAllFingerIds();
 
+    int holdTimerCallback();
+
   protected:
     SMonitorArea getMonitorArea() const override;
     void handleGesture(const CompletedGesture& gev) override;
@@ -40,6 +42,8 @@ class CGestures : public IGestureManager {
     bool m_bDispatcherFound = false;
     CMonitor* m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
+    wl_event_source* m_pHoldTimer;
+    uint32_t last_touch_down_time = 0;
 
     // for workspace swipe
     std::optional<DragActionType> active_drag_action = std::nullopt;
@@ -52,6 +56,8 @@ class CGestures : public IGestureManager {
     void moveWindowBegin();
     void moveWindowEnd();
     void moveWindowUpdate();
+
+    void reset_hold_event_timer();
 };
 
 inline std::unique_ptr<CGestures> g_pGestureManager;
