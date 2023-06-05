@@ -5,23 +5,25 @@
   hyprland,
   wf-touch,
   doctest,
-}:
-stdenv.mkDerivation {
-  pname = "hyprland-touch-gestures";
-  version = "0.1";
-  src = ./..;
+}: let
+  pluginInfo = builtins.fromTOML (builtins.readFile ../hyprload.toml);
+in
+  stdenv.mkDerivation {
+    pname = "hyprland-touch-gestures";
+    version = pluginInfo.touch-gestures.version;
+    src = ./..;
 
-  nativeBuildInputs = hyprland.nativeBuildInputs ++ [cmake];
+    nativeBuildInputs = hyprland.nativeBuildInputs ++ [cmake];
 
-  buildInputs = [hyprland wf-touch doctest] ++ hyprland.buildInputs;
+    buildInputs = [hyprland wf-touch doctest] ++ hyprland.buildInputs;
 
-  # CMake is just used for finding doctest.
-  dontUseCmakeConfigure = true;
+    # CMake is just used for finding doctest.
+    dontUseCmakeConfigure = true;
 
-  meta = with lib; {
-    homepage = "https://github.com/horriblename/hyprland-touch-gestures";
-    description = "Hyprland plugin for touch gestures";
-    license = licenses.bsd3;
-    platforms = platforms.linux;
-  };
-}
+    meta = with lib; {
+      homepage = "https://github.com/horriblename/hyprland-touch-gestures";
+      description = "Hyprland plugin for touch gestures";
+      license = licenses.bsd3;
+      platforms = platforms.linux;
+    };
+  }
