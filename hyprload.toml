@@ -1,6 +1,6 @@
 [touch-gestures]
 description = "Touch gestures"
-version = "0.0.1"
+version = "0.3.0"
 author = "horriblename"
 
 [touch-gestures.build]
