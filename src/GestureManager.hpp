@@ -42,6 +42,8 @@ class CGestures : public IGestureManager {
     void addDefaultGestures();
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
     void handleWorkspaceSwipe(const CompletedGesture& gev);
+
+    std::string fingers_to_json() const;
 };
 
 inline std::unique_ptr<CGestures> g_pGestureManager;

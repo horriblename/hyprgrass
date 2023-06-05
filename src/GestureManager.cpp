@@ -6,6 +6,8 @@
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <memory>
+#include <string>
+#include <wayfire/touch/touch.hpp>
 
 // constexpr double SWIPE_THRESHOLD = 30.;
 
@@ -150,6 +152,26 @@ void CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
     }
 }
 
+std::string CGestures::fingers_to_json() const {
+    std::string ret = "[";
+    for (int i = 0; i < 4; i++) {
+        wf::touch::point_t pos = {-1, -1};
+        if (this->m_sGestureState.fingers.contains(i)) {
+            pos = this->m_sGestureState.fingers.at(i).current;
+        }
+        ret += "{\"x\": " + std::to_string((int)pos.x) +
+               "}, {\"y\": " + std::to_string((int)pos.y) + "}" +
+               (i == 3 ? "" : ",");
+    }
+
+    return ret + "]";
+}
+
+void eww_update(std::string new_val) {
+    g_pKeybindManager->m_mDispatchers["exec"](
+        "eww -c /tmp/eww/config update 'gCoords=" + new_val + "'");
+}
+
 // @return whether or not to inhibit further actions
 bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
@@ -195,6 +217,8 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
 
     IGestureManager::onTouchDown(gesture_event);
 
+    eww_update(this->fingers_to_json());
+
     if (m_bDispatcherFound) {
         m_bDispatcherFound = false;
         return true;
@@ -224,6 +248,8 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
 
     IGestureManager::onTouchUp(gesture_event);
 
+    eww_update(this->fingers_to_json());
+
     // TODO where do I put this, before or after IGestureManager::onTouchUp...?
     if (m_bWorkspaceSwipeActive) {
         emulateSwipeEnd(ev->time_msec, false);
@@ -250,6 +276,8 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
     };
 
     IGestureManager::onTouchMove(gesture_event);
+
+    eww_update(this->fingers_to_json());
 
     // TODO where do I put this
     if (m_bWorkspaceSwipeActive) {
