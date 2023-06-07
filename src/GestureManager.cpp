@@ -53,8 +53,8 @@ void CGestures::emulateSwipeUpdate(uint32_t time) {
              ->intValue;
 
     if (!g_pInputManager->m_sActiveSwipe.pMonitor) {
-        Debug::log(
-            ERR, "ignoring touch gesture motion event due to missing monitor!");
+        Debug::log(ERR, "[touch-gesture] ignoring touch gesture motion event "
+                        "due to missing monitor!");
         return;
     }
 
@@ -212,6 +212,12 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
     try {
         lift_off_pos = m_sGestureState.fingers.at(ev->touch_id).current;
     } catch (const std::out_of_range&) {
+        Debug::log(WARN,
+                   "[touch-gesture] Can't find touch id of %d during touch up",
+                   ev->touch_id);
+        if (this->m_bWorkspaceSwipeActive) {
+            this->emulateSwipeEnd(ev->time_msec, false);
+        }
         return false;
     }
 
