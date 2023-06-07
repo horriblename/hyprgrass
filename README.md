@@ -11,6 +11,10 @@ Please open an issue if you encounter any bugs. Feel free to make a feature requ
 - [x] Swipe From Edge
 - [x] Multi-finger swipe
 
+## Installation
+
+The easiest way to use this plugin is by using [Hyprload](https://github.com/Duckonaut/hyprload) (a plugin manager).
+
 ## Configuration
 
 ### Configuration options:
