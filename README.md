@@ -27,7 +27,10 @@ Steps (this is untested, let me know if it doesn't work):
    ```
 3. run this command:
    ```bash
+   # installs touch-gesture plugin
    hyprctl dispatch hyprload install
+   
+   # load plugin
    hyprctl dispatch hyprload load
    ```
 
