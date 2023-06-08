@@ -15,6 +15,22 @@ Please open an issue if you encounter any bugs. Feel free to make a feature requ
 
 The easiest way to use this plugin is by using [Hyprload](https://github.com/Duckonaut/hyprload) (a plugin manager).
 
+Steps (this is untested, let me know if it doesn't work):
+
+1. install hyprload by following the instructions
+   [here](https://github.com/Duckonaut/hyprload#Installing)
+2. put this in `~/.config/hypr/hyprload.toml`:
+   ```
+   plugins = [
+       "horriblename/hyprland-touch-gestures",
+   ]
+   ```
+3. run this command:
+   ```bash
+   hyprctl dispatch hyprload install
+   hyprctl dispatch hyprload load
+   ```
+
 ## Configuration
 
 ### Configuration options:
