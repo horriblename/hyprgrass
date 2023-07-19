@@ -1,6 +1,6 @@
 # Hyprland Touch Gestures
 
-⚠️ WARNING there may still be some bugs that leaves your touch device unusable until you unload the plugin/close hyprland (#27), keep a keyboard in hand the first time you try this.
+⚠️ WARNING there may still be some bugs that leaves your touch device unusable until you unload the plugin/close hyprland (https://github.com/horriblename/hyprgrass/issues/27), keep a keyboard in hand the first time you try this.
 
 this plugin is very alpha, expect breaking changes!  
 
