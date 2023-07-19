@@ -9,8 +9,8 @@
   pluginInfo = builtins.fromTOML (builtins.readFile ../hyprload.toml);
 in
   stdenv.mkDerivation {
-    pname = "hyprland-touch-gestures";
-    version = pluginInfo.touch-gestures.version;
+    pname = "hyprgrass";
+    version = pluginInfo.hyprgrass.version;
     src = ./..;
 
     nativeBuildInputs = hyprland.nativeBuildInputs ++ [cmake];
@@ -21,7 +21,7 @@ in
     dontUseCmakeConfigure = true;
 
     meta = with lib; {
-      homepage = "https://github.com/horriblename/hyprland-touch-gestures";
+      homepage = "https://github.com/horriblename/hyprgrass";
       description = "Hyprland plugin for touch gestures";
       license = licenses.bsd3;
       platforms = platforms.linux;

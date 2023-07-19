@@ -1,6 +1,6 @@
 subdir('gestures')
 
-shared_module('touch-gestures',
+shared_module('hyprgrass',
   'main.cpp',
   'GestureManager.cpp',
   cpp_args: ['-DWLR_USE_UNSTABLE'],
