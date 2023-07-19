@@ -23,7 +23,7 @@
 
     devShells = withPkgsFor (system: pkgs: {
       default = pkgs.mkShell {
-        name = "hyprland-touch-gesture-shell";
+        name = "hyprgrass-shell";
         nativeBuildInputs = with pkgs; [cpplint];
         buildInputs = [hyprland.packages.${system}.hyprland];
         inputsFrom = [

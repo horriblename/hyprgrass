@@ -13,26 +13,43 @@ Please open an issue if you encounter any bugs. Feel free to make a feature requ
 
 ## Installation
 
+### Dependencies
+
+Asides from hyprland (duh), this plugin has the following dependencies:
+
+```
+glm
+```
+
+### Install via hyprload
+
 The easiest way to use this plugin is by using [Hyprload](https://github.com/Duckonaut/hyprload) (a plugin manager).
 
-Steps (this is untested, let me know if it doesn't work):
-
-1. install hyprload by following the instructions
+1. install all [dependencies](#dependencies)
+2. install hyprload by following the instructions
    [here](https://github.com/Duckonaut/hyprload#Installing)
-2. put this in `~/.config/hypr/hyprload.toml`:
+3. put this in `~/.config/hypr/hyprload.toml`:
    ```
    plugins = [
-       "horriblename/hyprland-touch-gestures",
+       "horriblename/hyprgrass",
    ]
    ```
-3. run this command:
+4. run this command:
+
    ```bash
-   # installs touch-gesture plugin
+   # installs plugins
    hyprctl dispatch hyprload install
-   
-   # load plugin
+
+   # load plugins
    hyprctl dispatch hyprload load
    ```
+
+### Manual Compilation
+
+```bash
+meson setup build
+ninja -C build
+```
 
 ## Configuration
 

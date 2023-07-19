@@ -91,7 +91,7 @@ void CGestures::handleGesture(const CompletedGesture& gev) {
     }
 
     auto bind = gev.to_string();
-    Debug::log(LOG, "[touch-gesture] Gesture Triggered: %s", bind.c_str());
+    Debug::log(LOG, "[hyprgrass] Gesture Triggered: %s", bind.c_str());
 
     for (const auto& k : g_pKeybindManager->m_lKeybinds) {
         if (k.key != bind)
@@ -110,8 +110,7 @@ void CGestures::handleGesture(const CompletedGesture& gev) {
         }
 
         // call the dispatcher
-        Debug::log(LOG, "[touch-gesture] calling dispatcher (%s)",
-                   bind.c_str());
+        Debug::log(LOG, "[hyprgrass] calling dispatcher (%s)", bind.c_str());
 
         if (k.handler == "pass")
             continue;

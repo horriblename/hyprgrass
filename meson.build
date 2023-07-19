@@ -1,4 +1,4 @@
-project('hyprland-touch-gestures', 'cpp', 'c',
+project('hyprgrass', 'cpp', 'c',
   version: '0.0.1',
   default_options: ['buildtype=release'],
 )
