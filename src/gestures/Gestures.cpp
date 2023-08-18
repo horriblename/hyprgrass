@@ -106,6 +106,26 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state,
 }
 
 wf::touch::action_status_t
+MultiFingerDownAction::update_state(const wf::touch::gesture_state_t& state,
+                                    const wf::touch::gesture_event_t& event) {
+    if (event.time - this->start_time > this->get_duration()) {
+        // TODO
+        return wf::touch::ACTION_STATUS_CANCELLED;
+    }
+
+    if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP) {
+        return wf::touch::ACTION_STATUS_CANCELLED;
+    }
+
+    if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN &&
+        state.fingers.size() >= 3) {
+        return wf::touch::ACTION_STATUS_COMPLETED;
+    }
+
+    return wf::touch::ACTION_STATUS_RUNNING;
+}
+
+wf::touch::action_status_t
 LiftoffAction::update_state(const wf::touch::gesture_state_t& state,
                             const wf::touch::gesture_event_t& event) {
 
@@ -122,6 +142,13 @@ LiftoffAction::update_state(const wf::touch::gesture_state_t& state,
     }
 
     return wf::touch::ACTION_STATUS_RUNNING;
+}
+
+wf::touch::action_status_t
+CallbackAction::update_state(const wf::touch::gesture_state_t& state,
+                             const wf::touch::gesture_event_t& event) {
+    this->callback();
+    return wf::touch::ACTION_STATUS_COMPLETED;
 }
 
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {

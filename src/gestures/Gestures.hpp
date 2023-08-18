@@ -90,12 +90,32 @@ class CMultiAction : public wf::touch::gesture_action_t {
     };
 };
 
+// Completes upon receiving enough touch down events within a short duration
+class MultiFingerDownAction : public wf::touch::gesture_action_t {
+    wf::touch::action_status_t
+    update_state(const wf::touch::gesture_state_t& state,
+                 const wf::touch::gesture_event_t& event) override;
+};
+
 // Completes upon receiving a touch up event and cancels upon receiving a touch
 // down event.
 class LiftoffAction : public wf::touch::gesture_action_t {
     wf::touch::action_status_t
     update_state(const wf::touch::gesture_state_t& state,
                  const wf::touch::gesture_event_t& event) override;
+};
+
+// This action is used to call a function in between other actions
+class CallbackAction : public wf::touch::gesture_action_t {
+  public:
+    CallbackAction(std::function<void()> callback) : callback(callback) {}
+
+    wf::touch::action_status_t
+    update_state(const wf::touch::gesture_state_t& state,
+                 const wf::touch::gesture_event_t& event) override;
+
+  private:
+    const std::function<void()> callback;
 };
 
 /*
