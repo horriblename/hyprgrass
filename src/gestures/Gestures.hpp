@@ -66,7 +66,6 @@ struct SMonitorArea {
 };
 
 // swipe and with multiple fingers and directions
-// TODO make threshold dynamic so we can adjust it at runtime
 class CMultiAction : public wf::touch::gesture_action_t {
   public:
     //   threshold = base_threshold / sensitivity
