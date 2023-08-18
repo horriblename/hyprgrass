@@ -16,3 +16,5 @@ void CMockGestureManager::handleCancelledGesture() {
     std::cout << "gesture cancelled\n";
     this->cancelled = true;
 }
+
+void CMockGestureManager::sendCancelEventsToWindows() {}

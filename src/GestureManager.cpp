@@ -149,10 +149,29 @@ void CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
     }
 }
 
+void CGestures::sendCancelEventsToWindows() {
+    for (const auto& surface : this->touchedSurfaces) {
+        if (!surface)
+            continue;
+        wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, surface);
+    }
+    touchedSurfaces.clear();
+}
+
 // @return whether or not to inhibit further actions
 bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
+
+    if (!eventForwardingInhibited() &&
+        g_pInputManager->m_sTouchData.touchFocusSurface) {
+        const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
+        const auto TOUCHED =
+            std::find(touchedSurfaces.begin(), touchedSurfaces.end(), surface);
+        if (TOUCHED == touchedSurfaces.end()) {
+            touchedSurfaces.push_back(surface);
+        }
+    }
 
     m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(
         ev->touch->output_name ? ev->touch->output_name : "");

@@ -31,6 +31,7 @@ class CGestures : public IGestureManager {
     void handleCancelledGesture() override{};
 
   private:
+    std::vector<wlr_surface*> touchedSurfaces;
     bool m_bDispatcherFound = false;
     CMonitor* m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
@@ -42,6 +43,8 @@ class CGestures : public IGestureManager {
     void addDefaultGestures();
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
     void handleWorkspaceSwipe(const CompletedGesture& gev);
+
+    void sendCancelEventsToWindows() override;
 };
 
 inline std::unique_ptr<CGestures> g_pGestureManager;

@@ -137,7 +137,14 @@ class IGestureManager {
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
     void addMultiFingerDragGesture(const float* sensitivity);
     void addMultiFingerSwipeThenLiftoffGesture(const float* sensitivity);
+    void addMultiFingerGesture(const float* sensitivity);
     void addEdgeSwipeGesture(const float* sensitivity);
+
+    // indicates whether events should be blocked from forwarding to client
+    // windows/surfaces
+    bool eventForwardingInhibited() {
+        return inhibitTouchEvents;
+    };
 
   protected:
     std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
@@ -149,5 +156,12 @@ class IGestureManager {
     virtual void handleCancelledGesture()                   = 0;
 
   private:
+    bool inhibitTouchEvents;
+
+    // this function is called when needed to send "cancel touch" events to
+    // client windows/surfaces
+    virtual void sendCancelEventsToWindows() = 0;
+
     void updateGestures(const wf::touch::gesture_event_t&);
+    void cancelTouchEventsOnAllWindows();
 };

@@ -94,6 +94,22 @@ void ProcessEvents(CMockGestureManager& gm, ExpectResult expect,
 using TouchEvent = wf::touch::gesture_event_t;
 using wf::touch::point_t;
 
+TEST_CASE("Multifinger: block touch events to client surfaces when more than a "
+          "certain number of fingers touch down.") {
+    CMockGestureManager gm;
+    gm.addMultiFingerGesture(&SENSITIVITY);
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 120, 1, {500, 300}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 140, 2, {550, 290}},
+    };
+    ProcessEvents(
+        gm, {.type = ExpectResultType::CHECK_PROGRESS, .progress = 1.0 / 4.0},
+        events);
+
+    CHECK(gm.eventForwardingInhibited());
+}
+
 TEST_CASE("Swipe Drag: Complete upon moving more than the threshold") {
     CMockGestureManager gm;
     gm.addMultiFingerDragGesture(&SENSITIVITY);

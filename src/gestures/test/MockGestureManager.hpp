@@ -44,5 +44,6 @@ class CMockGestureManager : public IGestureManager {
     }
 
   private:
+    void sendCancelEventsToWindows() override;
     friend Tester;
 };
