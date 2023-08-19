@@ -10,13 +10,16 @@
 class CGestures : public IGestureManager {
   public:
     CGestures();
-    // @return whether a gesture was triggered after this event
+    // @return whether this touch event should be blocked from forwarding to the
+    // client window/surface
     bool onTouchDown(wlr_touch_down_event*);
 
-    // @return whether a gesture was triggered after this event
+    // @return whether this touch event should be blocked from forwarding to the
+    // client window/surface
     bool onTouchUp(wlr_touch_up_event*);
 
-    // @return whether a gesture was triggered after this event
+    // @return whether this touch event should be blocked from forwarding to the
+    // client window/surface
     bool onTouchMove(wlr_touch_motion_event*);
 
   protected:

@@ -138,8 +138,16 @@ class CallbackAction : public wf::touch::gesture_action_t {
 class IGestureManager {
   public:
     virtual ~IGestureManager() {}
+    // @return whether this touch event should be blocked from forwarding to the
+    // client window/surface
     bool onTouchDown(const wf::touch::gesture_event_t&);
+
+    // @return whether this touch event should be blocked from forwarding to the
+    // client window/surface
     bool onTouchUp(const wf::touch::gesture_event_t&);
+
+    // @return whether this touch event should be blocked from forwarding to the
+    // client window/surface
     bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);

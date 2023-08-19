@@ -278,6 +278,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
         std::move(swipe_actions), ack, cancel));
 }
 
+// TODO: fix duration, do not depend on sensitivity
 void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {
     // Edge swipe needs a quick release to be considered edge swipe
     auto edge = std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE, sensitivity);
