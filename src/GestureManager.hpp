@@ -39,7 +39,7 @@ class CGestures : public IGestureManager {
     void emulateSwipeUpdate(uint32_t time);
 
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
-    void handleWorkspaceSwipe(const CompletedGesture& gev);
+    bool handleWorkspaceSwipe(const CompletedGesture& gev);
 
     void sendCancelEventsToWindows() override;
 };

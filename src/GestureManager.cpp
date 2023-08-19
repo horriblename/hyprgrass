@@ -73,8 +73,7 @@ void CGestures::emulateSwipeUpdate(uint32_t time) {
 
 bool CGestures::handleGesture(const CompletedGesture& gev) {
     if (gev.type == GESTURE_TYPE_SWIPE_HOLD) {
-        this->handleWorkspaceSwipe(gev);
-        return true;
+        return this->handleWorkspaceSwipe(gev);
     }
     if (gev.type == GESTURE_TYPE_SWIPE && dragGestureIsActive()) {
         this->emulateSwipeEnd(0, false);
@@ -121,7 +120,7 @@ void CGestures::handleCancelledGesture() {
     this->emulateSwipeEnd(0, false);
 }
 
-void CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
+bool CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
     static auto* const PWORKSPACEFINGERS =
         &HyprlandAPI::getConfigValue(
              PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
@@ -145,8 +144,11 @@ void CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
             // FIXME time arg of @emulateSwipeBegin should probably be assigned
             // something useful (though its not really used later)
             this->emulateSwipeBegin(0);
+            return true;
         }
     }
+
+    return false;
 }
 
 void CGestures::sendCancelEventsToWindows() {
