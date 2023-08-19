@@ -210,10 +210,6 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     const auto& geometry = m_pLastTouchedMonitor->vecSize;
     m_sMonitorArea       = {position.x, position.y, geometry.x, geometry.y};
 
-    if (m_bWorkspaceSwipeActive) {
-        emulateSwipeEnd(ev->time_msec, false);
-    }
-
     // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
     // represent "how many percent of screen" whereas
     // @wf::touch::gesture_event_t uses PIXELS as unit
@@ -252,11 +248,6 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
     };
 
     IGestureManager::onTouchUp(gesture_event);
-
-    // TODO where do I put this, before or after IGestureManager::onTouchUp...?
-    if (m_bWorkspaceSwipeActive) {
-        emulateSwipeEnd(ev->time_msec, false);
-    }
 
     return this->eventForwardingInhibited();
 }
