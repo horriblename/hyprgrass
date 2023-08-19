@@ -84,13 +84,18 @@ std::vector<int> CGestures::getAllFingerIds() {
     return ret;
 }
 
-void CGestures::handleGesture(const CompletedGesture& gev) {
+bool CGestures::handleGesture(const CompletedGesture& gev) {
     if (gev.type == GESTURE_TYPE_SWIPE_HOLD) {
         this->handleWorkspaceSwipe(gev);
-        return;
+        return true;
+    }
+    if (gev.type == GESTURE_TYPE_SWIPE && dragGestureIsActive()) {
+        this->emulateSwipeEnd(0, false);
+        return true;
     }
 
-    auto bind = gev.to_string();
+    const auto bind = gev.to_string();
+    bool found      = false;
     Debug::log(LOG, "[hyprgrass] Gesture Triggered: %s", bind.c_str());
 
     for (const auto& k : g_pKeybindManager->m_lKeybinds) {
@@ -117,7 +122,17 @@ void CGestures::handleGesture(const CompletedGesture& gev) {
 
         DISPATCHER->second(k.arg);
         m_bDispatcherFound = true;
+        found              = true;
     }
+    return found;
+}
+
+void CGestures::handleCancelledGesture() {
+    if (!this->dragGestureIsActive()) {
+        return;
+    }
+
+    this->emulateSwipeEnd(0, false);
 }
 
 void CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {

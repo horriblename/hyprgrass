@@ -27,8 +27,8 @@ class CGestures : public IGestureManager {
 
   protected:
     SMonitorArea getMonitorArea() const override;
-    void handleGesture(const CompletedGesture& gev) override;
-    void handleCancelledGesture() override{};
+    bool handleGesture(const CompletedGesture& gev) override;
+    void handleCancelledGesture() override;
 
   private:
     std::vector<wlr_surface*> touchedSurfaces;

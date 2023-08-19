@@ -159,6 +159,7 @@ void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
         if (m_sGestureState.fingers.size() == 1 &&
             ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
             this->inhibitTouchEvents = false;
+            this->dragGestureActive  = false;
             gesture->reset(ev.time);
         }
 
@@ -309,7 +310,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
     auto swipe_begin = std::make_unique<CallbackAction>(swipe_begin_callback);
 
     auto swipe_liftoff = std::make_unique<LiftoffAction>();
-    swipe_liftoff->set_duration(GESTURE_BASE_DURATION / 2);
+    // swipe_liftoff->set_duration(GESTURE_BASE_DURATION / 2);
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
     swipe_actions.emplace_back(std::move(touch_inhibit));

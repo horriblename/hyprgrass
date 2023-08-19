@@ -142,7 +142,7 @@ class IGestureManager {
 
     // indicates whether events should be blocked from forwarding to client
     // windows/surfaces
-    bool eventForwardingInhibited() {
+    bool eventForwardingInhibited() const {
         return inhibitTouchEvents;
     };
 
@@ -151,12 +151,20 @@ class IGestureManager {
     wf::touch::gesture_state_t m_sGestureState;
 
     gestureDirection find_swipe_edges(wf::touch::point_t point);
-    virtual SMonitorArea getMonitorArea() const             = 0;
-    virtual void handleGesture(const CompletedGesture& gev) = 0;
-    virtual void handleCancelledGesture()                   = 0;
+    bool dragGestureIsActive() const {
+        return dragGestureActive;
+    }
+    virtual SMonitorArea getMonitorArea() const = 0;
+
+    // handles gesture events and returns whether or not the event is used.
+    virtual bool handleGesture(const CompletedGesture& gev) = 0;
+
+    // this function should cleanup after drag gestures
+    virtual void handleCancelledGesture() = 0;
 
   private:
     bool inhibitTouchEvents;
+    bool dragGestureActive;
 
     // this function is called when needed to send "cancel touch" events to
     // client windows/surfaces
