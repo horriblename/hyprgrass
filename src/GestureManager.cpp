@@ -71,16 +71,6 @@ void CGestures::emulateSwipeUpdate(uint32_t time) {
     m_vGestureLastCenter = currentCenter;
 }
 
-// TODO: remove
-std::vector<int> CGestures::getAllFingerIds() {
-    auto ret = std::vector<int>();
-    for (const auto& finger : m_sGestureState.fingers) {
-        ret.emplace_back(finger.first);
-    }
-
-    return ret;
-}
-
 bool CGestures::handleGesture(const CompletedGesture& gev) {
     if (gev.type == GESTURE_TYPE_SWIPE_HOLD) {
         this->handleWorkspaceSwipe(gev);

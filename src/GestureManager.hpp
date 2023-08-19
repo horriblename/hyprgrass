@@ -7,7 +7,7 @@
 #include <vector>
 #include <wayfire/touch/touch.hpp>
 
-class CGestures final : public IGestureManager {
+class CGestures : public IGestureManager {
   public:
     CGestures();
     // @return whether a gesture was triggered after this event
@@ -22,8 +22,6 @@ class CGestures final : public IGestureManager {
     void emulateSwipeBegin(uint32_t time);
     void emulateSwipeEnd(uint32_t time, bool cancelled);
     void emulateSwipeUpdate(uint32_t time);
-
-    std::vector<int> getAllFingerIds();
 
   protected:
     SMonitorArea getMonitorArea() const override;
