@@ -15,8 +15,7 @@ CGestures::CGestures() {
                                      "plugin:touch_gestures:sensitivity")
              ->floatValue;
 
-    addMultiFingerDragGesture(PSENSITIVITY);
-    addMultiFingerSwipeThenLiftoffGesture(PSENSITIVITY);
+    addMultiFingerGesture(PSENSITIVITY);
     addEdgeSwipeGesture(PSENSITIVITY);
 }
 
