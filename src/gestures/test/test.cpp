@@ -1,3 +1,4 @@
+#include <iostream>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
@@ -96,6 +97,7 @@ using wf::touch::point_t;
 
 TEST_CASE("Multifinger: block touch events to client surfaces when more than a "
           "certain number of fingers touch down.") {
+    std::cout << "  ==== stdout:" << std::endl;
     CMockGestureManager gm;
     gm.addMultiFingerGesture(&SENSITIVITY);
     const std::vector<TouchEvent> events{
@@ -111,6 +113,7 @@ TEST_CASE("Multifinger: block touch events to client surfaces when more than a "
 }
 
 TEST_CASE("Swipe Drag: Complete upon moving more than the threshold") {
+    std::cout << "  ==== stdout:" << std::endl;
     CMockGestureManager gm;
     gm.addMultiFingerDragGesture(&SENSITIVITY);
     const std::vector<TouchEvent> events{
@@ -129,6 +132,7 @@ TEST_CASE("Swipe Drag: Complete upon moving more than the threshold") {
 
 TEST_CASE("Swipe Drag: Cancel 2 finger swipe due to moving too much before "
           "adding new finger, but not enough to trigger 2 finger swipe first") {
+    std::cout << "  ==== stdout:" << std::endl;
     CMockGestureManager gm;
     gm.addMultiFingerDragGesture(&SENSITIVITY);
     const std::vector<TouchEvent> events{
@@ -143,6 +147,7 @@ TEST_CASE("Swipe Drag: Cancel 2 finger swipe due to moving too much before "
 
 TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
           "finger") {
+    std::cout << "  ==== stdout:" << std::endl;
     CMockGestureManager gm;
     gm.addMultiFingerSwipeThenLiftoffGesture(&SENSITIVITY);
 
@@ -164,6 +169,7 @@ TEST_CASE("Edge Swipe: Complete upon: \n"
           "1. touch down on edge of screen\n"
           "2. swiping more than the threshold, within the time limit, then\n"
           "3. lifting the finger, within the time limit.\n") {
+    std::cout << "  ==== stdout:" << std::endl;
     CMockGestureManager gm;
     gm.addEdgeSwipeGesture(&SENSITIVITY);
 
@@ -178,6 +184,7 @@ TEST_CASE("Edge Swipe: Complete upon: \n"
 }
 
 TEST_CASE("Edge Swipe: Timeout during swiping phase") {
+    std::cout << "  ==== stdout:" << std::endl;
     CMockGestureManager gm;
     gm.addEdgeSwipeGesture(&SENSITIVITY);
 
@@ -193,6 +200,7 @@ TEST_CASE("Edge Swipe: Timout during liftoff phase: \n"
           "1. touch down on edge of screen\n"
           "2. swipe more than the threshold, within the time limit, then\n"
           "3. do not lift finger until after timeout.") {
+    std::cout << "  ==== stdout:" << std::endl;
     CMockGestureManager gm;
     gm.addEdgeSwipeGesture(&SENSITIVITY);
 
@@ -212,6 +220,7 @@ TEST_CASE(
     "3. lift the finger, within the time limit.\n"
     "The starting position of the swipe is checked at the end and should "
     "fail.") {
+    std::cout << "  ==== stdout:" << std::endl;
     CMockGestureManager gm;
     gm.addEdgeSwipeGesture(&SENSITIVITY);
 
