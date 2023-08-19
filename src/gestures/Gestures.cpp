@@ -302,10 +302,14 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
     auto swipe_ptr = swipe.get();
 
     auto swipe_begin_callback = [swipe_ptr, this]() {
+        if (this->dragGestureActive) {
+            return;
+        }
         const auto gesture = CompletedGesture{GESTURE_TYPE_SWIPE_HOLD,
                                               swipe_ptr->target_direction,
                                               swipe_ptr->finger_count};
-        this->handleGesture(gesture);
+
+        this->dragGestureActive = this->handleGesture(gesture);
     };
     auto swipe_begin = std::make_unique<CallbackAction>(swipe_begin_callback);
 
