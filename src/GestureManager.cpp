@@ -33,16 +33,13 @@ void CGestures::emulateSwipeBegin(uint32_t time) {
                                       .fingers   = (uint32_t)*PSWIPEFINGERS};
     g_pInputManager->onSwipeBegin(&emulated_swipe);
 
-    m_vGestureLastCenter    = m_sGestureState.get_center().origin;
-    m_bWorkspaceSwipeActive = true;
+    m_vGestureLastCenter = m_sGestureState.get_center().origin;
 }
 
 void CGestures::emulateSwipeEnd(uint32_t time, bool cancelled) {
     auto emulated_swipe = wlr_pointer_swipe_end_event{
         .pointer = nullptr, .time_msec = time, .cancelled = cancelled};
     g_pInputManager->onSwipeEnd(&emulated_swipe);
-
-    m_bWorkspaceSwipeActive = false;
 }
 
 void CGestures::emulateSwipeUpdate(uint32_t time) {
@@ -74,6 +71,7 @@ void CGestures::emulateSwipeUpdate(uint32_t time) {
     m_vGestureLastCenter = currentCenter;
 }
 
+// TODO: remove
 std::vector<int> CGestures::getAllFingerIds() {
     auto ret = std::vector<int>();
     for (const auto& finger : m_sGestureState.fingers) {
@@ -221,9 +219,7 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
         .pos    = pos,
     };
 
-    IGestureManager::onTouchDown(gesture_event);
-
-    return this->eventForwardingInhibited();
+    return IGestureManager::onTouchDown(gesture_event);
 }
 
 bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
@@ -246,9 +242,7 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
         .pos    = {lift_off_pos.x, lift_off_pos.y},
     };
 
-    IGestureManager::onTouchUp(gesture_event);
-
-    return this->eventForwardingInhibited();
+    return IGestureManager::onTouchUp(gesture_event);
 }
 
 bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
@@ -264,14 +258,7 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
         .pos    = pos,
     };
 
-    IGestureManager::onTouchMove(gesture_event);
-
-    // TODO where do I put this
-    if (m_bWorkspaceSwipeActive) {
-        emulateSwipeUpdate(ev->time_msec);
-    }
-
-    return this->eventForwardingInhibited();
+    return IGestureManager::onTouchMove(gesture_event);
 }
 
 SMonitorArea CGestures::getMonitorArea() const {

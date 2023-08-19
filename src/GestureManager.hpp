@@ -7,7 +7,7 @@
 #include <vector>
 #include <wayfire/touch/touch.hpp>
 
-class CGestures : public IGestureManager {
+class CGestures final : public IGestureManager {
   public:
     CGestures();
     // @return whether a gesture was triggered after this event
@@ -37,7 +37,6 @@ class CGestures : public IGestureManager {
     SMonitorArea m_sMonitorArea;
 
     // for workspace swipe
-    bool m_bWorkspaceSwipeActive = false;
     wf::touch::point_t m_vGestureLastCenter;
 
     void addDefaultGestures();

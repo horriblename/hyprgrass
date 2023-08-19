@@ -183,19 +183,19 @@ bool IGestureManager::onTouchDown(const wf::touch::gesture_event_t& ev) {
     // gestures
     m_sGestureState.update(ev);
     updateGestures(ev);
-    return false;
+    return this->eventForwardingInhibited();
 }
 
 bool IGestureManager::onTouchUp(const wf::touch::gesture_event_t& ev) {
     updateGestures(ev);
     m_sGestureState.update(ev);
-    return false;
+    return this->eventForwardingInhibited();
 }
 
 bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
     updateGestures(ev);
     m_sGestureState.update(ev);
-    return false;
+    return this->eventForwardingInhibited();
 }
 
 gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
