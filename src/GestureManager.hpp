@@ -19,10 +19,6 @@ class CGestures : public IGestureManager {
     // @return whether a gesture was triggered after this event
     bool onTouchMove(wlr_touch_motion_event*);
 
-    void emulateSwipeBegin(uint32_t time);
-    void emulateSwipeEnd(uint32_t time, bool cancelled);
-    void emulateSwipeUpdate(uint32_t time);
-
   protected:
     SMonitorArea getMonitorArea() const override;
     bool handleGesture(const CompletedGesture& gev) override;
@@ -36,6 +32,9 @@ class CGestures : public IGestureManager {
 
     // for workspace swipe
     wf::touch::point_t m_vGestureLastCenter;
+    void emulateSwipeBegin(uint32_t time);
+    void emulateSwipeEnd(uint32_t time, bool cancelled);
+    void emulateSwipeUpdate(uint32_t time);
 
     void addDefaultGestures();
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
