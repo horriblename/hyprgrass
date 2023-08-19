@@ -91,10 +91,18 @@ class CMultiAction : public wf::touch::gesture_action_t {
 };
 
 // Completes upon receiving enough touch down events within a short duration
+// upon completion, calls the given callback
 class MultiFingerDownAction : public wf::touch::gesture_action_t {
+  public:
+    MultiFingerDownAction(std::function<void()> callback)
+        : callback(callback) {}
+
     wf::touch::action_status_t
     update_state(const wf::touch::gesture_state_t& state,
                  const wf::touch::gesture_event_t& event) override;
+
+  private:
+    std::function<void()> callback;
 };
 
 // Completes upon receiving a touch up event and cancels upon receiving a touch
