@@ -13,7 +13,7 @@ class Tester {
     static void testFindSwipeEdges();
 };
 
-class CMockGestureManager : public IGestureManager {
+class CMockGestureManager final : public IGestureManager {
   public:
     CMockGestureManager();
     ~CMockGestureManager() {}

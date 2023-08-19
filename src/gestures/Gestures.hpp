@@ -148,6 +148,10 @@ class IGestureManager {
     void addMultiFingerGesture(const float* sensitivity);
     void addEdgeSwipeGesture(const float* sensitivity);
 
+    bool dragGestureIsActive() const {
+        return dragGestureActive;
+    }
+
     // indicates whether events should be blocked from forwarding to client
     // windows/surfaces
     bool eventForwardingInhibited() const {
@@ -159,9 +163,6 @@ class IGestureManager {
     wf::touch::gesture_state_t m_sGestureState;
 
     gestureDirection find_swipe_edges(wf::touch::point_t point);
-    bool dragGestureIsActive() const {
-        return dragGestureActive;
-    }
     virtual SMonitorArea getMonitorArea() const = 0;
 
     // handles gesture events and returns whether or not the event is used.

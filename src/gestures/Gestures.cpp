@@ -170,8 +170,8 @@ void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
 
 void IGestureManager::cancelTouchEventsOnAllWindows() {
     if (!this->inhibitTouchEvents) {
-        this->sendCancelEventsToWindows();
         this->inhibitTouchEvents = true;
+        this->sendCancelEventsToWindows();
     }
 }
 
