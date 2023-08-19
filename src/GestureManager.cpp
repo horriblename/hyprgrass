@@ -213,11 +213,7 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
 
     IGestureManager::onTouchDown(gesture_event);
 
-    if (m_bDispatcherFound) {
-        m_bDispatcherFound = false;
-        return true;
-    }
-    return false;
+    return this->eventForwardingInhibited();
 }
 
 bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
@@ -247,11 +243,7 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
         emulateSwipeEnd(ev->time_msec, false);
     }
 
-    if (m_bDispatcherFound) {
-        m_bDispatcherFound = false;
-        return true;
-    }
-    return false;
+    return this->eventForwardingInhibited();
 }
 
 bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
@@ -274,11 +266,7 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
         emulateSwipeUpdate(ev->time_msec);
     }
 
-    if (m_bDispatcherFound) {
-        m_bDispatcherFound = false;
-        return true;
-    }
-    return false;
+    return this->eventForwardingInhibited();
 }
 
 SMonitorArea CGestures::getMonitorArea() const {
