@@ -108,8 +108,7 @@ bool CGestures::handleGesture(const CompletedGesture& gev) {
             continue;
 
         DISPATCHER->second(k.arg);
-        m_bDispatcherFound = true;
-        found              = true;
+        found = true;
     }
     return found;
 }
@@ -146,7 +145,6 @@ void CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
             // FIXME time arg of @emulateSwipeBegin should probably be assigned
             // something useful (though its not really used later)
             this->emulateSwipeBegin(0);
-            m_bDispatcherFound = true;
         }
     }
 }

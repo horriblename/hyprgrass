@@ -29,7 +29,6 @@ class CGestures : public IGestureManager {
 
   private:
     std::vector<wlr_surface*> touchedSurfaces;
-    bool m_bDispatcherFound = false;
     CMonitor* m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
 
