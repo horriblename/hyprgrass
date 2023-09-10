@@ -1,6 +1,6 @@
 {
   lib,
-  stdenv,
+  gcc13Stdenv,
   cmake,
   hyprland,
   wf-touch,
@@ -8,7 +8,7 @@
 }: let
   pluginInfo = builtins.fromTOML (builtins.readFile ../hyprload.toml);
 in
-  stdenv.mkDerivation {
+  gcc13Stdenv.mkDerivation {
     pname = "hyprgrass";
     version = pluginInfo.hyprgrass.version;
     src = ./..;
