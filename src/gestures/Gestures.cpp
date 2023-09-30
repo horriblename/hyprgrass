@@ -55,11 +55,6 @@ std::string CompletedGesture::to_string() const {
     return bind;
 }
 
-// The action is completed if any number of fingers is moved enough.
-//
-// This action should be followed by another that completes upon lifting a
-// finger to achieve a gesture that completes after a multi-finger swipe is done
-// and lifted.
 wf::touch::action_status_t
 CMultiAction::update_state(const wf::touch::gesture_state_t& state,
                            const wf::touch::gesture_event_t& event) {
@@ -249,9 +244,9 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
         if (this->dragGestureActive) {
             return;
         }
-        const auto gesture = CompletedGesture{GESTURE_TYPE_SWIPE_HOLD,
-                                              swipe_ptr->target_direction,
-                                              swipe_ptr->finger_count};
+        const auto gesture = CompletedGesture{
+            GESTURE_TYPE_SWIPE_HOLD, swipe_ptr->target_direction,
+            static_cast<int>(this->m_sGestureState.fingers.size())};
 
         this->dragGestureActive = this->handleGesture(gesture);
     };
@@ -267,9 +262,9 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
     swipe_actions.emplace_back(std::move(swipe_liftoff));
 
     auto ack = [swipe_ptr, this]() {
-        const auto gesture =
-            CompletedGesture{GESTURE_TYPE_SWIPE, swipe_ptr->target_direction,
-                             swipe_ptr->finger_count};
+        const auto gesture = CompletedGesture{
+            GESTURE_TYPE_SWIPE, swipe_ptr->target_direction,
+            static_cast<int>(this->m_sGestureState.fingers.size())};
         this->handleGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };

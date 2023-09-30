@@ -80,6 +80,11 @@ class CMultiAction : public wf::touch::gesture_action_t {
     gestureDirection target_direction = 0;
     int finger_count                  = 0;
 
+    // The action is completed if any number of fingers is moved enough.
+    //
+    // This action should be followed by another that completes upon lifting a
+    // finger to achieve a gesture that completes after a multi-finger swipe is
+    // done and lifted.
     wf::touch::action_status_t
     update_state(const wf::touch::gesture_state_t& state,
                  const wf::touch::gesture_event_t& event) override;
