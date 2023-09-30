@@ -167,6 +167,7 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
 
     if (!eventForwardingInhibited() &&
         g_pInputManager->m_sTouchData.touchFocusSurface) {
+        // remember which surfaces were touched, to later send cancel events
         const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
         const auto TOUCHED =
             std::find(touchedSurfaces.begin(), touchedSurfaces.end(), surface);
