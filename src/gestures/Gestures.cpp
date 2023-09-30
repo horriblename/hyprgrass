@@ -151,11 +151,14 @@ CallbackAction::update_state(const wf::touch::gesture_state_t& state,
 }
 
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
+    if (m_sGestureState.fingers.size() == 1 &&
+        ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
+        this->inhibitTouchEvents = false;
+        this->dragGestureActive  = false;
+    }
     for (auto& gesture : m_vGestures) {
         if (m_sGestureState.fingers.size() == 1 &&
             ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
-            this->inhibitTouchEvents = false;
-            this->dragGestureActive  = false;
             gesture->reset(ev.time);
         }
 
