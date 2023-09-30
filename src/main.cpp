@@ -24,12 +24,6 @@ void hkOnTouchDown(void* thisptr, wlr_touch_down_event* e) {
     }
 
     (*(origTouchDown)g_pTouchDownHook->m_pOriginal)(thisptr, e);
-
-    // TODO: add surface to list of touched surface
-
-    // if (g_pInputManager->m_sTouchData.touchFocusSurface) {
-    //     markSurfaceAsTouched(*g_pInputManager->m_sTouchData.touchFocusSurface);
-    // }
 }
 
 void hkOnTouchUp(void* thisptr, wlr_touch_up_event* e) {
