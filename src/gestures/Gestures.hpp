@@ -22,6 +22,8 @@ constexpr static double HOLD_INCORRECT_DRAG_TOLERANCE = 100;
 constexpr static double GESTURE_INITIAL_TOLERANCE = 40;
 constexpr static uint32_t GESTURE_BASE_DURATION   = 400;
 
+constexpr static uint32_t SEND_CANCEL_EVENT_FINGER_COUNT = 3;
+
 enum eTouchGestureType {
     // Invalid Gesture
     GESTURE_TYPE_SWIPE,

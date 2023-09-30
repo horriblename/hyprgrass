@@ -115,7 +115,7 @@ MultiFingerDownAction::update_state(const wf::touch::gesture_state_t& state,
     }
 
     if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN &&
-        state.fingers.size() >= 3) {
+        state.fingers.size() >= SEND_CANCEL_EVENT_FINGER_COUNT) {
         this->callback();
         return wf::touch::ACTION_STATUS_COMPLETED;
     }
