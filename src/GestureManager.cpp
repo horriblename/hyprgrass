@@ -239,6 +239,10 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
+    if (this->dragGestureIsActive()) {
+        this->emulateSwipeUpdate(0);
+    }
+
     auto pos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
 
     const wf::touch::gesture_event_t gesture_event = {
