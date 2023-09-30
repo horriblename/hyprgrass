@@ -229,7 +229,8 @@ void IGestureManager::addTouchGesture(
 //   down within a short duration.
 // * emits a GESTURE_TYPE_SWIPE_HOLD event once fingers moved over the
 //   threshold.
-// * emits a GESTURE_TYPE_SWIPE event once a finger is lifted
+// * further emits a GESTURE_TYPE_SWIPE event if the SWIPE_HOLD event was
+//   emitted and once a finger is lifted
 void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
     auto multi_down = std::make_unique<MultiFingerDownAction>(
         [this]() { this->cancelTouchEventsOnAllWindows(); });

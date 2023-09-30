@@ -98,8 +98,11 @@ class CMultiAction : public wf::touch::gesture_action_t {
 };
 
 // Completes upon receiving enough touch down events within a short duration
-// upon completion, calls the given callback
 class MultiFingerDownAction : public wf::touch::gesture_action_t {
+// upon completion, calls the given callback.
+//
+// Intended to be used to send cancel events to surfaces when enough fingers
+// touch down in quick succession.
   public:
     MultiFingerDownAction(std::function<void()> callback)
         : callback(callback) {}
@@ -121,6 +124,8 @@ class LiftoffAction : public wf::touch::gesture_action_t {
 };
 
 // This action is used to call a function in between other actions
+//
+// NOTE: this action consumes any event, and must consume an event to work.
 class CallbackAction : public wf::touch::gesture_action_t {
   public:
     CallbackAction(std::function<void()> callback) : callback(callback) {}
