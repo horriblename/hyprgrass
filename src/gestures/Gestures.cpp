@@ -107,7 +107,6 @@ wf::touch::action_status_t
 MultiFingerDownAction::update_state(const wf::touch::gesture_state_t& state,
                                     const wf::touch::gesture_event_t& event) {
     if (event.time - this->start_time > this->get_duration()) {
-        // TODO
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
 
