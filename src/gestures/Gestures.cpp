@@ -225,7 +225,7 @@ void IGestureManager::addTouchGesture(
 }
 
 // Adds a Multi-fingered swipe:
-// * inhibits events to client windows/surfaces when more enough fingers touch
+// * inhibits events to client windows/surfaces when enough fingers touch
 //   down within a short duration.
 // * emits a GESTURE_TYPE_SWIPE_HOLD event once fingers moved over the
 //   threshold.
