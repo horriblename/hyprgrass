@@ -53,6 +53,35 @@ meson setup build
 ninja -C build
 ```
 
+### Install via nix
+
+flakes are highly recommended (because I don't know how to do anything without it)
+
+put this in your `flake.nix`
+
+```nix
+{
+   inputs = {
+      # ...
+      hyprland.url = "github:hyprwm/Hyprland";
+      hyprgrass = {
+         url = "github:horriblename/hyprgrass";
+         inputs.hyprland.follows = "hyprland"; # IMPORTANT
+      };
+   };
+}
+```
+
+then, inside your home-manager module:
+
+```nix
+wayland.windowManager.hyprland = {
+   plugins = [
+      inputs.hyprgrass.packages.${pkgs.system}.default
+   ];
+};
+```
+
 ## Configuration
 
 ### Configuration options:
