@@ -13,7 +13,7 @@ class Tester {
     static void testFindSwipeEdges();
 };
 
-class CMockGestureManager : public IGestureManager {
+class CMockGestureManager final : public IGestureManager {
   public:
     CMockGestureManager();
     ~CMockGestureManager() {}
@@ -34,7 +34,7 @@ class CMockGestureManager : public IGestureManager {
         return {pos->x, pos->y};
     }
 
-    void handleGesture(const CompletedGesture& gev) override;
+    bool handleGesture(const CompletedGesture& gev) override;
     void handleCancelledGesture() override;
 
   protected:
@@ -44,5 +44,6 @@ class CMockGestureManager : public IGestureManager {
     }
 
   private:
+    void sendCancelEventsToWindows() override;
     friend Tester;
 };

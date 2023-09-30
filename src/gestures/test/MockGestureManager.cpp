@@ -7,12 +7,17 @@
 
 CMockGestureManager::CMockGestureManager() {}
 
-void CMockGestureManager::handleGesture(const CompletedGesture& gev) {
+bool CMockGestureManager::handleGesture(const CompletedGesture& gev) {
     std::cout << "gesture triggered: " << gev.to_string() << "\n";
-    this->triggered = true;
+    this->triggered = this->triggered || gev.type != GESTURE_TYPE_SWIPE_HOLD;
+    return true;
 }
 
 void CMockGestureManager::handleCancelledGesture() {
     std::cout << "gesture cancelled\n";
     this->cancelled = true;
+}
+
+void CMockGestureManager::sendCancelEventsToWindows() {
+    std::cout << "cancel touch on windows\n";
 }

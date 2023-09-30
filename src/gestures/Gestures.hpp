@@ -22,6 +22,8 @@ constexpr static double HOLD_INCORRECT_DRAG_TOLERANCE = 100;
 constexpr static double GESTURE_INITIAL_TOLERANCE = 40;
 constexpr static uint32_t GESTURE_BASE_DURATION   = 400;
 
+constexpr static uint32_t SEND_CANCEL_EVENT_FINGER_COUNT = 3;
+
 enum eTouchGestureType {
     // Invalid Gesture
     GESTURE_TYPE_SWIPE,
@@ -66,7 +68,6 @@ struct SMonitorArea {
 };
 
 // swipe and with multiple fingers and directions
-// TODO make threshold dynamic so we can adjust it at runtime
 class CMultiAction : public wf::touch::gesture_action_t {
   public:
     //   threshold = base_threshold / sensitivity
@@ -81,6 +82,11 @@ class CMultiAction : public wf::touch::gesture_action_t {
     gestureDirection target_direction = 0;
     int finger_count                  = 0;
 
+    // The action is completed if any number of fingers is moved enough.
+    //
+    // This action should be followed by another that completes upon lifting a
+    // finger to achieve a gesture that completes after a multi-finger swipe is
+    // done and lifted.
     wf::touch::action_status_t
     update_state(const wf::touch::gesture_state_t& state,
                  const wf::touch::gesture_event_t& event) override;
@@ -91,12 +97,45 @@ class CMultiAction : public wf::touch::gesture_action_t {
     };
 };
 
+// Completes upon receiving enough touch down events within a short duration
+class MultiFingerDownAction : public wf::touch::gesture_action_t {
+// upon completion, calls the given callback.
+//
+// Intended to be used to send cancel events to surfaces when enough fingers
+// touch down in quick succession.
+  public:
+    MultiFingerDownAction(std::function<void()> callback)
+        : callback(callback) {}
+
+    wf::touch::action_status_t
+    update_state(const wf::touch::gesture_state_t& state,
+                 const wf::touch::gesture_event_t& event) override;
+
+  private:
+    std::function<void()> callback;
+};
+
 // Completes upon receiving a touch up event and cancels upon receiving a touch
 // down event.
 class LiftoffAction : public wf::touch::gesture_action_t {
     wf::touch::action_status_t
     update_state(const wf::touch::gesture_state_t& state,
                  const wf::touch::gesture_event_t& event) override;
+};
+
+// This action is used to call a function in between other actions
+//
+// NOTE: this action consumes any event, and must consume an event to work.
+class CallbackAction : public wf::touch::gesture_action_t {
+  public:
+    CallbackAction(std::function<void()> callback) : callback(callback) {}
+
+    wf::touch::action_status_t
+    update_state(const wf::touch::gesture_state_t& state,
+                 const wf::touch::gesture_event_t& event) override;
+
+  private:
+    const std::function<void()> callback;
 };
 
 /*
@@ -111,24 +150,53 @@ class LiftoffAction : public wf::touch::gesture_action_t {
 class IGestureManager {
   public:
     virtual ~IGestureManager() {}
+    // @return whether this touch event should be blocked from forwarding to the
+    // client window/surface
     bool onTouchDown(const wf::touch::gesture_event_t&);
+
+    // @return whether this touch event should be blocked from forwarding to the
+    // client window/surface
     bool onTouchUp(const wf::touch::gesture_event_t&);
+
+    // @return whether this touch event should be blocked from forwarding to the
+    // client window/surface
     bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
-    void addMultiFingerDragGesture(const float* sensitivity);
-    void addMultiFingerSwipeThenLiftoffGesture(const float* sensitivity);
+    void addMultiFingerGesture(const float* sensitivity);
     void addEdgeSwipeGesture(const float* sensitivity);
+
+    bool dragGestureIsActive() const {
+        return dragGestureActive;
+    }
+
+    // indicates whether events should be blocked from forwarding to client
+    // windows/surfaces
+    bool eventForwardingInhibited() const {
+        return inhibitTouchEvents;
+    };
 
   protected:
     std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
     wf::touch::gesture_state_t m_sGestureState;
 
     gestureDirection find_swipe_edges(wf::touch::point_t point);
-    virtual SMonitorArea getMonitorArea() const             = 0;
-    virtual void handleGesture(const CompletedGesture& gev) = 0;
-    virtual void handleCancelledGesture()                   = 0;
+    virtual SMonitorArea getMonitorArea() const = 0;
+
+    // handles gesture events and returns whether or not the event is used.
+    virtual bool handleGesture(const CompletedGesture& gev) = 0;
+
+    // this function should cleanup after drag gestures
+    virtual void handleCancelledGesture() = 0;
 
   private:
+    bool inhibitTouchEvents;
+    bool dragGestureActive;
+
+    // this function is called when needed to send "cancel touch" events to
+    // client windows/surfaces
+    virtual void sendCancelEventsToWindows() = 0;
+
     void updateGestures(const wf::touch::gesture_event_t&);
+    void cancelTouchEventsOnAllWindows();
 };
