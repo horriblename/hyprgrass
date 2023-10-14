@@ -82,7 +82,7 @@ bool CGestures::handleGesture(const CompletedGesture& gev) {
 
     const auto bind = gev.to_string();
     bool found      = false;
-    Debug::log(LOG, "[hyprgrass] Gesture Triggered: %s", bind.c_str());
+    Debug::log(LOG, "[hyprgrass] Gesture Triggered: {}", bind);
 
     for (const auto& k : g_pKeybindManager->m_lKeybinds) {
         if (k.key != bind)
@@ -95,13 +95,13 @@ bool CGestures::handleGesture(const CompletedGesture& gev) {
         if (DISPATCHER == g_pKeybindManager->m_mDispatchers.end()) {
             Debug::log(
                 ERR,
-                "Invalid handler in a keybind! (handler %s does not exist)",
-                k.handler.c_str());
+                "Invalid handler in a keybind! (handler {} does not exist)",
+                k.handler);
             continue;
         }
 
         // call the dispatcher
-        Debug::log(LOG, "[hyprgrass] calling dispatcher (%s)", bind.c_str());
+        Debug::log(LOG, "[hyprgrass] calling dispatcher ({})", bind);
 
         if (k.handler == "pass")
             continue;
