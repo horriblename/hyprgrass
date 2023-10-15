@@ -5,6 +5,7 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/version.h>
 #include <vector>
 
 const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f,
@@ -82,6 +83,20 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     g_pTouchMoveHook = HyprlandAPI::createFunctionHook(
         PHANDLE, (void*)&CInputManager::onTouchMove, (void*)&hkOnTouchMove);
 #pragma GCC diagnostic pop
+
+    const auto hlTargetVersion = GIT_COMMIT_HASH;
+    const auto hlVersion       = HyprlandAPI::getHyprlandVersion(PHANDLE);
+
+    if (hlVersion.hash != hlTargetVersion) {
+        HyprlandAPI::addNotification(
+            PHANDLE, "Mismatched Hyprland version! check logs for details",
+            CColor(0.8, 0.2, 0.2, 1.0), 5000);
+        Debug::log(ERR, "[hyprgrass] version mismatch!");
+        Debug::log(ERR, "[hyprgrass] | hyprgrass was built against: {}",
+                   hlTargetVersion);
+        Debug::log(ERR, "[hyprgrass] | actual hyprland version: {}",
+                   hlVersion.hash);
+    }
 
     g_pTouchDownHook->hook();
     g_pTouchUpHook->hook();
