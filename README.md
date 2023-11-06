@@ -92,6 +92,8 @@ plugin {
     # default sensitivity is probably too low on tablet screens,
     # I recommend turning it up to 4.0
     sensitivity = 1.0
+
+    # must be >= 3
     workspace_swipe_fingers = 3
   }
 }
@@ -123,9 +125,10 @@ where (skip to [examples](#examples) if this is confusing):
 
 - `gesture_name` is one of:
   1. `swipe:<finger_count>:<direction>`
+     - `finger_count` must be >= 3
      - `direction` is one of `l`, `r`, `u`, `d`, or `ld`, `rd`, `lu`, `ru` for diagonal directions.  
        (l, r, u, d stands for left, right, up, down)
-  2. `edge:<from_edge>:<direction>`
+  3. `edge:<from_edge>:<direction>`
      - `<from_edge>` is from which edge to start (l/r/u/d)
      - `<direction>` is in which direction to swipe (l/r/u/d/lu/ld/ru/rd)
 
