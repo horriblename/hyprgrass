@@ -1,5 +1,5 @@
 project('hyprgrass', 'cpp', 'c',
-  version: '0.0.1',
+  version: '0.0.4',
   default_options: ['buildtype=release'],
 )
 
