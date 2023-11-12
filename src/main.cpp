@@ -5,47 +5,34 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/version.h>
 #include <vector>
 
 const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f,
                               1.0f};
-inline CFunctionHook* g_pTouchDownHook = nullptr;
-inline CFunctionHook* g_pTouchUpHook   = nullptr;
-inline CFunctionHook* g_pTouchMoveHook = nullptr;
-typedef void (*origTouchDown)(void*, wlr_touch_down_event*);
-typedef void (*origTouchUp)(void*, wlr_touch_up_event*);
-typedef void (*origTouchMove)(void*, wlr_touch_motion_event*);
 
-void hkOnTouchDown(void* thisptr, wlr_touch_down_event* e) {
-    const auto BLOCK = g_pGestureManager->onTouchDown(e);
+void hkOnTouchDown(void* _, SCallbackInfo& cbinfo, std::any e) {
+    auto ev = std::any_cast<wlr_touch_down_event*>(e);
 
-    if (BLOCK) {
-        return;
-    }
-
-    (*(origTouchDown)g_pTouchDownHook->m_pOriginal)(thisptr, e);
+    cbinfo.cancelled = g_pGestureManager->onTouchDown(ev);
 }
 
-void hkOnTouchUp(void* thisptr, wlr_touch_up_event* e) {
-    const auto BLOCK = g_pGestureManager->onTouchUp(e);
+void hkOnTouchUp(void* _, SCallbackInfo& cbinfo, std::any e) {
+    auto ev = std::any_cast<wlr_touch_up_event*>(e);
 
-    if (BLOCK) {
-        return;
-    }
-
-    (*(origTouchUp)g_pTouchUpHook->m_pOriginal)(thisptr, e);
+    cbinfo.cancelled = g_pGestureManager->onTouchUp(ev);
 }
 
-void hkOnTouchMove(void* thisptr, wlr_touch_motion_event* e) {
-    const auto BLOCK = g_pGestureManager->onTouchMove(e);
+void hkOnTouchMove(void* _, SCallbackInfo& cbinfo, std::any e) {
+    auto ev = std::any_cast<wlr_touch_motion_event*>(e);
 
-    if (BLOCK) {
-        return;
-    }
-
-    (*(origTouchMove)g_pTouchMoveHook->m_pOriginal)(thisptr, e);
+    cbinfo.cancelled = g_pGestureManager->onTouchMove(ev);
 }
+
+HOOK_CALLBACK_FN gTouchDownCallback = hkOnTouchDown;
+HOOK_CALLBACK_FN gTouchUpCallback   = hkOnTouchUp;
+HOOK_CALLBACK_FN gTouchMoveCallback = hkOnTouchMove;
 
 // Do NOT change this function.
 APICALL EXPORT std::string PLUGIN_API_VERSION() {
@@ -74,16 +61,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     }
 #pragma GCC diagnostic pop
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpmf-conversions"
-    g_pTouchDownHook = HyprlandAPI::createFunctionHook(
-        PHANDLE, (void*)&CInputManager::onTouchDown, (void*)&hkOnTouchDown);
-    g_pTouchUpHook = HyprlandAPI::createFunctionHook(
-        PHANDLE, (void*)&CInputManager::onTouchUp, (void*)&hkOnTouchUp);
-    g_pTouchMoveHook = HyprlandAPI::createFunctionHook(
-        PHANDLE, (void*)&CInputManager::onTouchMove, (void*)&hkOnTouchMove);
-#pragma GCC diagnostic pop
-
     const auto hlTargetVersion = GIT_COMMIT_HASH;
     const auto hlVersion       = HyprlandAPI::getHyprlandVersion(PHANDLE);
 
@@ -98,9 +75,11 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
                    hlVersion.hash);
     }
 
-    g_pTouchDownHook->hook();
-    g_pTouchUpHook->hook();
-    g_pTouchMoveHook->hook();
+    HyprlandAPI::registerCallbackStatic(PHANDLE, "touchDown",
+                                        &gTouchDownCallback);
+    HyprlandAPI::registerCallbackStatic(PHANDLE, "touchUp", &gTouchUpCallback);
+    HyprlandAPI::registerCallbackStatic(PHANDLE, "touchMove",
+                                        &gTouchMoveCallback);
 
     HyprlandAPI::reloadConfig();
 
