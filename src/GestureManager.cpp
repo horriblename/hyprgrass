@@ -13,8 +13,8 @@ CGestures::CGestures() {
     static auto* const PSENSITIVITY =
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")->floatValue;
 
-    addMultiFingerGesture(PSENSITIVITY);
-    addEdgeSwipeGesture(PSENSITIVITY);
+    this->addMultiFingerGesture(PSENSITIVITY);
+    this->addEdgeSwipeGesture(PSENSITIVITY);
 }
 
 void CGestures::emulateSwipeBegin(uint32_t time) {
@@ -63,7 +63,7 @@ bool CGestures::handleGesture(const CompletedGesture& gev) {
     if (gev.type == GESTURE_TYPE_SWIPE_HOLD) {
         return this->handleWorkspaceSwipe(gev);
     }
-    if (gev.type == GESTURE_TYPE_SWIPE && dragGestureIsActive()) {
+    if (gev.type == GESTURE_TYPE_SWIPE && this->dragGestureIsActive()) {
         this->emulateSwipeEnd(0, false);
         return true;
     }
@@ -134,7 +134,7 @@ void CGestures::sendCancelEventsToWindows() {
             continue;
         wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, surface);
     }
-    touchedSurfaces.clear();
+    this->touchedSurfaces.clear();
 }
 
 // @return whether or not to inhibit further actions
@@ -163,7 +163,7 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
 
     const auto& position = m_pLastTouchedMonitor->vecPosition;
     const auto& geometry = m_pLastTouchedMonitor->vecSize;
-    m_sMonitorArea       = {position.x, position.y, geometry.x, geometry.y};
+    this->m_sMonitorArea = {position.x, position.y, geometry.x, geometry.y};
 
     // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
     // represent "how many percent of screen" whereas
@@ -188,7 +188,7 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
     // updating gestures
     wf::touch::point_t lift_off_pos;
     try {
-        lift_off_pos = m_sGestureState.fingers.at(ev->touch_id).current;
+        lift_off_pos = this->m_sGestureState.fingers.at(ev->touch_id).current;
     } catch (const std::out_of_range&) {
         return false;
     }
@@ -224,11 +224,11 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
 }
 
 SMonitorArea CGestures::getMonitorArea() const {
-    return m_sMonitorArea;
+    return this->m_sMonitorArea;
 }
 
 wf::touch::point_t CGestures::wlrTouchEventPositionAsPixels(double x, double y) const {
-    auto area = getMonitorArea();
+    auto area = this->getMonitorArea();
     // TODO do I need to add area.x and area.y respectively?
     return wf::touch::point_t{x * area.w, y * area.h};
 }

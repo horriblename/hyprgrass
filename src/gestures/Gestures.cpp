@@ -167,25 +167,25 @@ bool IGestureManager::onTouchDown(const wf::touch::gesture_event_t& ev) {
     // during touch down it must be updated before updating the gestures
     // in touch up and motion, it must be updated AFTER updating the
     // gestures
-    m_sGestureState.update(ev);
-    updateGestures(ev);
+    this->m_sGestureState.update(ev);
+    this->updateGestures(ev);
     return this->eventForwardingInhibited();
 }
 
 bool IGestureManager::onTouchUp(const wf::touch::gesture_event_t& ev) {
-    updateGestures(ev);
-    m_sGestureState.update(ev);
+    this->updateGestures(ev);
+    this->m_sGestureState.update(ev);
     return this->eventForwardingInhibited();
 }
 
 bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
-    updateGestures(ev);
-    m_sGestureState.update(ev);
+    this->updateGestures(ev);
+    this->m_sGestureState.update(ev);
     return this->eventForwardingInhibited();
 }
 
 gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
-    auto mon = getMonitorArea();
+    auto mon = this->getMonitorArea();
 
     gestureDirection edge_directions = 0;
 
@@ -209,7 +209,7 @@ gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
 }
 
 void IGestureManager::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture) {
-    m_vGestures.emplace_back(std::move(gesture));
+    this->m_vGestures.emplace_back(std::move(gesture));
 }
 
 // Adds a Multi-fingered swipe:
@@ -256,7 +256,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
 
-    addTouchGesture(std::make_unique<wf::touch::gesture_t>(std::move(swipe_actions), ack, cancel));
+    this->addTouchGesture(std::make_unique<wf::touch::gesture_t>(std::move(swipe_actions), ack, cancel));
 }
 
 // TODO: fix duration, do not depend on sensitivity
@@ -295,5 +295,5 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {
     auto cancel = [this]() { this->handleCancelledGesture(); };
 
     auto gesture = std::make_unique<wf::touch::gesture_t>(std::move(edge_swipe_actions), ack, cancel);
-    addTouchGesture(std::move(gesture));
+    this->addTouchGesture(std::move(gesture));
 }
