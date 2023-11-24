@@ -7,9 +7,9 @@
 #include <vector>
 #include <wayfire/touch/touch.hpp>
 
-class CGestures : public IGestureManager {
+class GestureManager : public IGestureManager {
   public:
-    CGestures();
+    GestureManager();
     // @return whether this touch event should be blocked from forwarding to the
     // client window/surface
     bool onTouchDown(wlr_touch_down_event*);
@@ -44,4 +44,4 @@ class CGestures : public IGestureManager {
     void sendCancelEventsToWindows() override;
 };
 
-inline std::unique_ptr<CGestures> g_pGestureManager;
+inline std::unique_ptr<GestureManager> g_pGestureManager;

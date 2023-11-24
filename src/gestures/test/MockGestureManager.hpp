@@ -39,8 +39,7 @@ class CMockGestureManager final : public IGestureManager {
 
   protected:
     SMonitorArea getMonitorArea() const override {
-        return SMonitorArea{MONITOR_X, MONITOR_Y, MONITOR_WIDTH,
-                            MONITOR_HEIGHT};
+        return SMonitorArea{MONITOR_X, MONITOR_Y, MONITOR_WIDTH, MONITOR_HEIGHT};
     }
 
   private:

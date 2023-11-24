@@ -9,48 +9,38 @@
 
 // constexpr double SWIPE_THRESHOLD = 30.;
 
-CGestures::CGestures() {
+GestureManager::GestureManager() {
     static auto* const PSENSITIVITY =
-        &HyprlandAPI::getConfigValue(PHANDLE,
-                                     "plugin:touch_gestures:sensitivity")
-             ->floatValue;
+        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")->floatValue;
 
-    addMultiFingerGesture(PSENSITIVITY);
-    addEdgeSwipeGesture(PSENSITIVITY);
+    this->addMultiFingerGesture(PSENSITIVITY);
+    this->addEdgeSwipeGesture(PSENSITIVITY);
 }
 
-void CGestures::emulateSwipeBegin(uint32_t time) {
+void GestureManager::emulateSwipeBegin(uint32_t time) {
     static auto* const PSWIPEFINGERS =
-        &HyprlandAPI::getConfigValue(PHANDLE,
-                                     "gestures:workspace_swipe_fingers")
-             ->intValue;
+        &HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_fingers")->intValue;
 
     // HACK .pointer is not used by g_pInputManager->onSwipeBegin so it's fine I
     // think
     auto emulated_swipe =
-        wlr_pointer_swipe_begin_event{.pointer   = nullptr,
-                                      .time_msec = time,
-                                      .fingers   = (uint32_t)*PSWIPEFINGERS};
+        wlr_pointer_swipe_begin_event{.pointer = nullptr, .time_msec = time, .fingers = (uint32_t)*PSWIPEFINGERS};
     g_pInputManager->onSwipeBegin(&emulated_swipe);
 
     m_vGestureLastCenter = m_sGestureState.get_center().origin;
 }
 
-void CGestures::emulateSwipeEnd(uint32_t time, bool cancelled) {
-    auto emulated_swipe = wlr_pointer_swipe_end_event{
-        .pointer = nullptr, .time_msec = time, .cancelled = cancelled};
+void GestureManager::emulateSwipeEnd(uint32_t time, bool cancelled) {
+    auto emulated_swipe = wlr_pointer_swipe_end_event{.pointer = nullptr, .time_msec = time, .cancelled = cancelled};
     g_pInputManager->onSwipeEnd(&emulated_swipe);
 }
 
-void CGestures::emulateSwipeUpdate(uint32_t time) {
+void GestureManager::emulateSwipeUpdate(uint32_t time) {
     static auto* const PSWIPEDIST =
-        &HyprlandAPI::getConfigValue(PHANDLE,
-                                     "gestures:workspace_swipe_distance")
-             ->intValue;
+        &HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")->intValue;
 
     if (!g_pInputManager->m_sActiveSwipe.pMonitor) {
-        Debug::log(
-            ERR, "ignoring touch gesture motion event due to missing monitor!");
+        Debug::log(ERR, "ignoring touch gesture motion event due to missing monitor!");
         return;
     }
 
@@ -62,20 +52,18 @@ void CGestures::emulateSwipeUpdate(uint32_t time) {
         .pointer   = nullptr,
         .time_msec = time,
         .fingers   = (uint32_t)m_sGestureState.fingers.size(),
-        .dx = (currentCenter.x - m_vGestureLastCenter.x) / m_sMonitorArea.w *
-              *PSWIPEDIST,
-        .dy = (currentCenter.y - m_vGestureLastCenter.y) / m_sMonitorArea.h *
-              *PSWIPEDIST};
+        .dx        = (currentCenter.x - m_vGestureLastCenter.x) / m_sMonitorArea.w * *PSWIPEDIST,
+        .dy        = (currentCenter.y - m_vGestureLastCenter.y) / m_sMonitorArea.h * *PSWIPEDIST};
 
     g_pInputManager->onSwipeUpdate(&emulated_swipe);
     m_vGestureLastCenter = currentCenter;
 }
 
-bool CGestures::handleGesture(const CompletedGesture& gev) {
-    if (gev.type == GESTURE_TYPE_SWIPE_HOLD) {
+bool GestureManager::handleGesture(const CompletedGesture& gev) {
+    if (gev.type == TouchGestureType::SWIPE_HOLD) {
         return this->handleWorkspaceSwipe(gev);
     }
-    if (gev.type == GESTURE_TYPE_SWIPE && dragGestureIsActive()) {
+    if (gev.type == TouchGestureType::SWIPE && this->dragGestureIsActive()) {
         this->emulateSwipeEnd(0, false);
         return true;
     }
@@ -88,15 +76,11 @@ bool CGestures::handleGesture(const CompletedGesture& gev) {
         if (k.key != bind)
             continue;
 
-        const auto DISPATCHER =
-            g_pKeybindManager->m_mDispatchers.find(k.handler);
+        const auto DISPATCHER = g_pKeybindManager->m_mDispatchers.find(k.handler);
 
         // Should never happen, as we check in the ConfigManager, but oh well
         if (DISPATCHER == g_pKeybindManager->m_mDispatchers.end()) {
-            Debug::log(
-                ERR,
-                "Invalid handler in a keybind! (handler {} does not exist)",
-                k.handler);
+            Debug::log(ERR, "Invalid handler in a keybind! (handler {} does not exist)", k.handler);
             continue;
         }
 
@@ -112,7 +96,7 @@ bool CGestures::handleGesture(const CompletedGesture& gev) {
     return found;
 }
 
-void CGestures::handleCancelledGesture() {
+void GestureManager::handleCancelledGesture() {
     if (!this->dragGestureIsActive()) {
         return;
     }
@@ -120,27 +104,20 @@ void CGestures::handleCancelledGesture() {
     this->emulateSwipeEnd(0, false);
 }
 
-bool CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
+bool GestureManager::handleWorkspaceSwipe(const CompletedGesture& gev) {
     static auto* const PWORKSPACEFINGERS =
-        &HyprlandAPI::getConfigValue(
-             PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
-             ->intValue;
-    const auto VERTANIMS =
-        g_pCompositor
-            ->getWorkspaceByID(g_pCompositor->m_pLastMonitor->activeWorkspace)
-            ->m_vRenderOffset.getConfig()
-            ->pValues->internalStyle == "slidevert";
+        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")->intValue;
+    const auto VERTANIMS = g_pCompositor->getWorkspaceByID(g_pCompositor->m_pLastMonitor->activeWorkspace)
+                               ->m_vRenderOffset.getConfig()
+                               ->pValues->internalStyle == "slidevert";
 
-    if (gev.type == GESTURE_TYPE_SWIPE_HOLD &&
-        gev.finger_count == *PWORKSPACEFINGERS) {
-        const auto horizontal =
-            GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
-        const auto vertical = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
+    if (gev.type == TouchGestureType::SWIPE_HOLD && gev.finger_count == *PWORKSPACEFINGERS) {
+        const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
+        const auto vertical             = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
         const auto workspace_directions = VERTANIMS ? vertical : horizontal;
         const auto anti_directions      = VERTANIMS ? horizontal : vertical;
 
-        if (gev.direction & workspace_directions &&
-            !(gev.direction & anti_directions)) {
+        if (gev.direction & workspace_directions && !(gev.direction & anti_directions)) {
             // FIXME time arg of @emulateSwipeBegin should probably be assigned
             // something useful (though its not really used later)
             this->emulateSwipeBegin(0);
@@ -151,52 +128,42 @@ bool CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
     return false;
 }
 
-void CGestures::sendCancelEventsToWindows() {
+void GestureManager::sendCancelEventsToWindows() {
     for (const auto& surface : this->touchedSurfaces) {
         if (!surface)
             continue;
         wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, surface);
     }
-    touchedSurfaces.clear();
+    this->touchedSurfaces.clear();
 }
 
 // @return whether or not to inhibit further actions
-bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
+bool GestureManager::onTouchDown(wlr_touch_down_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
-    if (!eventForwardingInhibited() &&
-        g_pInputManager->m_sTouchData.touchFocusSurface) {
+    if (!eventForwardingInhibited() && g_pInputManager->m_sTouchData.touchFocusSurface) {
         // remember which surfaces were touched, to later send cancel events
         const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
-        const auto TOUCHED =
-            std::find(touchedSurfaces.begin(), touchedSurfaces.end(), surface);
+        const auto TOUCHED = std::find(touchedSurfaces.begin(), touchedSurfaces.end(), surface);
         if (TOUCHED == touchedSurfaces.end()) {
             touchedSurfaces.push_back(surface);
         }
     }
 
-    m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(
-        ev->touch->output_name ? ev->touch->output_name : "");
+    m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(ev->touch->output_name ? ev->touch->output_name : "");
 
-    const auto PDEVIT = std::find_if(
-        g_pInputManager->m_lTouchDevices.begin(),
-        g_pInputManager->m_lTouchDevices.end(), [&](const STouchDevice& other) {
-            return other.pWlrDevice == &ev->touch->base;
-        });
+    const auto PDEVIT = std::find_if(g_pInputManager->m_lTouchDevices.begin(), g_pInputManager->m_lTouchDevices.end(),
+                                     [&](const STouchDevice& other) { return other.pWlrDevice == &ev->touch->base; });
 
-    if (PDEVIT != g_pInputManager->m_lTouchDevices.end() &&
-        !PDEVIT->boundOutput.empty()) {
-        m_pLastTouchedMonitor =
-            g_pCompositor->getMonitorFromName(PDEVIT->boundOutput);
+    if (PDEVIT != g_pInputManager->m_lTouchDevices.end() && !PDEVIT->boundOutput.empty()) {
+        m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(PDEVIT->boundOutput);
     }
-    m_pLastTouchedMonitor = m_pLastTouchedMonitor
-                                ? m_pLastTouchedMonitor
-                                : g_pCompositor->m_pLastMonitor;
+    m_pLastTouchedMonitor = m_pLastTouchedMonitor ? m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor;
 
     const auto& position = m_pLastTouchedMonitor->vecPosition;
     const auto& geometry = m_pLastTouchedMonitor->vecSize;
-    m_sMonitorArea       = {position.x, position.y, geometry.x, geometry.y};
+    this->m_sMonitorArea = {position.x, position.y, geometry.x, geometry.y};
 
     // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
     // represent "how many percent of screen" whereas
@@ -213,7 +180,7 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     return IGestureManager::onTouchDown(gesture_event);
 }
 
-bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
+bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
@@ -221,7 +188,7 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
     // updating gestures
     wf::touch::point_t lift_off_pos;
     try {
-        lift_off_pos = m_sGestureState.fingers.at(ev->touch_id).current;
+        lift_off_pos = this->m_sGestureState.fingers.at(ev->touch_id).current;
     } catch (const std::out_of_range&) {
         return false;
     }
@@ -236,7 +203,7 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
     return IGestureManager::onTouchUp(gesture_event);
 }
 
-bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
+bool GestureManager::onTouchMove(wlr_touch_motion_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
@@ -256,13 +223,12 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
     return IGestureManager::onTouchMove(gesture_event);
 }
 
-SMonitorArea CGestures::getMonitorArea() const {
-    return m_sMonitorArea;
+SMonitorArea GestureManager::getMonitorArea() const {
+    return this->m_sMonitorArea;
 }
 
-wf::touch::point_t CGestures::wlrTouchEventPositionAsPixels(double x,
-                                                            double y) const {
-    auto area = getMonitorArea();
+wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, double y) const {
+    auto area = this->getMonitorArea();
     // TODO do I need to add area.x and area.y respectively?
     return wf::touch::point_t{x * area.w, y * area.h};
 }
