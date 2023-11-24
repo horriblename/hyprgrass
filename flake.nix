@@ -23,16 +23,20 @@
 
     devShells = withPkgsFor (system: pkgs: {
       default = pkgs.mkShell {
+        shellHook = ''
+          meson setup build --reconfigure -D tests=true
+          sed -e 's/c++23/c++2b/g' ./build/compile_commands.json > ./compile_commands.json
+        '';
         name = "hyprgrass-shell";
-        nativeBuildInputs = with pkgs; [cpplint];
+        nativeBuildInputs = with pkgs; [gcc13];
         buildInputs = [hyprland.packages.${system}.hyprland];
         inputsFrom = [
           hyprland.packages.${system}.hyprland
-          (self.packages.${system}.default)
+          self.packages.${system}.default
         ];
       };
     });
 
-    formatter = withPkgsFor (system: pkgs: pkgs.alejandra);
+    formatter = withPkgsFor (_system: pkgs: pkgs.alejandra);
   };
 }
