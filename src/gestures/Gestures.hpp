@@ -24,7 +24,8 @@ constexpr static uint32_t GESTURE_BASE_DURATION   = 400;
 
 constexpr static uint32_t SEND_CANCEL_EVENT_FINGER_COUNT = 3;
 
-enum eTouchGestureType {
+enum eTouchGestureType
+{
     // Invalid Gesture
     GESTURE_TYPE_SWIPE,
     GESTURE_TYPE_SWIPE_HOLD, // same as SWIPE but fingers were not lifted
@@ -32,7 +33,8 @@ enum eTouchGestureType {
     // GESTURE_TYPE_PINCH,
 };
 
-enum eTouchGestureDirection {
+enum eTouchGestureDirection
+{
     /* Swipe-specific */
     GESTURE_DIRECTION_LEFT  = (1 << 0),
     GESTURE_DIRECTION_RIGHT = (1 << 1),
@@ -87,9 +89,8 @@ class CMultiAction : public wf::touch::gesture_action_t {
     // This action should be followed by another that completes upon lifting a
     // finger to achieve a gesture that completes after a multi-finger swipe is
     // done and lifted.
-    wf::touch::action_status_t
-    update_state(const wf::touch::gesture_state_t& state,
-                 const wf::touch::gesture_event_t& event) override;
+    wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
+                                            const wf::touch::gesture_event_t& event) override;
 
     void reset(uint32_t time) override {
         gesture_action_t::reset(time);
@@ -99,17 +100,15 @@ class CMultiAction : public wf::touch::gesture_action_t {
 
 // Completes upon receiving enough touch down events within a short duration
 class MultiFingerDownAction : public wf::touch::gesture_action_t {
-// upon completion, calls the given callback.
-//
-// Intended to be used to send cancel events to surfaces when enough fingers
-// touch down in quick succession.
+    // upon completion, calls the given callback.
+    //
+    // Intended to be used to send cancel events to surfaces when enough fingers
+    // touch down in quick succession.
   public:
-    MultiFingerDownAction(std::function<void()> callback)
-        : callback(callback) {}
+    MultiFingerDownAction(std::function<void()> callback) : callback(callback) {}
 
-    wf::touch::action_status_t
-    update_state(const wf::touch::gesture_state_t& state,
-                 const wf::touch::gesture_event_t& event) override;
+    wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
+                                            const wf::touch::gesture_event_t& event) override;
 
   private:
     std::function<void()> callback;
@@ -118,9 +117,8 @@ class MultiFingerDownAction : public wf::touch::gesture_action_t {
 // Completes upon receiving a touch up event and cancels upon receiving a touch
 // down event.
 class LiftoffAction : public wf::touch::gesture_action_t {
-    wf::touch::action_status_t
-    update_state(const wf::touch::gesture_state_t& state,
-                 const wf::touch::gesture_event_t& event) override;
+    wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
+                                            const wf::touch::gesture_event_t& event) override;
 };
 
 // This action is used to call a function in between other actions
@@ -130,9 +128,8 @@ class CallbackAction : public wf::touch::gesture_action_t {
   public:
     CallbackAction(std::function<void()> callback) : callback(callback) {}
 
-    wf::touch::action_status_t
-    update_state(const wf::touch::gesture_state_t& state,
-                 const wf::touch::gesture_event_t& event) override;
+    wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
+                                            const wf::touch::gesture_event_t& event) override;
 
   private:
     const std::function<void()> callback;
