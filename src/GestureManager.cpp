@@ -9,7 +9,7 @@
 
 // constexpr double SWIPE_THRESHOLD = 30.;
 
-CGestures::CGestures() {
+GestureManager::GestureManager() {
     static auto* const PSENSITIVITY =
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")->floatValue;
 
@@ -17,7 +17,7 @@ CGestures::CGestures() {
     this->addEdgeSwipeGesture(PSENSITIVITY);
 }
 
-void CGestures::emulateSwipeBegin(uint32_t time) {
+void GestureManager::emulateSwipeBegin(uint32_t time) {
     static auto* const PSWIPEFINGERS =
         &HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_fingers")->intValue;
 
@@ -30,12 +30,12 @@ void CGestures::emulateSwipeBegin(uint32_t time) {
     m_vGestureLastCenter = m_sGestureState.get_center().origin;
 }
 
-void CGestures::emulateSwipeEnd(uint32_t time, bool cancelled) {
+void GestureManager::emulateSwipeEnd(uint32_t time, bool cancelled) {
     auto emulated_swipe = wlr_pointer_swipe_end_event{.pointer = nullptr, .time_msec = time, .cancelled = cancelled};
     g_pInputManager->onSwipeEnd(&emulated_swipe);
 }
 
-void CGestures::emulateSwipeUpdate(uint32_t time) {
+void GestureManager::emulateSwipeUpdate(uint32_t time) {
     static auto* const PSWIPEDIST =
         &HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")->intValue;
 
@@ -59,7 +59,7 @@ void CGestures::emulateSwipeUpdate(uint32_t time) {
     m_vGestureLastCenter = currentCenter;
 }
 
-bool CGestures::handleGesture(const CompletedGesture& gev) {
+bool GestureManager::handleGesture(const CompletedGesture& gev) {
     if (gev.type == GESTURE_TYPE_SWIPE_HOLD) {
         return this->handleWorkspaceSwipe(gev);
     }
@@ -96,7 +96,7 @@ bool CGestures::handleGesture(const CompletedGesture& gev) {
     return found;
 }
 
-void CGestures::handleCancelledGesture() {
+void GestureManager::handleCancelledGesture() {
     if (!this->dragGestureIsActive()) {
         return;
     }
@@ -104,7 +104,7 @@ void CGestures::handleCancelledGesture() {
     this->emulateSwipeEnd(0, false);
 }
 
-bool CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
+bool GestureManager::handleWorkspaceSwipe(const CompletedGesture& gev) {
     static auto* const PWORKSPACEFINGERS =
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")->intValue;
     const auto VERTANIMS = g_pCompositor->getWorkspaceByID(g_pCompositor->m_pLastMonitor->activeWorkspace)
@@ -128,7 +128,7 @@ bool CGestures::handleWorkspaceSwipe(const CompletedGesture& gev) {
     return false;
 }
 
-void CGestures::sendCancelEventsToWindows() {
+void GestureManager::sendCancelEventsToWindows() {
     for (const auto& surface : this->touchedSurfaces) {
         if (!surface)
             continue;
@@ -138,7 +138,7 @@ void CGestures::sendCancelEventsToWindows() {
 }
 
 // @return whether or not to inhibit further actions
-bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
+bool GestureManager::onTouchDown(wlr_touch_down_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
@@ -180,7 +180,7 @@ bool CGestures::onTouchDown(wlr_touch_down_event* ev) {
     return IGestureManager::onTouchDown(gesture_event);
 }
 
-bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
+bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
@@ -203,7 +203,7 @@ bool CGestures::onTouchUp(wlr_touch_up_event* ev) {
     return IGestureManager::onTouchUp(gesture_event);
 }
 
-bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
+bool GestureManager::onTouchMove(wlr_touch_motion_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
@@ -223,11 +223,11 @@ bool CGestures::onTouchMove(wlr_touch_motion_event* ev) {
     return IGestureManager::onTouchMove(gesture_event);
 }
 
-SMonitorArea CGestures::getMonitorArea() const {
+SMonitorArea GestureManager::getMonitorArea() const {
     return this->m_sMonitorArea;
 }
 
-wf::touch::point_t CGestures::wlrTouchEventPositionAsPixels(double x, double y) const {
+wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, double y) const {
     auto area = this->getMonitorArea();
     // TODO do I need to add area.x and area.y respectively?
     return wf::touch::point_t{x * area.w, y * area.h};
