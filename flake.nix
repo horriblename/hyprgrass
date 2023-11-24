@@ -1,7 +1,4 @@
 {
-  # WARNING this is mainly for testing if it will work in nix
-  # depending on which part of hyprland is used, it may be necessary to add
-  # the dependencies of Hyprland here as well
   description = "Hyprland plugin for touch gestures";
 
   inputs.hyprland.url = "github:hyprwm/Hyprland";
