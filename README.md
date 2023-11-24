@@ -1,7 +1,7 @@
 # Hyprland Touch Gestures
 
 > [!WARNING]
-> There may still be some bugs that render your touch device unusable until you unload the plugin/close Hyprland (https://github.com/horriblename/hyprgrass/issues/27), have a keyboard in hand the first time you try this. This plugin is very alpha, expect breakable changes!  
+> There may still be some bugs that render your touch device unusable until you unload the plugin/close Hyprland (https://github.com/horriblename/hyprgrass/issues/27), have a keyboard in hand the first time you try this. This plugin is very alpha, expect breakable changes!
 
 Please open an issue if you find any bugs. Feel free to make a feature request if you have a suggestion.
 
@@ -94,6 +94,12 @@ plugin {
 
     # must be >= 3
     workspace_swipe_fingers = 3
+
+    experimental {
+      # send proper cancel events to windows instead of hacky touch_up events,
+      # NOT recommended as it crashed a few times, once it's stabilized I'll make it the default
+      send_cancel = 0
+    }
   }
 }
 ```
@@ -127,7 +133,7 @@ where (skip to [examples](#examples) if this is confusing):
      - `finger_count` must be >= 3
      - `direction` is one of `l`, `r`, `u`, `d`, or `ld`, `rd`, `lu`, `ru` for diagonal directions.  
        (l, r, u, d stand for left, right, up, down)
-  3. `edge:<from_edge>:<direction>`
+  2. `edge:<from_edge>:<direction>`
      - `<from_edge>` is from which edge to start from (l/r/u/d)
      - `<direction>` is in which direction to swipe (l/r/u/d/lu/ld/ru/rd)
 

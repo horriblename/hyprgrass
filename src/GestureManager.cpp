@@ -129,6 +129,13 @@ bool GestureManager::handleWorkspaceSwipe(const CompletedGesture& gev) {
 }
 
 void GestureManager::sendCancelEventsToWindows() {
+    static auto* const SEND_CANCEL =
+        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")->intValue;
+
+    if (*SEND_CANCEL == 0) {
+        return;
+    }
+
     for (const auto& surface : this->touchedSurfaces) {
         if (!surface)
             continue;
@@ -139,10 +146,13 @@ void GestureManager::sendCancelEventsToWindows() {
 
 // @return whether or not to inhibit further actions
 bool GestureManager::onTouchDown(wlr_touch_down_event* ev) {
+    static auto* const SEND_CANCEL =
+        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")->intValue;
+
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
-    if (!eventForwardingInhibited() && g_pInputManager->m_sTouchData.touchFocusSurface) {
+    if (!eventForwardingInhibited() && *SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
         // remember which surfaces were touched, to later send cancel events
         const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
         const auto TOUCHED = std::find(touchedSurfaces.begin(), touchedSurfaces.end(), surface);
@@ -181,6 +191,9 @@ bool GestureManager::onTouchDown(wlr_touch_down_event* ev) {
 }
 
 bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
+    static auto* const SEND_CANCEL =
+        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")->intValue;
+
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
@@ -200,7 +213,13 @@ bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
         .pos    = {lift_off_pos.x, lift_off_pos.y},
     };
 
-    return IGestureManager::onTouchUp(gesture_event);
+    const auto BLOCK = IGestureManager::onTouchUp(gesture_event);
+    if (*SEND_CANCEL) {
+        return BLOCK;
+    } else {
+        // send_cancel is turned off; we need to rely on touchup events
+        return false;
+    }
 }
 
 bool GestureManager::onTouchMove(wlr_touch_motion_event* ev) {
