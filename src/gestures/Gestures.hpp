@@ -24,17 +24,15 @@ constexpr static uint32_t GESTURE_BASE_DURATION   = 400;
 
 constexpr static uint32_t SEND_CANCEL_EVENT_FINGER_COUNT = 3;
 
-enum eTouchGestureType
-{
+enum class TouchGestureType {
     // Invalid Gesture
-    GESTURE_TYPE_SWIPE,
-    GESTURE_TYPE_SWIPE_HOLD, // same as SWIPE but fingers were not lifted
-    GESTURE_TYPE_EDGE_SWIPE,
-    // GESTURE_TYPE_PINCH,
+    SWIPE,
+    SWIPE_HOLD, // same as SWIPE but fingers were not lifted
+    EDGE_SWIPE,
+    // PINCH,
 };
 
-enum eTouchGestureDirection
-{
+enum TouchGestureDirection {
     /* Swipe-specific */
     GESTURE_DIRECTION_LEFT  = (1 << 0),
     GESTURE_DIRECTION_RIGHT = (1 << 1),
@@ -54,7 +52,7 @@ using gestureDirection = uint32_t;
  * Finger count can be arbitrary (might be a good idea to limit to >3)
  */
 struct CompletedGesture {
-    eTouchGestureType type;
+    TouchGestureType type;
     gestureDirection direction;
     int finger_count;
 

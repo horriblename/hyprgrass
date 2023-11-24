@@ -60,10 +60,10 @@ void GestureManager::emulateSwipeUpdate(uint32_t time) {
 }
 
 bool GestureManager::handleGesture(const CompletedGesture& gev) {
-    if (gev.type == GESTURE_TYPE_SWIPE_HOLD) {
+    if (gev.type == TouchGestureType::SWIPE_HOLD) {
         return this->handleWorkspaceSwipe(gev);
     }
-    if (gev.type == GESTURE_TYPE_SWIPE && this->dragGestureIsActive()) {
+    if (gev.type == TouchGestureType::SWIPE && this->dragGestureIsActive()) {
         this->emulateSwipeEnd(0, false);
         return true;
     }
@@ -111,7 +111,7 @@ bool GestureManager::handleWorkspaceSwipe(const CompletedGesture& gev) {
                                ->m_vRenderOffset.getConfig()
                                ->pValues->internalStyle == "slidevert";
 
-    if (gev.type == GESTURE_TYPE_SWIPE_HOLD && gev.finger_count == *PWORKSPACEFINGERS) {
+    if (gev.type == TouchGestureType::SWIPE_HOLD && gev.finger_count == *PWORKSPACEFINGERS) {
         const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
         const auto vertical             = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
         const auto workspace_directions = VERTANIMS ? vertical : horizontal;

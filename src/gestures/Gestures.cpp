@@ -30,20 +30,20 @@ std::string stringifyDirection(gestureDirection direction) {
 std::string CompletedGesture::to_string() const {
     std::string bind = "";
     switch (type) {
-        case GESTURE_TYPE_EDGE_SWIPE:
+        case TouchGestureType::EDGE_SWIPE:
             bind += "edge";
             break;
-        case GESTURE_TYPE_SWIPE:
+        case TouchGestureType::SWIPE:
             bind += "swipe";
             break;
-        case GESTURE_TYPE_SWIPE_HOLD:
+        case TouchGestureType::SWIPE_HOLD:
             // this gesture is only used internally for workspace swipe
             return "workspace_swipe";
     }
 
     bind += ":";
 
-    if (type == GESTURE_TYPE_EDGE_SWIPE) {
+    if (type == TouchGestureType::EDGE_SWIPE) {
         bind += stringifyDirection(this->edge_origin);
     } else {
         bind += std::to_string(finger_count);
@@ -215,9 +215,9 @@ void IGestureManager::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gest
 // Adds a Multi-fingered swipe:
 // * inhibits events to client windows/surfaces when enough fingers touch
 //   down within a short duration.
-// * emits a GESTURE_TYPE_SWIPE_HOLD event once fingers moved over the
+// * emits a TouchGestureType::SWIPE_HOLD event once fingers moved over the
 //   threshold.
-// * further emits a GESTURE_TYPE_SWIPE event if the SWIPE_HOLD event was
+// * further emits a TouchGestureType::SWIPE event if the SWIPE_HOLD event was
 //   emitted and once a finger is lifted
 void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
     auto multi_down = std::make_unique<MultiFingerDownAction>([this]() { this->cancelTouchEventsOnAllWindows(); });
@@ -233,7 +233,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
         if (this->dragGestureActive) {
             return;
         }
-        const auto gesture = CompletedGesture{GESTURE_TYPE_SWIPE_HOLD, swipe_ptr->target_direction,
+        const auto gesture = CompletedGesture{TouchGestureType::SWIPE_HOLD, swipe_ptr->target_direction,
                                               static_cast<int>(this->m_sGestureState.fingers.size())};
 
         this->dragGestureActive = this->handleGesture(gesture);
@@ -250,7 +250,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
     swipe_actions.emplace_back(std::move(swipe_liftoff));
 
     auto ack = [swipe_ptr, this]() {
-        const auto gesture = CompletedGesture{GESTURE_TYPE_SWIPE, swipe_ptr->target_direction,
+        const auto gesture = CompletedGesture{TouchGestureType::SWIPE, swipe_ptr->target_direction,
                                               static_cast<int>(this->m_sGestureState.fingers.size())};
         this->handleGesture(gesture);
     };
@@ -289,7 +289,7 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {
             return;
         }
         auto direction = edge_ptr->target_direction;
-        auto gesture   = CompletedGesture{GESTURE_TYPE_EDGE_SWIPE, direction, edge_ptr->finger_count, origin_edges};
+        auto gesture = CompletedGesture{TouchGestureType::EDGE_SWIPE, direction, edge_ptr->finger_count, origin_edges};
         this->handleGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
