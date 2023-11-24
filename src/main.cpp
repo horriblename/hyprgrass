@@ -49,6 +49,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
                                                          SConfigValue{.intValue = 3});
     cfgStatus = cfgStatus && HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity",
                                                          SConfigValue{.floatValue = 1.0});
+    cfgStatus = cfgStatus && HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel",
+                                                         SConfigValue{.intValue = 0});
 
     if (!cfgStatus) {
         HyprlandAPI::addNotification(PHANDLE, "config values cannot be properly added", CColor(0.8, 0.2, 0.2, 1.0),
