@@ -1,7 +1,7 @@
 # Hyprland Touch Gestures
 
 > [!WARNING]
-> There may still be some bugs that render your touch device unusable until you unload the plugin/close Hyprland (https://github.com/horriblename/hyprgrass/issues/27), have a keyboard in hand the first time you try this. This plugin is very alpha, expect breakable changes!
+> Even though hyprgrass is mostly stable now, there used to be some bugs that render your touch device unusable until you unload the plugin/close Hyprland (https://github.com/horriblename/hyprgrass/issues/27), keep a keyboard in hand the first time you try this. This plugin is still in alpha, expect breakable changes!
 
 Please open an issue if you find any bugs. Feel free to make a feature request if you have a suggestion.
 
@@ -152,6 +152,7 @@ bind = , edge:d:u, exec, firefox
 bind = , edge:l:d, exec, pactl set-sink-volume @DEFAULT_SINK@ -4%
 
 # swipe down with 4 fingers
+# NOTE: swipe events only trigger for finger count of >= 3
 bind = , swipe:4:d, killactive
 
 # swipe diagonally left and down with 3 fingers
