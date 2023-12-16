@@ -36,8 +36,7 @@ void Tester::testFindSwipeEdges() {
     }
 }
 
-enum class ExpectResultType
-{
+enum class ExpectResultType {
     COMPLETED,
     DRAG_TRIGGERED,
     CANCELLED,
@@ -165,6 +164,52 @@ TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
         {wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {100, 290}},
     };
     ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
+}
+
+TEST_CASE("Multi-finger Tap") {
+    std::cout << "  ==== stdout:" << std::endl;
+    CMockGestureManager gm;
+    gm.addMultiFingerTap(&SENSITIVITY);
+
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}},
+        {wf::touch::EVENT_TYPE_TOUCH_UP, 120, 2, {550, 290}},
+    };
+
+    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
+}
+
+TEST_CASE("Multi-finger Tap: Timeout") {
+    std::cout << "  ==== stdout:" << std::endl;
+    CMockGestureManager gm;
+    gm.addMultiFingerTap(&SENSITIVITY);
+
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}},
+        {wf::touch::EVENT_TYPE_TOUCH_UP, 510, 2, {550, 290}},
+    };
+
+    ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
+}
+
+TEST_CASE("Multi-finger Tap: finger moved too much") {
+    std::cout << "  ==== stdout:" << std::endl;
+    CMockGestureManager gm;
+    gm.addMultiFingerTap(&SENSITIVITY);
+
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}},
+        {wf::touch::EVENT_TYPE_MOTION, 120, 1, {650, 290}},
+        // {wf::touch::EVENT_TYPE_TOUCH_UP, 130, 2, {550, 290}},
+    };
+
+    ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
 }
 
 TEST_CASE("Edge Swipe: Complete upon: \n"
