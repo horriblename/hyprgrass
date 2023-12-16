@@ -29,6 +29,7 @@ enum class TouchGestureType {
     SWIPE,
     SWIPE_HOLD, // same as SWIPE but fingers were not lifted
     EDGE_SWIPE,
+    TAP,
     // PINCH,
 };
 
@@ -96,6 +97,23 @@ class CMultiAction : public wf::touch::gesture_action_t {
     };
 };
 
+class MultiFingerTap : public wf::touch::gesture_action_t {
+  private:
+    double base_threshold;
+    const float* sensitivity;
+
+  public:
+    MultiFingerTap(double base_threshold, const float* sensitivity)
+        : base_threshold(base_threshold), sensitivity(sensitivity){};
+
+    wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
+                                            const wf::touch::gesture_event_t& event) override;
+
+    void reset(uint32_t time) override {
+        gesture_action_t::reset(time);
+    };
+};
+
 // Completes upon receiving enough touch down events within a short duration
 class MultiFingerDownAction : public wf::touch::gesture_action_t {
     // upon completion, calls the given callback.
@@ -159,6 +177,7 @@ class IGestureManager {
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
     void addMultiFingerGesture(const float* sensitivity);
+    void addMultiFingerTap(const float* sensitivity);
     void addEdgeSwipeGesture(const float* sensitivity);
 
     bool dragGestureIsActive() const {
