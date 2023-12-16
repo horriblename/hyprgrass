@@ -226,10 +226,9 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
     auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity);
     swipe->set_duration(GESTURE_BASE_DURATION);
 
-    // FIXME memory management be damned
     auto swipe_ptr = swipe.get();
 
-    auto swipe_begin_callback = [swipe_ptr, this]() {
+    auto trigger_swipe = std::make_unique<CallbackAction>([=, this]() {
         if (this->dragGestureActive) {
             return;
         }
@@ -237,8 +236,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
                                               static_cast<int>(this->m_sGestureState.fingers.size())};
 
         this->dragGestureActive = this->handleGesture(gesture);
-    };
-    auto swipe_begin = std::make_unique<CallbackAction>(swipe_begin_callback);
+    });
 
     auto swipe_liftoff = std::make_unique<LiftoffAction>();
     // swipe_liftoff->set_duration(GESTURE_BASE_DURATION / 2);
@@ -246,7 +244,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
     swipe_actions.emplace_back(std::move(multi_down));
     swipe_actions.emplace_back(std::move(swipe));
-    swipe_actions.emplace_back(std::move(swipe_begin));
+    swipe_actions.emplace_back(std::move(trigger_swipe));
     swipe_actions.emplace_back(std::move(swipe_liftoff));
 
     auto ack = [swipe_ptr, this]() {
@@ -275,7 +273,6 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {
     // TODO make this adjustable:
     edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * *sensitivity);
 
-    // FIXME proper memory management pls
     auto edge_ptr = edge.get();
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> edge_swipe_actions;
