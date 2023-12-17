@@ -30,7 +30,8 @@ enum class TouchGestureType {
     SWIPE_HOLD, // same as SWIPE but fingers were not lifted
     EDGE_SWIPE,
     TAP,
-    HOLD,
+    HOLD_BEGIN,
+    HOLD_END,
     // PINCH,
 };
 
@@ -112,10 +113,6 @@ class MultiFingerTap : public wf::touch::gesture_action_t {
 
     wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
                                             const wf::touch::gesture_event_t& event) override;
-
-    void reset(uint32_t time) override {
-        gesture_action_t::reset(time);
-    };
 };
 
 class LongPress : public wf::touch::gesture_action_t {
@@ -130,10 +127,6 @@ class LongPress : public wf::touch::gesture_action_t {
 
     wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
                                             const wf::touch::gesture_event_t& event) override;
-
-    void reset(uint32_t time) override {
-        gesture_action_t::reset(time);
-    };
 };
 
 // Completes upon receiving enough touch down events within a short duration
@@ -155,6 +148,12 @@ class MultiFingerDownAction : public wf::touch::gesture_action_t {
 // Completes upon receiving a touch up event and cancels upon receiving a touch
 // down event.
 class LiftoffAction : public wf::touch::gesture_action_t {
+    wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
+                                            const wf::touch::gesture_event_t& event) override;
+};
+
+// Completes upon receiving a touch up or touch down event
+class TouchUpOrDownAction : public wf::touch::gesture_action_t {
     wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
                                             const wf::touch::gesture_event_t& event) override;
 };

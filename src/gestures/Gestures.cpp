@@ -39,7 +39,9 @@ std::string CompletedGesture::to_string() const {
             return "workspace_swipe";
         case TouchGestureType::TAP:
             return "tap:" + std::to_string(finger_count);
-        case TouchGestureType::HOLD:
+        case TouchGestureType::HOLD_BEGIN:
+            return "hold_begin:" + std::to_string(finger_count);
+        case TouchGestureType::HOLD_END:
             return "hold:" + std::to_string(finger_count);
     }
 
@@ -146,6 +148,7 @@ wf::touch::action_status_t LongPress::update_state(const wf::touch::gesture_stat
             break;
 
         case wf::touch::EVENT_TYPE_TOUCH_DOWN:
+            // TODO: also reset wl_timer here
             gesture_action_t::reset(event.time);
             break;
 
@@ -173,6 +176,19 @@ wf::touch::action_status_t LiftoffAction::update_state(const wf::touch::gesture_
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 
+wf::touch::action_status_t TouchUpOrDownAction::update_state(const wf::touch::gesture_state_t& state,
+                                                             const wf::touch::gesture_event_t& event) {
+    if (event.time - this->start_time > this->get_duration()) {
+        return wf::touch::ACTION_STATUS_CANCELLED;
+    }
+
+    if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP || event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
+        return wf::touch::ACTION_STATUS_COMPLETED;
+    }
+
+    return wf::touch::ACTION_STATUS_RUNNING;
+}
+
 wf::touch::action_status_t OnCompleteAction::update_state(const wf::touch::gesture_state_t& state,
                                                           const wf::touch::gesture_event_t& event) {
     auto status = this->action->update_state(state, event);
@@ -189,7 +205,7 @@ void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
         this->inhibitTouchEvents = false;
         this->dragGestureActive  = false;
     }
-    for (auto& gesture : m_vGestures) {
+    for (const auto& gesture : m_vGestures) {
         if (m_sGestureState.fingers.size() == 1 && ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
             gesture->reset(ev.time);
         }
@@ -316,14 +332,26 @@ void IGestureManager::addMultiFingerTap(const float* sensitivity, const int64_t*
 }
 
 void IGestureManager::addLongPress(const float* sensitivity, const int64_t* delay) {
-    auto long_press = std::make_unique<LongPress>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, delay);
+    auto long_press_and_emit = std::make_unique<OnCompleteAction>(
+        std::make_unique<LongPress>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, delay), [this]() {
+            if (this->dragGestureActive) {
+                return;
+            }
+            const auto gesture = CompletedGesture{TouchGestureType::HOLD_BEGIN, 0,
+                                                  static_cast<int>(this->m_sGestureState.fingers.size())};
+
+            this->dragGestureActive = this->handleGesture(gesture);
+        });
+
+    auto touch_up_or_down = std::make_unique<TouchUpOrDownAction>();
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> long_press_actions;
-    long_press_actions.emplace_back(std::move(long_press));
+    long_press_actions.emplace_back(std::move(long_press_and_emit));
+    long_press_actions.emplace_back(std::move(touch_up_or_down));
 
     auto ack = [this]() {
         const auto gesture =
-            CompletedGesture{TouchGestureType::HOLD, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
+            CompletedGesture{TouchGestureType::HOLD_END, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
         this->handleGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };

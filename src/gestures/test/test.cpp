@@ -205,7 +205,7 @@ TEST_CASE("Multi-finger Tap: finger moved too much") {
     ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
 }
 
-TEST_CASE("Long press") {
+TEST_CASE("Long press: begin drag") {
     std::cout << "  ==== stdout:" << std::endl;
     CMockGestureManager gm;
     gm.addLongPress(&SENSITIVITY, &HOLD_DELAY);
@@ -216,8 +216,10 @@ TEST_CASE("Long press") {
         {wf::touch::EVENT_TYPE_MOTION, 300, 1, {510, 290}},     {wf::touch::EVENT_TYPE_MOTION, 511, 2, {560, 300}},
     };
 
-    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
+    ProcessEvents(gm, {.type = ExpectResultType::DRAG_TRIGGERED}, events);
 }
+
+// TODO: add test case for a completed long press gesture
 
 TEST_CASE("Long press: cancelled due to short hold duration") {
     std::cout << "  ==== stdout:" << std::endl;
