@@ -138,6 +138,11 @@ void GestureManager::handleCancelledGesture() {
     this->emulateSwipeEnd(0, false);
 }
 
+void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
+    // TODO:
+    emulateSwipeUpdate(ev.time);
+}
+
 bool GestureManager::handleWorkspaceSwipe(const DragGesture& gev) {
     static auto* const PWORKSPACEFINGERS =
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")->intValue;
@@ -233,6 +238,7 @@ bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
 
     // NOTE this is neccessary because onTouchDown might fail and exit without
     // updating gestures
+    // FIXME: I don't think the above is true anymore but haven't checked
     wf::touch::point_t lift_off_pos;
     try {
         lift_off_pos = this->m_sGestureState.fingers.at(ev->touch_id).current;
@@ -259,10 +265,6 @@ bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
 bool GestureManager::onTouchMove(wlr_touch_motion_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
-
-    if (this->dragGestureIsActive()) {
-        this->emulateSwipeUpdate(0);
-    }
 
     auto pos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
 
