@@ -271,7 +271,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
 
     auto swipe_ptr = swipe.get();
 
-    auto trigger_swipe = std::make_unique<OnCompleteAction>(std::move(swipe), [=, this]() {
+    auto swipe_and_emit = std::make_unique<OnCompleteAction>(std::move(swipe), [=, this]() {
         if (this->dragGestureActive) {
             return;
         }
@@ -286,7 +286,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
     swipe_actions.emplace_back(std::move(multi_down));
-    swipe_actions.emplace_back(std::move(trigger_swipe));
+    swipe_actions.emplace_back(std::move(swipe_and_emit));
     swipe_actions.emplace_back(std::move(swipe_liftoff));
 
     auto ack = [swipe_ptr, this]() {
