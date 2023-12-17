@@ -24,6 +24,8 @@ glm
 
 ### Install via hyprpm
 
+First, install all [dependencies](#dependencies). Then, run these commands:
+
 ```bash
 hyprpm add https://github.com/horriblename/hyprgrass
 hyprpm enable hyprgrass
