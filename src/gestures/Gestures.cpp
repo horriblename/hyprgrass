@@ -173,10 +173,15 @@ wf::touch::action_status_t LiftoffAction::update_state(const wf::touch::gesture_
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 
-wf::touch::action_status_t CallbackAction::update_state(const wf::touch::gesture_state_t& state,
-                                                        const wf::touch::gesture_event_t& event) {
-    this->callback();
-    return wf::touch::ACTION_STATUS_COMPLETED;
+wf::touch::action_status_t OnCompleteAction::update_state(const wf::touch::gesture_state_t& state,
+                                                          const wf::touch::gesture_event_t& event) {
+    auto status = this->action->update_state(state, event);
+
+    if (status == wf::touch::ACTION_STATUS_COMPLETED) {
+        this->callback();
+    }
+
+    return status;
 }
 
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
@@ -266,7 +271,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
 
     auto swipe_ptr = swipe.get();
 
-    auto trigger_swipe = std::make_unique<CallbackAction>([=, this]() {
+    auto trigger_swipe = std::make_unique<OnCompleteAction>(std::move(swipe), [=, this]() {
         if (this->dragGestureActive) {
             return;
         }
@@ -281,7 +286,6 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
     swipe_actions.emplace_back(std::move(multi_down));
-    swipe_actions.emplace_back(std::move(swipe));
     swipe_actions.emplace_back(std::move(trigger_swipe));
     swipe_actions.emplace_back(std::move(swipe_liftoff));
 

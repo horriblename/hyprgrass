@@ -159,18 +159,20 @@ class LiftoffAction : public wf::touch::gesture_action_t {
                                             const wf::touch::gesture_event_t& event) override;
 };
 
-// This action is used to call a function in between other actions
-//
-// NOTE: this action consumes any event, and must consume an event to work.
-class CallbackAction : public wf::touch::gesture_action_t {
+// This action is used to call a function right after another action is completed
+class OnCompleteAction : public wf::touch::gesture_action_t {
+  private:
+    std::unique_ptr<wf::touch::gesture_action_t> action;
+    const std::function<void()> callback;
+
   public:
-    CallbackAction(std::function<void()> callback) : callback(callback) {}
+    OnCompleteAction(std::unique_ptr<wf::touch::gesture_action_t> action, std::function<void()> callback)
+        : callback(callback) {
+        this->action = std::move(action);
+    }
 
     wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
                                             const wf::touch::gesture_event_t& event) override;
-
-  private:
-    const std::function<void()> callback;
 };
 
 /*

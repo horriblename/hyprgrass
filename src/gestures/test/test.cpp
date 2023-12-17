@@ -109,7 +109,7 @@ TEST_CASE("Multifinger: block touch events to client surfaces when more than a "
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 120, 1, {500, 300}},
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 140, 2, {550, 290}},
     };
-    ProcessEvents(gm, {.type = ExpectResultType::CHECK_PROGRESS, .progress = 1.0 / 4.0}, events);
+    ProcessEvents(gm, {.type = ExpectResultType::CHECK_PROGRESS, .progress = 1.0 / 3.0}, events);
 
     CHECK(gm.eventForwardingInhibited());
 }
@@ -123,13 +123,6 @@ TEST_CASE("Swipe Drag: Complete upon moving more than the threshold") {
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {550, 290}},
         {wf::touch::EVENT_TYPE_MOTION, 200, 0, {0, 290}},
-        // CallbackAction needs an extra event to trigger
-        {wf::touch::EVENT_TYPE_MOTION, 200, 0, {0, 290}},
-        /* FIXME idk why this triggers after one finger movement, should be
-        after all finers moved? threshold should be 450, I thought the center is
-        used for distance? */
-        // {wf::touch::EVENT_TYPE_MOTION, 200, 1, point_t{50, 300}},
-        // {wf::touch::EVENT_TYPE_MOTION, 200, 2, point_t{100, 290}},
     };
     ProcessEvents(gm, {.type = ExpectResultType::DRAG_TRIGGERED}, events);
 }
@@ -158,7 +151,6 @@ TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {550, 290}},
         {wf::touch::EVENT_TYPE_MOTION, 200, 0, {0, 290}},
-        // FIXME same issue as in Swipe Drag
         // TODO CHECK progress == 0.5
         {wf::touch::EVENT_TYPE_MOTION, 200, 1, {50, 300}},
         {wf::touch::EVENT_TYPE_MOTION, 200, 2, {100, 290}},
