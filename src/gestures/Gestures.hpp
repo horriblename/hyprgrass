@@ -233,8 +233,14 @@ class IGestureManager {
     virtual SMonitorArea getMonitorArea() const = 0;
 
     // handles gesture events and returns whether or not the event is used.
+    // if a drag gesture is already active, it should be handled accordingly.
     virtual bool handleCompletedGesture(const CompletedGesture& gev) = 0;
-    virtual bool handleDragGesture(const DragGesture& gev)           = 0;
+
+    // called at the start of drag evetns and returns whether or not the event is used.
+    virtual bool handleDragGesture(const DragGesture& gev) = 0;
+
+    // called on every touch event while a drag gesture is active
+    virtual void dragGestureUpdate(const wf::touch::gesture_event_t&) = 0;
 
     // this function should cleanup after drag gestures
     virtual void handleCancelledGesture() = 0;

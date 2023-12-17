@@ -235,18 +235,33 @@ bool IGestureManager::onTouchDown(const wf::touch::gesture_event_t& ev) {
     // gestures
     this->m_sGestureState.update(ev);
     this->updateGestures(ev);
+
+    if (this->dragGestureActive) {
+        this->dragGestureUpdate(ev);
+    }
+
     return this->eventForwardingInhibited();
 }
 
 bool IGestureManager::onTouchUp(const wf::touch::gesture_event_t& ev) {
     this->updateGestures(ev);
     this->m_sGestureState.update(ev);
+
+    if (this->dragGestureActive) {
+        this->dragGestureUpdate(ev);
+    }
+
     return this->eventForwardingInhibited();
 }
 
 bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
     this->updateGestures(ev);
     this->m_sGestureState.update(ev);
+
+    if (this->dragGestureActive) {
+        this->dragGestureUpdate(ev);
+    }
+
     return this->eventForwardingInhibited();
 }
 
