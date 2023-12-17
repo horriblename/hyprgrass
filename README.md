@@ -24,8 +24,6 @@ glm
 
 ### Install via hyprpm
 
-see [hyprland wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/#hyprpm)
-
 ```bash
 hyprpm add https://github.com/horriblename/hyprgrass
 hyprpm enable hyprgrass
@@ -33,6 +31,8 @@ hyprpm enable hyprgrass
 
 You can add `exec-once = hyprpm reload -n` to your hyprland config to have plugins loaded at
 startup. -n will make hyprpm send a notification if anything goes wrong (e.g. update needed)
+
+see [hyprland wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/#hyprpm) for more info
 
 ### Install via Hyprload
 
