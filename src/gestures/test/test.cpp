@@ -219,7 +219,19 @@ TEST_CASE("Long press: begin drag") {
     ProcessEvents(gm, {.type = ExpectResultType::DRAG_TRIGGERED}, events);
 }
 
-// TODO: add test case for a completed long press gesture
+TEST_CASE("Long press: begin drag") {
+    std::cout << "  ==== stdout:" << std::endl;
+    CMockGestureManager gm;
+    gm.addLongPress(&SENSITIVITY, &HOLD_DELAY);
+
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}}, {wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}}, {wf::touch::EVENT_TYPE_MOTION, 200, 0, {460, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 300, 1, {510, 290}},     {wf::touch::EVENT_TYPE_MOTION, 511, 2, {560, 300}},
+        {wf::touch::EVENT_TYPE_TOUCH_UP, 550, 2, {560, 300}}};
+
+    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
+}
 
 TEST_CASE("Long press: cancelled due to short hold duration") {
     std::cout << "  ==== stdout:" << std::endl;

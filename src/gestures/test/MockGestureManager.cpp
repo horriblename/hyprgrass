@@ -9,7 +9,12 @@ CMockGestureManager::CMockGestureManager() {}
 
 bool CMockGestureManager::handleCompletedGesture(const CompletedGesture& gev) {
     std::cout << "gesture triggered: " << gev.to_string() << "\n";
-    this->triggered = this->triggered || gev.type != TouchGestureType::SWIPE_HOLD;
+    this->triggered = true;
+    return true;
+}
+
+bool CMockGestureManager::handleDragGesture(const DragGesture& gev) {
+    std::cout << "drag started: " << gev.to_string() << "\n";
     return true;
 }
 
