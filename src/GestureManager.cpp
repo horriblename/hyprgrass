@@ -18,6 +18,7 @@ GestureManager::GestureManager() {
 
     this->addMultiFingerGesture(PSENSITIVITY, HOLD_DELAY);
     this->addMultiFingerTap(PSENSITIVITY, HOLD_DELAY);
+    this->addLongPress(PSENSITIVITY, HOLD_DELAY);
     this->addEdgeSwipeGesture(PSENSITIVITY, HOLD_DELAY);
 }
 
