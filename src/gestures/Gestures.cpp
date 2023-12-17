@@ -116,7 +116,7 @@ wf::touch::action_status_t MultiFingerTap::update_state(const wf::touch::gesture
     if (event.type == wf::touch::EVENT_TYPE_MOTION) {
         for (const auto& finger : state.fingers) {
             const auto delta = finger.second.delta();
-            if (delta.x * delta.x + delta.y + delta.y > this->base_threshold * *this->sensitivity) {
+            if (delta.x * delta.x + delta.y + delta.y > this->base_threshold / *this->sensitivity) {
                 return wf::touch::ACTION_STATUS_CANCELLED;
             }
         }
