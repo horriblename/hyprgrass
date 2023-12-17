@@ -34,15 +34,21 @@ std::string CompletedGesture::to_string() const {
         case TouchGestureType::SWIPE:
             return "swipe:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
             break;
-        case TouchGestureType::SWIPE_HOLD:
-            // this gesture is only used internally for workspace swipe
-            return "workspace_swipe";
         case TouchGestureType::TAP:
             return "tap:" + std::to_string(finger_count);
-        case TouchGestureType::HOLD_BEGIN:
-            return "hold_begin:" + std::to_string(finger_count);
         case TouchGestureType::HOLD_END:
             return "hold:" + std::to_string(finger_count);
+    }
+
+    return "";
+}
+
+std::string DragGesture::to_string() const {
+    switch (type) {
+        case DragGestureType::HOLD:
+            return "hold:" + std::to_string(finger_count);
+        case DragGestureType::SWIPE:
+            return "swipe:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
     }
 
     return "";
@@ -291,10 +297,10 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
         if (this->dragGestureActive) {
             return;
         }
-        const auto gesture = CompletedGesture{TouchGestureType::SWIPE_HOLD, swipe_ptr->target_direction,
-                                              static_cast<int>(this->m_sGestureState.fingers.size())};
+        const auto gesture = DragGesture{DragGestureType::SWIPE, swipe_ptr->target_direction,
+                                         static_cast<int>(this->m_sGestureState.fingers.size())};
 
-        this->dragGestureActive = this->handleCompletedGesture(gesture);
+        this->dragGestureActive = this->handleDragGesture(gesture);
     });
 
     auto swipe_liftoff = std::make_unique<LiftoffAction>();
@@ -337,10 +343,10 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
             if (this->dragGestureActive) {
                 return;
             }
-            const auto gesture = CompletedGesture{TouchGestureType::HOLD_BEGIN, 0,
-                                                  static_cast<int>(this->m_sGestureState.fingers.size())};
+            const auto gesture =
+                DragGesture{DragGestureType::HOLD, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
 
-            this->dragGestureActive = this->handleCompletedGesture(gesture);
+            this->dragGestureActive = this->handleDragGesture(gesture);
         });
 
     auto touch_up_or_down = std::make_unique<TouchUpOrDownAction>();

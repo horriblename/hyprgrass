@@ -27,12 +27,15 @@ constexpr static uint32_t SEND_CANCEL_EVENT_FINGER_COUNT = 3;
 enum class TouchGestureType {
     // Invalid Gesture
     SWIPE,
-    SWIPE_HOLD, // same as SWIPE but fingers were not lifted
     EDGE_SWIPE,
     TAP,
-    HOLD_BEGIN,
     HOLD_END,
     // PINCH,
+};
+
+enum class DragGestureType {
+    SWIPE,
+    HOLD,
 };
 
 enum TouchGestureDirection {
@@ -62,6 +65,14 @@ struct CompletedGesture {
     // TODO turn this whole struct into a sum type?
     // edge swipe specific
     gestureDirection edge_origin;
+
+    std::string to_string() const;
+};
+
+struct DragGesture {
+    DragGestureType type;
+    gestureDirection direction;
+    int finger_count;
 
     std::string to_string() const;
 };
@@ -223,6 +234,7 @@ class IGestureManager {
 
     // handles gesture events and returns whether or not the event is used.
     virtual bool handleCompletedGesture(const CompletedGesture& gev) = 0;
+    virtual bool handleDragGesture(const DragGesture& gev)           = 0;
 
     // this function should cleanup after drag gestures
     virtual void handleCancelledGesture() = 0;
