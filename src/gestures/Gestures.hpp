@@ -222,7 +222,7 @@ class IGestureManager {
     virtual SMonitorArea getMonitorArea() const = 0;
 
     // handles gesture events and returns whether or not the event is used.
-    virtual bool handleGesture(const CompletedGesture& gev) = 0;
+    virtual bool handleCompletedGesture(const CompletedGesture& gev) = 0;
 
     // this function should cleanup after drag gestures
     virtual void handleCancelledGesture() = 0;

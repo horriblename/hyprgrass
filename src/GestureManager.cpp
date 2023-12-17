@@ -61,7 +61,7 @@ void GestureManager::emulateSwipeUpdate(uint32_t time) {
     m_vGestureLastCenter = currentCenter;
 }
 
-bool GestureManager::handleGesture(const CompletedGesture& gev) {
+bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
     if (gev.type == TouchGestureType::SWIPE_HOLD) {
         return this->handleWorkspaceSwipe(gev);
     }

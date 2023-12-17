@@ -24,7 +24,7 @@ class GestureManager : public IGestureManager {
 
   protected:
     SMonitorArea getMonitorArea() const override;
-    bool handleGesture(const CompletedGesture& gev) override;
+    bool handleCompletedGesture(const CompletedGesture& gev) override;
     void handleCancelledGesture() override;
 
   private:
