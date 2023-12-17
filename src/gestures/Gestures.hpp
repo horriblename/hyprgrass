@@ -215,8 +215,8 @@ class IGestureManager {
     void addLongPress(const float* sensitivity, const int64_t* delay);
     void addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout);
 
-    bool dragGestureIsActive() const {
-        return dragGestureActive;
+    std::optional<DragGesture> getActiveDragGesture() const {
+        return activeDragGesture;
     }
 
     // indicates whether events should be blocked from forwarding to client
@@ -247,7 +247,7 @@ class IGestureManager {
 
   private:
     bool inhibitTouchEvents;
-    bool dragGestureActive;
+    std::optional<DragGesture> activeDragGesture;
 
     // this function is called when needed to send "cancel touch" events to
     // client windows/surfaces

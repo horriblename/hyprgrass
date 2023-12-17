@@ -6,6 +6,7 @@
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <memory>
+#include <optional>
 
 // constexpr double SWIPE_THRESHOLD = 30.;
 
@@ -65,18 +66,21 @@ void GestureManager::emulateSwipeUpdate(uint32_t time) {
 }
 
 bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
-    if (this->dragGestureIsActive()) {
-        switch (gev.type) {
-            case CompletedGestureType::SWIPE:
-                // TODO: maybe check if active drag gesture is also swipe
-                this->emulateSwipeEnd(0, false);
-                return true;
-            case CompletedGestureType::HOLD_END:
-                // TODO:
-                return true;
-            default:
-                return false;
-        }
+    if (this->getActiveDragGesture().has_value()) {
+        switch (this->getActiveDragGesture()->type) {
+            case DragGestureType::SWIPE:
+                if (gev.type == CompletedGestureType::SWIPE) {
+                    this->emulateSwipeEnd(0, false);
+                    return true;
+                }
+            case DragGestureType::HOLD:
+                if (gev.type == CompletedGestureType::HOLD_END) {
+                    // TODO:
+                    return true;
+                }
+        };
+
+        return false;
     }
 
     return handleGestureBind(gev.to_string(), false);
@@ -132,11 +136,19 @@ bool handleGestureBind(std::string bind, bool pressed) {
 }
 
 void GestureManager::handleCancelledGesture() {
-    if (!this->dragGestureIsActive()) {
+    if (!this->getActiveDragGesture().has_value()) {
         return;
     }
 
-    this->emulateSwipeEnd(0, false);
+    switch (this->getActiveDragGesture()->type) {
+        case DragGestureType::SWIPE:
+            this->emulateSwipeEnd(0, false);
+            return;
+        case DragGestureType::HOLD:
+            // TODO:
+            // this->handleGestureBind("")
+            return;
+    }
 }
 
 void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {

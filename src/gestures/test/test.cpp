@@ -84,7 +84,7 @@ void ProcessEvents(CMockGestureManager& gm, ExpectResult expect,
             CHECK(gm.triggered);
             break;
         case ExpectResultType::DRAG_TRIGGERED:
-            CHECK(gm.dragGestureIsActive());
+            CHECK(gm.getActiveDragGesture().has_value());
             break;
         case ExpectResultType::CANCELLED:
             CHECK(gm.cancelled);

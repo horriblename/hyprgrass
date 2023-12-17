@@ -2,6 +2,7 @@
 #include <functional>
 #include <glm/glm.hpp>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <wayfire/touch/touch.hpp>
@@ -209,7 +210,7 @@ wf::touch::action_status_t OnCompleteAction::update_state(const wf::touch::gestu
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
     if (m_sGestureState.fingers.size() == 1 && ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
         this->inhibitTouchEvents = false;
-        this->dragGestureActive  = false;
+        this->activeDragGesture  = std::nullopt;
     }
     for (const auto& gesture : m_vGestures) {
         if (m_sGestureState.fingers.size() == 1 && ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
@@ -236,7 +237,7 @@ bool IGestureManager::onTouchDown(const wf::touch::gesture_event_t& ev) {
     this->m_sGestureState.update(ev);
     this->updateGestures(ev);
 
-    if (this->dragGestureActive) {
+    if (this->activeDragGesture.has_value()) {
         this->dragGestureUpdate(ev);
     }
 
@@ -247,7 +248,7 @@ bool IGestureManager::onTouchUp(const wf::touch::gesture_event_t& ev) {
     this->updateGestures(ev);
     this->m_sGestureState.update(ev);
 
-    if (this->dragGestureActive) {
+    if (this->activeDragGesture.has_value()) {
         this->dragGestureUpdate(ev);
     }
 
@@ -258,7 +259,7 @@ bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
     this->updateGestures(ev);
     this->m_sGestureState.update(ev);
 
-    if (this->dragGestureActive) {
+    if (this->activeDragGesture.has_value()) {
         this->dragGestureUpdate(ev);
     }
 
@@ -309,13 +310,13 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
     auto swipe_ptr = swipe.get();
 
     auto swipe_and_emit = std::make_unique<OnCompleteAction>(std::move(swipe), [=, this]() {
-        if (this->dragGestureActive) {
+        if (this->activeDragGesture.has_value()) {
             return;
         }
         const auto gesture = DragGesture{DragGestureType::SWIPE, swipe_ptr->target_direction,
                                          static_cast<int>(this->m_sGestureState.fingers.size())};
 
-        this->dragGestureActive = this->handleDragGesture(gesture);
+        this->activeDragGesture = this->handleDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
     });
 
     auto swipe_liftoff = std::make_unique<LiftoffAction>();
@@ -355,13 +356,13 @@ void IGestureManager::addMultiFingerTap(const float* sensitivity, const int64_t*
 void IGestureManager::addLongPress(const float* sensitivity, const int64_t* delay) {
     auto long_press_and_emit = std::make_unique<OnCompleteAction>(
         std::make_unique<LongPress>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, delay), [this]() {
-            if (this->dragGestureActive) {
+            if (this->activeDragGesture.has_value()) {
                 return;
             }
             const auto gesture =
                 DragGesture{DragGestureType::HOLD, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
 
-            this->dragGestureActive = this->handleDragGesture(gesture);
+            this->activeDragGesture = this->handleDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
         });
 
     auto touch_up_or_down = std::make_unique<TouchUpOrDownAction>();
