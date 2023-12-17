@@ -39,7 +39,10 @@ class GestureManager : public IGestureManager {
     void emulateSwipeUpdate(uint32_t time);
 
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
-    bool handleWorkspaceSwipe(const CompletedGesture& gev);
+    bool handleWorkspaceSwipe(const DragGesture& gev);
+
+    bool handleDragGesture(const DragGesture& gev) override;
+    void dragGestureUpdate(const wf::touch::gesture_event_t&) override;
 
     void sendCancelEventsToWindows() override;
 };

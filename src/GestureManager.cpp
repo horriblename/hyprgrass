@@ -9,6 +9,8 @@
 
 // constexpr double SWIPE_THRESHOLD = 30.;
 
+bool handleGestureBind(std::string bind, bool pressed);
+
 GestureManager::GestureManager() {
     static auto* const PSENSITIVITY =
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")->floatValue;
@@ -62,23 +64,45 @@ void GestureManager::emulateSwipeUpdate(uint32_t time) {
 }
 
 bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
-    if (gev.type == CompletedGestureType::SWIPE_HOLD) {
-        return this->handleWorkspaceSwipe(gev);
-    }
-    if (gev.type == CompletedGestureType::SWIPE && this->dragGestureIsActive()) {
-        this->emulateSwipeEnd(0, false);
-        return true;
+    if (this->dragGestureIsActive()) {
+        switch (gev.type) {
+            case CompletedGestureType::SWIPE:
+                // TODO: maybe check if active drag gesture is also swipe
+                this->emulateSwipeEnd(0, false);
+                return true;
+            case CompletedGestureType::HOLD_END:
+                // TODO:
+                return true;
+            default:
+                return false;
+        }
     }
 
-    const auto bind = gev.to_string();
-    bool found      = false;
+    return handleGestureBind(gev.to_string(), false);
+}
+
+bool GestureManager::handleDragGesture(const DragGesture& gev) {
+    switch (gev.type) {
+        case DragGestureType::SWIPE:
+            return this->handleWorkspaceSwipe(gev);
+        default:
+            break;
+    }
+
+    return handleGestureBind(gev.to_string(), true);
+}
+
+// bind is the name of the gesture event, pressed only matters for mouse binds, so only start of drag gestures should
+// set it to true
+bool handleGestureBind(std::string bind, bool pressed) {
+    bool found = false;
     Debug::log(LOG, "[hyprgrass] Gesture Triggered: {}", bind);
 
     for (const auto& k : g_pKeybindManager->m_lKeybinds) {
         if (k.key != bind)
             continue;
 
-        const auto DISPATCHER = g_pKeybindManager->m_mDispatchers.find(k.handler);
+        const auto DISPATCHER = g_pKeybindManager->m_mDispatchers.find(k.mouse ? "mouse" : k.handler);
 
         // Should never happen, as we check in the ConfigManager, but oh well
         if (DISPATCHER == g_pKeybindManager->m_mDispatchers.end()) {
@@ -92,9 +116,17 @@ bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
         if (k.handler == "pass")
             continue;
 
-        DISPATCHER->second(k.arg);
-        found = true;
+        if (k.handler == "mouse") {
+            DISPATCHER->second(pressed ? "1" : "0" + k.arg);
+        } else {
+            DISPATCHER->second(k.arg);
+        }
+
+        if (!k.nonConsuming) {
+            found = true;
+        }
     }
+
     return found;
 }
 
@@ -106,151 +138,150 @@ void GestureManager::handleCancelledGesture() {
     this->emulateSwipeEnd(0, false);
 }
 
-bool GestureManager::handleWorkspaceSwipe(const CompletedGesture& gev) {
+bool GestureManager::handleWorkspaceSwipe(const DragGesture& gev) {
     static auto* const PWORKSPACEFINGERS =
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")->intValue;
     const auto VERTANIMS = g_pCompositor->getWorkspaceByID(g_pCompositor->m_pLastMonitor->activeWorkspace)
                                ->m_vRenderOffset.getConfig()
                                ->pValues->internalStyle == "slidevert";
 
-    if (gev.type == CompletedGestureType::SWIPE_HOLD && gev.finger_count == *PWORKSPACEFINGERS) {
-            const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
-            const auto vertical             = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
-            const auto workspace_directions = VERTANIMS ? vertical : horizontal;
-            const auto anti_directions      = VERTANIMS ? horizontal : vertical;
+    if (gev.type == DragGestureType::SWIPE && gev.finger_count == *PWORKSPACEFINGERS) {
+        const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
+        const auto vertical             = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
+        const auto workspace_directions = VERTANIMS ? vertical : horizontal;
+        const auto anti_directions      = VERTANIMS ? horizontal : vertical;
 
-            if (gev.direction & workspace_directions && !(gev.direction & anti_directions)) {
-                // FIXME time arg of @emulateSwipeBegin should probably be assigned
-                // something useful (though its not really used later)
-                this->emulateSwipeBegin(0);
-                return true;
-            }
+        if (gev.direction & workspace_directions && !(gev.direction & anti_directions)) {
+            // FIXME time arg of @emulateSwipeBegin should probably be assigned
+            // something useful (though its not really used later)
+            this->emulateSwipeBegin(0);
+            return true;
         }
+    }
 
+    return false;
+}
+
+void GestureManager::sendCancelEventsToWindows() {
+    static auto* const SEND_CANCEL =
+        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")->intValue;
+
+    if (*SEND_CANCEL == 0) {
+        return;
+    }
+
+    for (const auto& surface : this->touchedSurfaces) {
+        if (!surface)
+            continue;
+        wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, surface);
+    }
+    this->touchedSurfaces.clear();
+}
+
+// @return whether or not to inhibit further actions
+bool GestureManager::onTouchDown(wlr_touch_down_event* ev) {
+    static auto* const SEND_CANCEL =
+        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")->intValue;
+
+    if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
+        return false;
+
+    if (!eventForwardingInhibited() && *SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
+        // remember which surfaces were touched, to later send cancel events
+        const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
+        const auto TOUCHED = std::find(touchedSurfaces.begin(), touchedSurfaces.end(), surface);
+        if (TOUCHED == touchedSurfaces.end()) {
+            touchedSurfaces.push_back(surface);
+        }
+    }
+
+    m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(ev->touch->output_name ? ev->touch->output_name : "");
+
+    const auto PDEVIT = std::find_if(g_pInputManager->m_lTouchDevices.begin(), g_pInputManager->m_lTouchDevices.end(),
+                                     [&](const STouchDevice& other) { return other.pWlrDevice == &ev->touch->base; });
+
+    if (PDEVIT != g_pInputManager->m_lTouchDevices.end() && !PDEVIT->boundOutput.empty()) {
+        m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(PDEVIT->boundOutput);
+    }
+    m_pLastTouchedMonitor = m_pLastTouchedMonitor ? m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor;
+
+    const auto& position = m_pLastTouchedMonitor->vecPosition;
+    const auto& geometry = m_pLastTouchedMonitor->vecSize;
+    this->m_sMonitorArea = {position.x, position.y, geometry.x, geometry.y};
+
+    // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
+    // represent "how many percent of screen" whereas
+    // @wf::touch::gesture_event_t uses PIXELS as unit
+    auto pos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
+
+    const wf::touch::gesture_event_t gesture_event = {
+        .type   = wf::touch::EVENT_TYPE_TOUCH_DOWN,
+        .time   = ev->time_msec,
+        .finger = ev->touch_id,
+        .pos    = pos,
+    };
+
+    return IGestureManager::onTouchDown(gesture_event);
+}
+
+bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
+    static auto* const SEND_CANCEL =
+        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")->intValue;
+
+    if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
+        return false;
+
+    // NOTE this is neccessary because onTouchDown might fail and exit without
+    // updating gestures
+    wf::touch::point_t lift_off_pos;
+    try {
+        lift_off_pos = this->m_sGestureState.fingers.at(ev->touch_id).current;
+    } catch (const std::out_of_range&) {
         return false;
     }
 
-    void GestureManager::sendCancelEventsToWindows() {
-        static auto* const SEND_CANCEL =
-            &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")->intValue;
+    const wf::touch::gesture_event_t gesture_event = {
+        .type   = wf::touch::EVENT_TYPE_TOUCH_UP,
+        .time   = ev->time_msec,
+        .finger = ev->touch_id,
+        .pos    = {lift_off_pos.x, lift_off_pos.y},
+    };
 
-        if (*SEND_CANCEL == 0) {
-            return;
-        }
+    const auto BLOCK = IGestureManager::onTouchUp(gesture_event);
+    if (*SEND_CANCEL) {
+        return BLOCK;
+    } else {
+        // send_cancel is turned off; we need to rely on touchup events
+        return false;
+    }
+}
 
-        for (const auto& surface : this->touchedSurfaces) {
-            if (!surface)
-                continue;
-            wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, surface);
-        }
-        this->touchedSurfaces.clear();
+bool GestureManager::onTouchMove(wlr_touch_motion_event* ev) {
+    if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
+        return false;
+
+    if (this->dragGestureIsActive()) {
+        this->emulateSwipeUpdate(0);
     }
 
-    // @return whether or not to inhibit further actions
-    bool GestureManager::onTouchDown(wlr_touch_down_event * ev) {
-        static auto* const SEND_CANCEL =
-            &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")->intValue;
+    auto pos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
 
-        if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
-            return false;
+    const wf::touch::gesture_event_t gesture_event = {
+        .type   = wf::touch::EVENT_TYPE_MOTION,
+        .time   = ev->time_msec,
+        .finger = ev->touch_id,
+        .pos    = pos,
+    };
 
-        if (!eventForwardingInhibited() && *SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
-            // remember which surfaces were touched, to later send cancel events
-            const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
-            const auto TOUCHED = std::find(touchedSurfaces.begin(), touchedSurfaces.end(), surface);
-            if (TOUCHED == touchedSurfaces.end()) {
-                touchedSurfaces.push_back(surface);
-            }
-        }
+    return IGestureManager::onTouchMove(gesture_event);
+}
 
-        m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(ev->touch->output_name ? ev->touch->output_name : "");
+SMonitorArea GestureManager::getMonitorArea() const {
+    return this->m_sMonitorArea;
+}
 
-        const auto PDEVIT =
-            std::find_if(g_pInputManager->m_lTouchDevices.begin(), g_pInputManager->m_lTouchDevices.end(),
-                         [&](const STouchDevice& other) { return other.pWlrDevice == &ev->touch->base; });
-
-        if (PDEVIT != g_pInputManager->m_lTouchDevices.end() && !PDEVIT->boundOutput.empty()) {
-            m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(PDEVIT->boundOutput);
-        }
-        m_pLastTouchedMonitor = m_pLastTouchedMonitor ? m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor;
-
-        const auto& position = m_pLastTouchedMonitor->vecPosition;
-        const auto& geometry = m_pLastTouchedMonitor->vecSize;
-        this->m_sMonitorArea = {position.x, position.y, geometry.x, geometry.y};
-
-        // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
-        // represent "how many percent of screen" whereas
-        // @wf::touch::gesture_event_t uses PIXELS as unit
-        auto pos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
-
-        const wf::touch::gesture_event_t gesture_event = {
-            .type   = wf::touch::EVENT_TYPE_TOUCH_DOWN,
-            .time   = ev->time_msec,
-            .finger = ev->touch_id,
-            .pos    = pos,
-        };
-
-        return IGestureManager::onTouchDown(gesture_event);
-    }
-
-    bool GestureManager::onTouchUp(wlr_touch_up_event * ev) {
-        static auto* const SEND_CANCEL =
-            &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")->intValue;
-
-        if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
-            return false;
-
-        // NOTE this is neccessary because onTouchDown might fail and exit without
-        // updating gestures
-        wf::touch::point_t lift_off_pos;
-        try {
-            lift_off_pos = this->m_sGestureState.fingers.at(ev->touch_id).current;
-        } catch (const std::out_of_range&) {
-            return false;
-        }
-
-        const wf::touch::gesture_event_t gesture_event = {
-            .type   = wf::touch::EVENT_TYPE_TOUCH_UP,
-            .time   = ev->time_msec,
-            .finger = ev->touch_id,
-            .pos    = {lift_off_pos.x, lift_off_pos.y},
-        };
-
-        const auto BLOCK = IGestureManager::onTouchUp(gesture_event);
-        if (*SEND_CANCEL) {
-            return BLOCK;
-        } else {
-            // send_cancel is turned off; we need to rely on touchup events
-            return false;
-        }
-    }
-
-    bool GestureManager::onTouchMove(wlr_touch_motion_event * ev) {
-        if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
-            return false;
-
-        if (this->dragGestureIsActive()) {
-            this->emulateSwipeUpdate(0);
-        }
-
-        auto pos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
-
-        const wf::touch::gesture_event_t gesture_event = {
-            .type   = wf::touch::EVENT_TYPE_MOTION,
-            .time   = ev->time_msec,
-            .finger = ev->touch_id,
-            .pos    = pos,
-        };
-
-        return IGestureManager::onTouchMove(gesture_event);
-    }
-
-    SMonitorArea GestureManager::getMonitorArea() const {
-        return this->m_sMonitorArea;
-    }
-
-    wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, double y) const {
-        auto area = this->getMonitorArea();
-        // TODO do I need to add area.x and area.y respectively?
-        return wf::touch::point_t{x * area.w, y * area.h};
-    }
+wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, double y) const {
+    auto area = this->getMonitorArea();
+    // TODO do I need to add area.x and area.y respectively?
+    return wf::touch::point_t{x * area.w, y * area.h};
+}
