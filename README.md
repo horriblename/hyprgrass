@@ -133,7 +133,9 @@ where (skip to [examples](#examples) if this is confusing):
      - `finger_count` must be >= 3
      - `direction` is one of `l`, `r`, `u`, `d`, or `ld`, `rd`, `lu`, `ru` for diagonal directions.  
        (l, r, u, d stand for left, right, up, down)
-  2. `edge:<from_edge>:<direction>`
+  2. `tap:<finger_count>`
+     - `finger_count` must be >= 3
+  3. `edge:<from_edge>:<direction>`
      - `<from_edge>` is from which edge to start from (l/r/u/d)
      - `<direction>` is in which direction to swipe (l/r/u/d/lu/ld/ru/rd)
 
@@ -158,6 +160,10 @@ bind = , swipe:4:d, killactive
 # swipe diagonally left and down with 3 fingers
 # l (or r) must come before d and u
 bind = , swipe:3:ld, exec, foot
+
+# tap with 3 fingers
+# NOTE: tap events only trigger for finger count of >= 3
+bind = , tap:3, exec, foot
 ```
 
 # Acknowledgements

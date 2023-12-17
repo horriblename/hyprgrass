@@ -14,6 +14,7 @@ GestureManager::GestureManager() {
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")->floatValue;
 
     this->addMultiFingerGesture(PSENSITIVITY);
+    this->addMultiFingerTap(PSENSITIVITY);
     this->addEdgeSwipeGesture(PSENSITIVITY);
 }
 
