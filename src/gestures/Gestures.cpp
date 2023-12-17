@@ -39,7 +39,11 @@ std::string CompletedGesture::to_string() const {
             return "workspace_swipe";
         case TouchGestureType::TAP:
             return "tap:" + std::to_string(finger_count);
+        case TouchGestureType::HOLD:
+            return "hold:" + std::to_string(finger_count);
     }
+
+    return "";
 }
 
 wf::touch::action_status_t CMultiAction::update_state(const wf::touch::gesture_state_t& state,
@@ -125,9 +129,35 @@ wf::touch::action_status_t MultiFingerTap::update_state(const wf::touch::gesture
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 
+wf::touch::action_status_t LongPress::update_state(const wf::touch::gesture_state_t& state,
+                                                   const wf::touch::gesture_event_t& event) {
+    if (event.time - this->start_time > *this->delay) {
+        return wf::touch::ACTION_STATUS_COMPLETED;
+    }
+
+    switch (event.type) {
+        case wf::touch::EVENT_TYPE_MOTION:
+            for (const auto& finger : state.fingers) {
+                const auto delta = finger.second.delta();
+                if (delta.x * delta.x + delta.y + delta.y > this->base_threshold / *this->sensitivity) {
+                    return wf::touch::ACTION_STATUS_CANCELLED;
+                }
+            }
+            break;
+
+        case wf::touch::EVENT_TYPE_TOUCH_DOWN:
+            gesture_action_t::reset(event.time);
+            break;
+
+        case wf::touch::EVENT_TYPE_TOUCH_UP:
+            return wf::touch::ACTION_STATUS_CANCELLED;
+    }
+
+    return wf::touch::ACTION_STATUS_RUNNING;
+}
+
 wf::touch::action_status_t LiftoffAction::update_state(const wf::touch::gesture_state_t& state,
                                                        const wf::touch::gesture_event_t& event) {
-
     if (event.time - this->start_time > this->get_duration()) {
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
@@ -281,7 +311,22 @@ void IGestureManager::addMultiFingerTap(const float* sensitivity, const int64_t*
     this->addTouchGesture(std::make_unique<wf::touch::gesture_t>(std::move(tap_actions), ack, cancel));
 }
 
-// TODO: fix duration, do not depend on sensitivity
+void IGestureManager::addLongPress(const float* sensitivity, const int64_t* delay) {
+    auto long_press = std::make_unique<LongPress>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, delay);
+
+    std::vector<std::unique_ptr<wf::touch::gesture_action_t>> long_press_actions;
+    long_press_actions.emplace_back(std::move(long_press));
+
+    auto ack = [this]() {
+        const auto gesture =
+            CompletedGesture{TouchGestureType::HOLD, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
+        this->handleGesture(gesture);
+    };
+    auto cancel = [this]() { this->handleCancelledGesture(); };
+
+    this->addTouchGesture(std::make_unique<wf::touch::gesture_t>(std::move(long_press_actions), ack, cancel));
+}
+
 void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout) {
     // Edge swipe needs a quick release to be considered edge swipe
     auto edge         = std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE, sensitivity, timeout);

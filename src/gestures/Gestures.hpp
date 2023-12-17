@@ -30,6 +30,7 @@ enum class TouchGestureType {
     SWIPE_HOLD, // same as SWIPE but fingers were not lifted
     EDGE_SWIPE,
     TAP,
+    HOLD,
     // PINCH,
 };
 
@@ -117,6 +118,24 @@ class MultiFingerTap : public wf::touch::gesture_action_t {
     };
 };
 
+class LongPress : public wf::touch::gesture_action_t {
+  private:
+    double base_threshold;
+    const float* sensitivity;
+    const int64_t* delay;
+
+  public:
+    LongPress(double base_threshold, const float* sensitivity, const int64_t* delay)
+        : base_threshold(base_threshold), sensitivity(sensitivity), delay(delay){};
+
+    wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
+                                            const wf::touch::gesture_event_t& event) override;
+
+    void reset(uint32_t time) override {
+        gesture_action_t::reset(time);
+    };
+};
+
 // Completes upon receiving enough touch down events within a short duration
 class MultiFingerDownAction : public wf::touch::gesture_action_t {
     // upon completion, calls the given callback.
@@ -181,7 +200,7 @@ class IGestureManager {
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
     void addMultiFingerGesture(const float* sensitivity, const int64_t* timeout);
     void addMultiFingerTap(const float* sensitivity, const int64_t* timeout);
-    void addEdgeSwipeGesture(const float* sensitivity);
+    void addLongPress(const float* sensitivity, const int64_t* delay);
     void addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout);
 
     bool dragGestureIsActive() const {
