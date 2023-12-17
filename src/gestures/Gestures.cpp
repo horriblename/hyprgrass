@@ -29,14 +29,14 @@ std::string stringifyDirection(gestureDirection direction) {
 
 std::string CompletedGesture::to_string() const {
     switch (type) {
-        case TouchGestureType::EDGE_SWIPE:
+        case CompletedGestureType::EDGE_SWIPE:
             return "edge:" + stringifyDirection(this->edge_origin) + ":" + stringifyDirection(this->direction);
-        case TouchGestureType::SWIPE:
+        case CompletedGestureType::SWIPE:
             return "swipe:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
             break;
-        case TouchGestureType::TAP:
+        case CompletedGestureType::TAP:
             return "tap:" + std::to_string(finger_count);
-        case TouchGestureType::HOLD_END:
+        case CompletedGestureType::HOLD_END:
             return "hold:" + std::to_string(finger_count);
     }
 
@@ -327,7 +327,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
     swipe_actions.emplace_back(std::move(swipe_liftoff));
 
     auto ack = [swipe_ptr, this]() {
-        const auto gesture = CompletedGesture{TouchGestureType::SWIPE, swipe_ptr->target_direction,
+        const auto gesture = CompletedGesture{CompletedGestureType::SWIPE, swipe_ptr->target_direction,
                                               static_cast<int>(this->m_sGestureState.fingers.size())};
         this->handleCompletedGesture(gesture);
     };
@@ -344,7 +344,7 @@ void IGestureManager::addMultiFingerTap(const float* sensitivity, const int64_t*
 
     auto ack = [this]() {
         const auto gesture =
-            CompletedGesture{TouchGestureType::TAP, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
+            CompletedGesture{CompletedGestureType::TAP, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
         this->handleCompletedGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
@@ -372,7 +372,7 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
 
     auto ack = [this]() {
         const auto gesture =
-            CompletedGesture{TouchGestureType::HOLD_END, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
+            CompletedGesture{CompletedGestureType::HOLD_END, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
         this->handleCompletedGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
@@ -406,7 +406,8 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_
             return;
         }
         auto direction = edge_ptr->target_direction;
-        auto gesture = CompletedGesture{TouchGestureType::EDGE_SWIPE, direction, edge_ptr->finger_count, origin_edges};
+        auto gesture =
+            CompletedGesture{CompletedGestureType::EDGE_SWIPE, direction, edge_ptr->finger_count, origin_edges};
         this->handleCompletedGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };

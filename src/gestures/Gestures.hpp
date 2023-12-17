@@ -24,7 +24,7 @@ constexpr static uint32_t GESTURE_BASE_DURATION   = 400;
 
 constexpr static uint32_t SEND_CANCEL_EVENT_FINGER_COUNT = 3;
 
-enum class TouchGestureType {
+enum class CompletedGestureType {
     // Invalid Gesture
     SWIPE,
     EDGE_SWIPE,
@@ -58,7 +58,7 @@ using gestureDirection = uint32_t;
  * Finger count can be arbitrary (might be a good idea to limit to >3)
  */
 struct CompletedGesture {
-    TouchGestureType type;
+    CompletedGestureType type;
     gestureDirection direction;
     int finger_count;
 
