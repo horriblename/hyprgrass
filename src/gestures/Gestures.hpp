@@ -70,15 +70,17 @@ struct SMonitorArea {
 
 // swipe and with multiple fingers and directions
 class CMultiAction : public wf::touch::gesture_action_t {
+  private:
+    double base_threshold;
+    const float* sensitivity;
+    const int64_t* timeout;
+
   public:
     //   threshold = base_threshold / sensitivity
     // if the threshold needs to be adjusted dynamically, the sensitivity
     // pointer is used
-    CMultiAction(double base_threshold, const float* sensitivity)
-        : base_threshold(base_threshold), sensitivity(sensitivity){};
-
-    double base_threshold;
-    const float* sensitivity;
+    CMultiAction(double base_threshold, const float* sensitivity, const int64_t* timeout)
+        : base_threshold(base_threshold), sensitivity(sensitivity), timeout(timeout){};
 
     gestureDirection target_direction = 0;
     int finger_count                  = 0;
@@ -101,10 +103,11 @@ class MultiFingerTap : public wf::touch::gesture_action_t {
   private:
     double base_threshold;
     const float* sensitivity;
+    const int64_t* timeout;
 
   public:
-    MultiFingerTap(double base_threshold, const float* sensitivity)
-        : base_threshold(base_threshold), sensitivity(sensitivity){};
+    MultiFingerTap(double base_threshold, const float* sensitivity, const int64_t* timeout)
+        : base_threshold(base_threshold), sensitivity(sensitivity), timeout(timeout){};
 
     wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
                                             const wf::touch::gesture_event_t& event) override;
@@ -176,9 +179,10 @@ class IGestureManager {
     bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
-    void addMultiFingerGesture(const float* sensitivity);
-    void addMultiFingerTap(const float* sensitivity);
+    void addMultiFingerGesture(const float* sensitivity, const int64_t* timeout);
+    void addMultiFingerTap(const float* sensitivity, const int64_t* timeout);
     void addEdgeSwipeGesture(const float* sensitivity);
+    void addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout);
 
     bool dragGestureIsActive() const {
         return dragGestureActive;

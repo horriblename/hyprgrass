@@ -44,7 +44,7 @@ std::string CompletedGesture::to_string() const {
 
 wf::touch::action_status_t CMultiAction::update_state(const wf::touch::gesture_state_t& state,
                                                       const wf::touch::gesture_event_t& event) {
-    if (event.time - this->start_time > this->get_duration()) {
+    if (event.time - this->start_time > *this->timeout) {
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
 
@@ -105,7 +105,7 @@ wf::touch::action_status_t MultiFingerDownAction::update_state(const wf::touch::
 
 wf::touch::action_status_t MultiFingerTap::update_state(const wf::touch::gesture_state_t& state,
                                                         const wf::touch::gesture_event_t& event) {
-    if (event.time - this->start_time > this->get_duration()) {
+    if (event.time - this->start_time > *this->timeout) {
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
 
@@ -228,12 +228,11 @@ void IGestureManager::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gest
 //   threshold.
 // * further emits a TouchGestureType::SWIPE event if the SWIPE_HOLD event was
 //   emitted and once a finger is lifted
-void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
+void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int64_t* timeout) {
     auto multi_down = std::make_unique<MultiFingerDownAction>([this]() { this->cancelTouchEventsOnAllWindows(); });
     multi_down->set_duration(GESTURE_BASE_DURATION);
 
-    auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity);
-    swipe->set_duration(GESTURE_BASE_DURATION);
+    auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, timeout);
 
     auto swipe_ptr = swipe.get();
 
@@ -266,10 +265,8 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity) {
     this->addTouchGesture(std::make_unique<wf::touch::gesture_t>(std::move(swipe_actions), ack, cancel));
 }
 
-void IGestureManager::addMultiFingerTap(const float* sensitivity) {
-    auto tap = std::make_unique<MultiFingerTap>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity);
-    tap->set_duration(GESTURE_BASE_DURATION);
-    // swipe_liftoff->set_duration(GESTURE_BASE_DURATION / 2);
+void IGestureManager::addMultiFingerTap(const float* sensitivity, const int64_t* timeout) {
+    auto tap = std::make_unique<MultiFingerTap>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, timeout);
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> tap_actions;
     tap_actions.emplace_back(std::move(tap));
@@ -285,13 +282,11 @@ void IGestureManager::addMultiFingerTap(const float* sensitivity) {
 }
 
 // TODO: fix duration, do not depend on sensitivity
-void IGestureManager::addEdgeSwipeGesture(const float* sensitivity) {
+void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout) {
     // Edge swipe needs a quick release to be considered edge swipe
-    auto edge         = std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE, sensitivity);
+    auto edge         = std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE, sensitivity, timeout);
     auto edge_release = std::make_unique<wf::touch::touch_action_t>(1, false);
 
-    // FIXME make this adjustable:
-    edge->set_duration(GESTURE_BASE_DURATION * *sensitivity);
     // TODO do I really need this:
     // edge->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE * *sensitivity);
 

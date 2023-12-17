@@ -12,10 +12,11 @@
 GestureManager::GestureManager() {
     static auto* const PSENSITIVITY =
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")->floatValue;
+    static auto* const HOLD_DELAY = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:hold_delay")->intValue;
 
-    this->addMultiFingerGesture(PSENSITIVITY);
-    this->addMultiFingerTap(PSENSITIVITY);
-    this->addEdgeSwipeGesture(PSENSITIVITY);
+    this->addMultiFingerGesture(PSENSITIVITY, HOLD_DELAY);
+    this->addMultiFingerTap(PSENSITIVITY, HOLD_DELAY);
+    this->addEdgeSwipeGesture(PSENSITIVITY, HOLD_DELAY);
 }
 
 void GestureManager::emulateSwipeBegin(uint32_t time) {
