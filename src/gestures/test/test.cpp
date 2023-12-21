@@ -40,6 +40,7 @@ void Tester::testFindSwipeEdges() {
 enum class ExpectResultType {
     COMPLETED,
     DRAG_TRIGGERED,
+    DRAG_ENDED,
     CANCELLED,
     CHECK_PROGRESS,
 };
@@ -86,6 +87,9 @@ void ProcessEvents(CMockGestureManager& gm, ExpectResult expect,
         case ExpectResultType::DRAG_TRIGGERED:
             CHECK(gm.getActiveDragGesture().has_value());
             break;
+        case ExpectResultType::DRAG_ENDED:
+            CHECK(gm.dragEnded);
+            break;
         case ExpectResultType::CANCELLED:
             CHECK(gm.cancelled);
             break;
@@ -93,6 +97,7 @@ void ProcessEvents(CMockGestureManager& gm, ExpectResult expect,
             const auto got = gm.getGestureAt(expect.gesture_index)->get()->get_progress();
             // fuck floating point math
             CHECK(std::abs(got - expect.progress) < 1e-5);
+            break;
     }
 }
 
@@ -219,7 +224,7 @@ TEST_CASE("Long press: begin drag") {
     ProcessEvents(gm, {.type = ExpectResultType::DRAG_TRIGGERED}, events);
 }
 
-TEST_CASE("Long press: begin drag") {
+TEST_CASE("Long press: full drag") {
     std::cout << "  ==== stdout:" << std::endl;
     CMockGestureManager gm;
     gm.addLongPress(&SENSITIVITY, &HOLD_DELAY);
@@ -228,9 +233,9 @@ TEST_CASE("Long press: begin drag") {
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}}, {wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}}, {wf::touch::EVENT_TYPE_MOTION, 200, 0, {460, 300}},
         {wf::touch::EVENT_TYPE_MOTION, 300, 1, {510, 290}},     {wf::touch::EVENT_TYPE_MOTION, 511, 2, {560, 300}},
-        {wf::touch::EVENT_TYPE_TOUCH_UP, 550, 2, {560, 300}}};
+        {wf::touch::EVENT_TYPE_MOTION, 530, 0, {470, 310}},     {wf::touch::EVENT_TYPE_TOUCH_UP, 550, 2, {560, 300}}};
 
-    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
+    ProcessEvents(gm, {.type = ExpectResultType::DRAG_ENDED}, events);
 }
 
 TEST_CASE("Long press: cancelled due to short hold duration") {
@@ -241,8 +246,8 @@ TEST_CASE("Long press: cancelled due to short hold duration") {
     const std::vector<TouchEvent> events{
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}}, {wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}}, {wf::touch::EVENT_TYPE_MOTION, 200, 0, {460, 300}},
-        {wf::touch::EVENT_TYPE_MOTION, 300, 1, {510, 290}},     {wf::touch::EVENT_TYPE_MOTION, 500, 2, {560, 300}},
-        {wf::touch::EVENT_TYPE_MOTION, 300, 1, {510, 290}},     {wf::touch::EVENT_TYPE_TOUCH_UP, 500, 2, {560, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 300, 1, {510, 290}},     {wf::touch::EVENT_TYPE_MOTION, 350, 2, {560, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 400, 1, {510, 290}},     {wf::touch::EVENT_TYPE_TOUCH_UP, 500, 2, {560, 300}},
     };
 
     ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);

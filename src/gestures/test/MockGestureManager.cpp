@@ -15,7 +15,16 @@ bool CMockGestureManager::handleCompletedGesture(const CompletedGesture& gev) {
 
 bool CMockGestureManager::handleDragGesture(const DragGesture& gev) {
     std::cout << "drag started: " << gev.to_string() << "\n";
-    return true;
+    return this->handlesDragEvents;
+}
+
+void CMockGestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& gev) {
+    std::cout << "drag update" << std::endl;
+}
+
+void CMockGestureManager::handleDragGestureEnd(const DragGesture& gev) {
+    std::cout << "drag end: " << gev.to_string() << "\n";
+    this->dragEnded = true;
 }
 
 void CMockGestureManager::handleCancelledGesture() {

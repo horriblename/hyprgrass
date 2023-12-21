@@ -18,11 +18,17 @@ class CMockGestureManager final : public IGestureManager {
     CMockGestureManager();
     ~CMockGestureManager() {}
 
+    // if set to true, handleDragGesture() will return true
+    bool handlesDragEvents = false;
+
     bool triggered = false;
     bool cancelled = false;
+    bool dragEnded = false;
+
     void resetTestResults() {
         triggered = false;
         cancelled = false;
+        dragEnded = false;
     }
 
     auto getGestureAt(int index) const {
@@ -36,7 +42,8 @@ class CMockGestureManager final : public IGestureManager {
 
     bool handleCompletedGesture(const CompletedGesture& gev) override;
     bool handleDragGesture(const DragGesture& gev) override;
-    void dragGestureUpdate(const wf::touch::gesture_event_t&) override {}
+    void dragGestureUpdate(const wf::touch::gesture_event_t&) override;
+    void handleDragGestureEnd(const DragGesture& gev) override;
     void handleCancelledGesture() override;
 
   protected:
