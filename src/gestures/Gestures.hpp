@@ -242,6 +242,9 @@ class IGestureManager {
     // called on every touch event while a drag gesture is active
     virtual void dragGestureUpdate(const wf::touch::gesture_event_t&) = 0;
 
+    // called at the end of a drag event
+    virtual void handleDragGestureEnd(const DragGesture& gev) = 0;
+
     // this function should cleanup after drag gestures
     virtual void handleCancelledGesture() = 0;
 

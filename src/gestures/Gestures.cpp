@@ -328,9 +328,18 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
     swipe_actions.emplace_back(std::move(swipe_liftoff));
 
     auto ack = [swipe_ptr, this]() {
-        const auto gesture = CompletedGesture{CompletedGestureType::SWIPE, swipe_ptr->target_direction,
-                                              static_cast<int>(this->m_sGestureState.fingers.size())};
-        this->handleCompletedGesture(gesture);
+        if (this->activeDragGesture.has_value() && this->activeDragGesture->type == DragGestureType::SWIPE) {
+            const auto gesture =
+                DragGesture{DragGestureType::SWIPE, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
+
+            this->handleDragGestureEnd(gesture);
+            this->activeDragGesture = std::nullopt;
+        } else {
+            const auto gesture = CompletedGesture{CompletedGestureType::SWIPE, swipe_ptr->target_direction,
+                                                  static_cast<int>(this->m_sGestureState.fingers.size())};
+
+            this->handleCompletedGesture(gesture);
+        }
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
 
@@ -372,9 +381,18 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
     long_press_actions.emplace_back(std::move(touch_up_or_down));
 
     auto ack = [this]() {
-        const auto gesture =
-            CompletedGesture{CompletedGestureType::HOLD_END, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
-        this->handleCompletedGesture(gesture);
+        if (this->activeDragGesture.has_value() && this->activeDragGesture->type == DragGestureType::HOLD) {
+            const auto gesture =
+                DragGesture{DragGestureType::HOLD, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
+
+            this->handleDragGestureEnd(gesture);
+            this->activeDragGesture = std::nullopt;
+        } else {
+            const auto gesture = CompletedGesture{CompletedGestureType::HOLD_END, 0,
+                                                  static_cast<int>(this->m_sGestureState.fingers.size())};
+
+            this->handleCompletedGesture(gesture);
+        };
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
 
