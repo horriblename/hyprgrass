@@ -15,15 +15,25 @@ class Tester {
 
 class CMockGestureManager final : public IGestureManager {
   public:
-    CMockGestureManager();
+    CMockGestureManager(bool handlesDragEvents) : handlesDragEvents(handlesDragEvents) {}
     ~CMockGestureManager() {}
 
     // if set to true, handleDragGesture() will return true
-    bool handlesDragEvents = false;
+    bool handlesDragEvents;
 
     bool triggered = false;
     bool cancelled = false;
     bool dragEnded = false;
+
+    // creates a gesture manager that handles all drag gestures
+    static CMockGestureManager newDragHandler() {
+        return CMockGestureManager(true);
+    }
+
+    // creates a gesture manager that ignores drag gesture events
+    static CMockGestureManager newCompletedGestureOnlyHandler() {
+        return CMockGestureManager(false);
+    }
 
     void resetTestResults() {
         triggered = false;
