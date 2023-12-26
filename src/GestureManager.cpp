@@ -157,8 +157,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             emulateSwipeUpdate(ev.time);
             return;
         case DragGestureType::HOLD:
-            // TODO:
-            // g_pKeybindManager->mouseMoveUnified();
+            wlr_cursor_warp(g_pCompositor->m_sWLRCursor, nullptr, ev.pos.x, ev.pos.y);
             return;
     }
 }
