@@ -33,6 +33,10 @@ GestureManager::GestureManager() {
     this->hold_gesture_timer = wl_event_loop_add_timer(g_pCompositor->m_sWLEventLoop, handleTimer, this);
 }
 
+GestureManager::~GestureManager() {
+    wl_event_source_remove(this->hold_gesture_timer);
+}
+
 void GestureManager::emulateSwipeBegin(uint32_t time) {
     static auto* const PSWIPEFINGERS =
         &HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_fingers")->intValue;

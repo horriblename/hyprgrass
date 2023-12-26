@@ -12,6 +12,7 @@ class GestureManager : public IGestureManager {
   public:
     uint32_t hold_gesture_next_trigger_time;
     GestureManager();
+    ~GestureManager();
     // @return whether this touch event should be blocked from forwarding to the
     // client window/surface
     bool onTouchDown(wlr_touch_down_event*);
