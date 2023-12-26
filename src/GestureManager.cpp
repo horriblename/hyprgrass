@@ -1,4 +1,5 @@
 #include "GestureManager.hpp"
+#include "hyprland/src/managers/LayoutManager.hpp"
 #include "wayfire/touch/touch.hpp"
 #include <algorithm>
 #include <cstdint>
@@ -156,9 +157,13 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
         case DragGestureType::SWIPE:
             emulateSwipeUpdate(ev.time);
             return;
-        case DragGestureType::HOLD:
-            wlr_cursor_warp(g_pCompositor->m_sWLRCursor, nullptr, ev.pos.x, ev.pos.y);
+        case DragGestureType::HOLD: {
+            const auto pos = this->m_sGestureState.get_center().current;
+            wlr_cursor_warp(g_pCompositor->m_sWLRCursor, nullptr, pos.x, pos.y);
+            // HACK: g_pInputManager->onMouseMoveUnified is private so I'm using just this
+            g_pLayoutManager->getCurrentLayout()->onMouseMove(Vector2D(pos.x, pos.y));
             return;
+        }
     }
 }
 
