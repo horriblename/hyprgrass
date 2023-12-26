@@ -1,4 +1,5 @@
 #include "GestureManager.hpp"
+#include "wayfire/touch/touch.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <hyprland/src/Compositor.hpp>
@@ -12,6 +13,13 @@
 
 bool handleGestureBind(std::string bind, bool pressed);
 
+int handleTimer(void* data) {
+    const auto gesture_manager = (GestureManager*)data;
+    gesture_manager->onLongPressTimeout(gesture_manager->hold_gesture_next_trigger_time);
+
+    return 0;
+}
+
 GestureManager::GestureManager() {
     static auto* const PSENSITIVITY =
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")->floatValue;
@@ -21,6 +29,8 @@ GestureManager::GestureManager() {
     this->addMultiFingerTap(PSENSITIVITY, HOLD_DELAY);
     this->addLongPress(PSENSITIVITY, HOLD_DELAY);
     this->addEdgeSwipeGesture(PSENSITIVITY, HOLD_DELAY);
+
+    this->hold_gesture_timer = wl_event_loop_add_timer(g_pCompositor->m_sWLEventLoop, handleTimer, this);
 }
 
 void GestureManager::emulateSwipeBegin(uint32_t time) {
@@ -189,6 +199,15 @@ bool GestureManager::handleWorkspaceSwipe(const DragGesture& gev) {
     return false;
 }
 
+void GestureManager::updateLongPressTimer(uint32_t current_time, uint32_t delay) {
+    this->hold_gesture_next_trigger_time = current_time + delay + 1;
+    wl_event_source_timer_update(this->hold_gesture_timer, delay);
+}
+
+void GestureManager::stopLongPressTimer() {
+    wl_event_source_timer_update(this->hold_gesture_timer, 0);
+}
+
 void GestureManager::sendCancelEventsToWindows() {
     static auto* const SEND_CANCEL =
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")->intValue;
@@ -258,9 +277,6 @@ bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
-    // NOTE this is neccessary because onTouchDown might fail and exit without
-    // updating gestures
-    // FIXME: I don't think the above is true anymore but haven't checked
     wf::touch::point_t lift_off_pos;
     try {
         lift_off_pos = this->m_sGestureState.fingers.at(ev->touch_id).current;

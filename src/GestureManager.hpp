@@ -6,9 +6,11 @@
 #include <hyprland/src/includes.hpp>
 #include <vector>
 #include <wayfire/touch/touch.hpp>
+#include <wayland-server-core.h>
 
 class GestureManager : public IGestureManager {
   public:
+    uint32_t hold_gesture_next_trigger_time;
     GestureManager();
     // @return whether this touch event should be blocked from forwarding to the
     // client window/surface
@@ -33,6 +35,7 @@ class GestureManager : public IGestureManager {
     std::vector<wlr_surface*> touchedSurfaces;
     CMonitor* m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
+    wl_event_source* hold_gesture_timer;
 
     // for workspace swipe
     wf::touch::point_t m_vGestureLastCenter;
@@ -46,6 +49,9 @@ class GestureManager : public IGestureManager {
     bool handleDragGesture(const DragGesture& gev) override;
     void dragGestureUpdate(const wf::touch::gesture_event_t&) override;
     void handleDragGestureEnd(const DragGesture& gev) override;
+
+    void updateLongPressTimer(uint32_t current_time, uint32_t delay) override;
+    void stopLongPressTimer() override;
 
     void sendCancelEventsToWindows() override;
 };
