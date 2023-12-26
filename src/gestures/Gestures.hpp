@@ -24,13 +24,20 @@ constexpr static uint32_t GESTURE_BASE_DURATION   = 400;
 
 constexpr static uint32_t SEND_CANCEL_EVENT_FINGER_COUNT = 3;
 
-enum class TouchGestureType {
+using UpdateExternalTimerCallback = std::function<void(uint32_t current_timer, uint32_t delay)>;
+
+enum class CompletedGestureType {
     // Invalid Gesture
     SWIPE,
-    SWIPE_HOLD, // same as SWIPE but fingers were not lifted
     EDGE_SWIPE,
     TAP,
+    LONG_PRESS,
     // PINCH,
+};
+
+enum class DragGestureType {
+    SWIPE,
+    LONG_PRESS,
 };
 
 enum TouchGestureDirection {
@@ -53,7 +60,7 @@ using gestureDirection = uint32_t;
  * Finger count can be arbitrary (might be a good idea to limit to >3)
  */
 struct CompletedGesture {
-    TouchGestureType type;
+    CompletedGestureType type;
     gestureDirection direction;
     int finger_count;
 
@@ -64,21 +71,31 @@ struct CompletedGesture {
     std::string to_string() const;
 };
 
+struct DragGesture {
+    DragGestureType type;
+    gestureDirection direction;
+    int finger_count;
+
+    std::string to_string() const;
+};
+
 struct SMonitorArea {
     double x, y, w, h;
 };
 
 // swipe and with multiple fingers and directions
 class CMultiAction : public wf::touch::gesture_action_t {
+  private:
+    double base_threshold;
+    const float* sensitivity;
+    const int64_t* timeout;
+
   public:
     //   threshold = base_threshold / sensitivity
     // if the threshold needs to be adjusted dynamically, the sensitivity
     // pointer is used
-    CMultiAction(double base_threshold, const float* sensitivity)
-        : base_threshold(base_threshold), sensitivity(sensitivity){};
-
-    double base_threshold;
-    const float* sensitivity;
+    CMultiAction(double base_threshold, const float* sensitivity, const int64_t* timeout)
+        : base_threshold(base_threshold), sensitivity(sensitivity), timeout(timeout){};
 
     gestureDirection target_direction = 0;
     int finger_count                  = 0;
@@ -101,17 +118,32 @@ class MultiFingerTap : public wf::touch::gesture_action_t {
   private:
     double base_threshold;
     const float* sensitivity;
+    const int64_t* timeout;
 
   public:
-    MultiFingerTap(double base_threshold, const float* sensitivity)
-        : base_threshold(base_threshold), sensitivity(sensitivity){};
+    MultiFingerTap(double base_threshold, const float* sensitivity, const int64_t* timeout)
+        : base_threshold(base_threshold), sensitivity(sensitivity), timeout(timeout){};
 
     wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
                                             const wf::touch::gesture_event_t& event) override;
+};
 
-    void reset(uint32_t time) override {
-        gesture_action_t::reset(time);
-    };
+class LongPress : public wf::touch::gesture_action_t {
+  private:
+    double base_threshold;
+    const float* sensitivity;
+    const int64_t* delay;
+    UpdateExternalTimerCallback update_external_timer_callback;
+
+  public:
+    // TODO: I hope one day I can figure out how not to pass a function for the update timer callback
+    LongPress(double base_threshold, const float* sensitivity, const int64_t* delay,
+              UpdateExternalTimerCallback update_external_timer)
+        : base_threshold(base_threshold), sensitivity(sensitivity), delay(delay),
+          update_external_timer_callback(update_external_timer){};
+
+    wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
+                                            const wf::touch::gesture_event_t& event) override;
 };
 
 // Completes upon receiving enough touch down events within a short duration
@@ -137,18 +169,30 @@ class LiftoffAction : public wf::touch::gesture_action_t {
                                             const wf::touch::gesture_event_t& event) override;
 };
 
-// This action is used to call a function in between other actions
-//
-// NOTE: this action consumes any event, and must consume an event to work.
-class CallbackAction : public wf::touch::gesture_action_t {
+// Completes upon receiving a touch up or touch down event
+class TouchUpOrDownAction : public wf::touch::gesture_action_t {
+    wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
+                                            const wf::touch::gesture_event_t& event) override;
+};
+
+// This action is used to call a function right after another action is completed
+class OnCompleteAction : public wf::touch::gesture_action_t {
+  private:
+    std::unique_ptr<wf::touch::gesture_action_t> action;
+    const std::function<void()> callback;
+
   public:
-    CallbackAction(std::function<void()> callback) : callback(callback) {}
+    OnCompleteAction(std::unique_ptr<wf::touch::gesture_action_t> action, std::function<void()> callback)
+        : callback(callback) {
+        this->action = std::move(action);
+    }
 
     wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
                                             const wf::touch::gesture_event_t& event) override;
 
-  private:
-    const std::function<void()> callback;
+    void reset(uint32_t time) override {
+        this->action->reset(time);
+    }
 };
 
 /*
@@ -176,12 +220,13 @@ class IGestureManager {
     bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
-    void addMultiFingerGesture(const float* sensitivity);
-    void addMultiFingerTap(const float* sensitivity);
-    void addEdgeSwipeGesture(const float* sensitivity);
+    void addMultiFingerGesture(const float* sensitivity, const int64_t* timeout);
+    void addMultiFingerTap(const float* sensitivity, const int64_t* timeout);
+    void addLongPress(const float* sensitivity, const int64_t* delay);
+    void addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout);
 
-    bool dragGestureIsActive() const {
-        return dragGestureActive;
+    std::optional<DragGesture> getActiveDragGesture() const {
+        return activeDragGesture;
     }
 
     // indicates whether events should be blocked from forwarding to client
@@ -198,14 +243,26 @@ class IGestureManager {
     virtual SMonitorArea getMonitorArea() const = 0;
 
     // handles gesture events and returns whether or not the event is used.
-    virtual bool handleGesture(const CompletedGesture& gev) = 0;
+    virtual bool handleCompletedGesture(const CompletedGesture& gev) = 0;
+
+    // called at the start of drag evetns and returns whether or not the event is used.
+    virtual bool handleDragGesture(const DragGesture& gev) = 0;
+
+    // called on every touch event while a drag gesture is active
+    virtual void dragGestureUpdate(const wf::touch::gesture_event_t&) = 0;
+
+    // called at the end of a drag event
+    virtual void handleDragGestureEnd(const DragGesture& gev) = 0;
 
     // this function should cleanup after drag gestures
     virtual void handleCancelledGesture() = 0;
 
+    virtual void updateLongPressTimer(uint32_t current_time, uint32_t delay) = 0;
+    virtual void stopLongPressTimer()                                        = 0;
+
   private:
     bool inhibitTouchEvents;
-    bool dragGestureActive;
+    std::optional<DragGesture> activeDragGesture;
 
     // this function is called when needed to send "cancel touch" events to
     // client windows/surfaces

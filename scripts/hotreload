@@ -1,0 +1,50 @@
+#!/bin/sh
+
+set -e
+
+TMP=/tmp/hyprgrass-testing
+helpText="
+	usage: $0 FILE
+
+Hot reload a hyprland plugin
+
+Plugins loaded by this script will not be 'cached' (not really but don't worry about it :D).
+If a new plugin with the same file name is loaded, the old one is first unloaded.
+
+	example: $(basename $0) ./build/libhyprgrass.so
+
+	Subsequent calls will automatically unload the plugin as needed"
+
+error () {
+	echo "$helpText"
+	exit 1
+}
+
+if [ -z "$1" ]; then
+	error
+fi
+
+if ! [ -f "$1" ]; then
+	echo "'$1' is not a valid file"
+	echo ''
+	error
+fi
+
+baseFileName="$(basename "$1")"
+fileHash="$(sha256sum "$1" | cut -d ' ' -f 1)"
+pluginTempDir="$TMP/$fileHash"
+pluginTempFile="$pluginTempDir/$baseFileName"
+
+for soPath in $TMP/*/$baseFileName; do
+	if [ -f "$soPath" ]; then
+		hyprctl plugin unload "$soPath"
+		rm -r $(dirname "$soPath")
+	fi
+done
+
+mkdir -p "$pluginTempDir"
+
+cp "$1" "$pluginTempDir"
+
+hyprctl plugin load "$pluginTempFile"
+

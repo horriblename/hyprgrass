@@ -41,21 +41,12 @@ APICALL EXPORT std::string PLUGIN_API_VERSION() {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
-    bool cfgStatus = true;
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-    cfgStatus = cfgStatus && HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers",
-                                                         SConfigValue{.intValue = 3});
-    cfgStatus = cfgStatus && HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity",
-                                                         SConfigValue{.floatValue = 1.0});
-    cfgStatus = cfgStatus && HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel",
-                                                         SConfigValue{.intValue = 0});
-
-    if (!cfgStatus) {
-        HyprlandAPI::addNotification(PHANDLE, "config values cannot be properly added", CColor(0.8, 0.2, 0.2, 1.0),
-                                     5000);
-    }
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers", SConfigValue{.intValue = 3});
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity", SConfigValue{.floatValue = 1.0});
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay", SConfigValue{.intValue = 400});
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel", SConfigValue{.intValue = 0});
 #pragma GCC diagnostic pop
 
     const auto hlTargetVersion = GIT_COMMIT_HASH;

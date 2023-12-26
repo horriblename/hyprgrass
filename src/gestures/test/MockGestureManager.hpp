@@ -15,14 +15,30 @@ class Tester {
 
 class CMockGestureManager final : public IGestureManager {
   public:
-    CMockGestureManager();
+    CMockGestureManager(bool handlesDragEvents) : handlesDragEvents(handlesDragEvents) {}
     ~CMockGestureManager() {}
+
+    // if set to true, handleDragGesture() will return true
+    bool handlesDragEvents;
 
     bool triggered = false;
     bool cancelled = false;
+    bool dragEnded = false;
+
+    // creates a gesture manager that handles all drag gestures
+    static CMockGestureManager newDragHandler() {
+        return CMockGestureManager(true);
+    }
+
+    // creates a gesture manager that ignores drag gesture events
+    static CMockGestureManager newCompletedGestureOnlyHandler() {
+        return CMockGestureManager(false);
+    }
+
     void resetTestResults() {
         triggered = false;
         cancelled = false;
+        dragEnded = false;
     }
 
     auto getGestureAt(int index) const {
@@ -34,8 +50,14 @@ class CMockGestureManager final : public IGestureManager {
         return {pos->x, pos->y};
     }
 
-    bool handleGesture(const CompletedGesture& gev) override;
+    bool handleCompletedGesture(const CompletedGesture& gev) override;
+    bool handleDragGesture(const DragGesture& gev) override;
+    void dragGestureUpdate(const wf::touch::gesture_event_t&) override;
+    void handleDragGestureEnd(const DragGesture& gev) override;
     void handleCancelledGesture() override;
+
+    void updateLongPressTimer(uint32_t current_time, uint32_t delay) override {}
+    void stopLongPressTimer() override {}
 
   protected:
     SMonitorArea getMonitorArea() const override {

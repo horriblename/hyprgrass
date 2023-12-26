@@ -1,4 +1,6 @@
 #include "GestureManager.hpp"
+#include "hyprland/src/managers/LayoutManager.hpp"
+#include "wayfire/touch/touch.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <hyprland/src/Compositor.hpp>
@@ -6,16 +8,35 @@
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <memory>
+#include <optional>
 
 // constexpr double SWIPE_THRESHOLD = 30.;
+
+bool handleGestureBind(std::string bind, bool pressed);
+
+int handleLongPressTimer(void* data) {
+    const auto gesture_manager = (GestureManager*)data;
+    gesture_manager->onLongPressTimeout(gesture_manager->long_press_next_trigger_time);
+
+    return 0;
+}
 
 GestureManager::GestureManager() {
     static auto* const PSENSITIVITY =
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")->floatValue;
+    static auto* const LONG_PRESS_DELAY =
+        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay")->intValue;
 
-    this->addMultiFingerGesture(PSENSITIVITY);
-    this->addMultiFingerTap(PSENSITIVITY);
-    this->addEdgeSwipeGesture(PSENSITIVITY);
+    this->addMultiFingerGesture(PSENSITIVITY, LONG_PRESS_DELAY);
+    this->addMultiFingerTap(PSENSITIVITY, LONG_PRESS_DELAY);
+    this->addLongPress(PSENSITIVITY, LONG_PRESS_DELAY);
+    this->addEdgeSwipeGesture(PSENSITIVITY, LONG_PRESS_DELAY);
+
+    this->long_press_timer = wl_event_loop_add_timer(g_pCompositor->m_sWLEventLoop, handleLongPressTimer, this);
+}
+
+GestureManager::~GestureManager() {
+    wl_event_source_remove(this->long_press_timer);
 }
 
 void GestureManager::emulateSwipeBegin(uint32_t time) {
@@ -60,24 +81,32 @@ void GestureManager::emulateSwipeUpdate(uint32_t time) {
     m_vGestureLastCenter = currentCenter;
 }
 
-bool GestureManager::handleGesture(const CompletedGesture& gev) {
-    if (gev.type == TouchGestureType::SWIPE_HOLD) {
-        return this->handleWorkspaceSwipe(gev);
-    }
-    if (gev.type == TouchGestureType::SWIPE && this->dragGestureIsActive()) {
-        this->emulateSwipeEnd(0, false);
-        return true;
+bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
+    return handleGestureBind(gev.to_string(), false);
+}
+
+bool GestureManager::handleDragGesture(const DragGesture& gev) {
+    switch (gev.type) {
+        case DragGestureType::SWIPE:
+            return this->handleWorkspaceSwipe(gev);
+        default:
+            break;
     }
 
-    const auto bind = gev.to_string();
-    bool found      = false;
+    return handleGestureBind(gev.to_string(), true);
+}
+
+// bind is the name of the gesture event.
+// pressed only matters for mouse binds: only start of drag gestures should set it to true
+bool handleGestureBind(std::string bind, bool pressed) {
+    bool found = false;
     Debug::log(LOG, "[hyprgrass] Gesture Triggered: {}", bind);
 
     for (const auto& k : g_pKeybindManager->m_lKeybinds) {
         if (k.key != bind)
             continue;
 
-        const auto DISPATCHER = g_pKeybindManager->m_mDispatchers.find(k.handler);
+        const auto DISPATCHER = g_pKeybindManager->m_mDispatchers.find(k.mouse ? "mouse" : k.handler);
 
         // Should never happen, as we check in the ConfigManager, but oh well
         if (DISPATCHER == g_pKeybindManager->m_mDispatchers.end()) {
@@ -91,28 +120,78 @@ bool GestureManager::handleGesture(const CompletedGesture& gev) {
         if (k.handler == "pass")
             continue;
 
-        DISPATCHER->second(k.arg);
-        found = true;
+        if (k.handler == "mouse") {
+            DISPATCHER->second((pressed ? "1" : "0") + k.arg);
+        } else {
+            DISPATCHER->second(k.arg);
+        }
+
+        if (!k.nonConsuming) {
+            found = true;
+        }
     }
+
     return found;
 }
 
 void GestureManager::handleCancelledGesture() {
-    if (!this->dragGestureIsActive()) {
+    if (!this->getActiveDragGesture().has_value()) {
         return;
     }
 
-    this->emulateSwipeEnd(0, false);
+    // FIXME: make it so handleDragGestureEnd is called instead of handling this here
+    switch (this->getActiveDragGesture()->type) {
+        case DragGestureType::SWIPE:
+            this->emulateSwipeEnd(0, false);
+            return;
+        case DragGestureType::LONG_PRESS:
+            break;
+    }
 }
 
-bool GestureManager::handleWorkspaceSwipe(const CompletedGesture& gev) {
+void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
+    if (!this->getActiveDragGesture().has_value()) {
+        return;
+    }
+
+    switch (this->getActiveDragGesture()->type) {
+        case DragGestureType::SWIPE:
+            emulateSwipeUpdate(ev.time);
+            return;
+        case DragGestureType::LONG_PRESS: {
+            const auto pos = this->m_sGestureState.get_center().current;
+            wlr_cursor_warp(g_pCompositor->m_sWLRCursor, nullptr, pos.x, pos.y);
+            // HACK: g_pInputManager->onMouseMoveUnified is private so I'm using just this
+            g_pLayoutManager->getCurrentLayout()->onMouseMove(Vector2D(pos.x, pos.y));
+            return;
+        }
+    }
+}
+
+void GestureManager::handleDragGestureEnd(const DragGesture& gev) {
+    if (!this->getActiveDragGesture().has_value()) {
+        return;
+    }
+
+    switch (this->getActiveDragGesture()->type) {
+        case DragGestureType::SWIPE:
+            emulateSwipeEnd(0, false);
+            return;
+        case DragGestureType::LONG_PRESS:
+            break;
+    }
+
+    handleGestureBind(gev.to_string(), false);
+}
+
+bool GestureManager::handleWorkspaceSwipe(const DragGesture& gev) {
     static auto* const PWORKSPACEFINGERS =
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")->intValue;
     const auto VERTANIMS = g_pCompositor->getWorkspaceByID(g_pCompositor->m_pLastMonitor->activeWorkspace)
                                ->m_vRenderOffset.getConfig()
                                ->pValues->internalStyle == "slidevert";
 
-    if (gev.type == TouchGestureType::SWIPE_HOLD && gev.finger_count == *PWORKSPACEFINGERS) {
+    if (gev.type == DragGestureType::SWIPE && gev.finger_count == *PWORKSPACEFINGERS) {
         const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
         const auto vertical             = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
         const auto workspace_directions = VERTANIMS ? vertical : horizontal;
@@ -127,6 +206,15 @@ bool GestureManager::handleWorkspaceSwipe(const CompletedGesture& gev) {
     }
 
     return false;
+}
+
+void GestureManager::updateLongPressTimer(uint32_t current_time, uint32_t delay) {
+    this->long_press_next_trigger_time = current_time + delay + 1;
+    wl_event_source_timer_update(this->long_press_timer, delay);
+}
+
+void GestureManager::stopLongPressTimer() {
+    wl_event_source_timer_update(this->long_press_timer, 0);
 }
 
 void GestureManager::sendCancelEventsToWindows() {
@@ -198,8 +286,6 @@ bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
-    // NOTE this is neccessary because onTouchDown might fail and exit without
-    // updating gestures
     wf::touch::point_t lift_off_pos;
     try {
         lift_off_pos = this->m_sGestureState.fingers.at(ev->touch_id).current;
@@ -227,10 +313,6 @@ bool GestureManager::onTouchMove(wlr_touch_motion_event* ev) {
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
-    if (this->dragGestureIsActive()) {
-        this->emulateSwipeUpdate(0);
-    }
-
     auto pos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
 
     const wf::touch::gesture_event_t gesture_event = {
@@ -245,6 +327,23 @@ bool GestureManager::onTouchMove(wlr_touch_motion_event* ev) {
 
 SMonitorArea GestureManager::getMonitorArea() const {
     return this->m_sMonitorArea;
+}
+
+void GestureManager::onLongPressTimeout(uint32_t time_msec) {
+    if (this->m_sGestureState.fingers.empty()) {
+        return;
+    }
+
+    const auto finger = this->m_sGestureState.fingers.begin();
+
+    const wf::touch::gesture_event_t touch_event = {
+        .type   = wf::touch::EVENT_TYPE_MOTION,
+        .time   = time_msec,
+        .finger = finger->first,
+        .pos    = finger->second.current,
+    };
+
+    IGestureManager::onTouchMove(touch_event);
 }
 
 wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, double y) const {

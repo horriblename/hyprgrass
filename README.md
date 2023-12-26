@@ -109,6 +109,9 @@ plugin {
     # must be >= 3
     workspace_swipe_fingers = 3
 
+    # in milliseconds
+    long_press_delay = 400
+
     experimental {
       # send proper cancel events to windows instead of hacky touch_up events,
       # NOT recommended as it crashed a few times, once it's stabilized I'll make it the default
@@ -152,8 +155,7 @@ where (skip to [examples](#examples) if this is confusing):
   3. `edge:<from_edge>:<direction>`
      - `<from_edge>` is from which edge to start from (l/r/u/d)
      - `<direction>` is in which direction to swipe (l/r/u/d/lu/ld/ru/rd)
-
-> :warning: `<gesture_name>` with misspellings will be silently ignored.
+  4. `longpress:<finger_count>`
 
 #### Examples
 
@@ -178,6 +180,10 @@ bind = , swipe:3:ld, exec, foot
 # tap with 3 fingers
 # NOTE: tap events only trigger for finger count of >= 3
 bind = , tap:3, exec, foot
+
+# longpress can trigger mouse binds:
+bindm = , longpress:2, movewindow
+bindm = , longpress:3, resizewindow
 ```
 
 # Acknowledgements

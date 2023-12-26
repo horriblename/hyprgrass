@@ -6,10 +6,13 @@
 #include <hyprland/src/includes.hpp>
 #include <vector>
 #include <wayfire/touch/touch.hpp>
+#include <wayland-server-core.h>
 
 class GestureManager : public IGestureManager {
   public:
+    uint32_t long_press_next_trigger_time;
     GestureManager();
+    ~GestureManager();
     // @return whether this touch event should be blocked from forwarding to the
     // client window/surface
     bool onTouchDown(wlr_touch_down_event*);
@@ -22,15 +25,18 @@ class GestureManager : public IGestureManager {
     // client window/surface
     bool onTouchMove(wlr_touch_motion_event*);
 
+    void onLongPressTimeout(uint32_t time_msec);
+
   protected:
     SMonitorArea getMonitorArea() const override;
-    bool handleGesture(const CompletedGesture& gev) override;
+    bool handleCompletedGesture(const CompletedGesture& gev) override;
     void handleCancelledGesture() override;
 
   private:
     std::vector<wlr_surface*> touchedSurfaces;
     CMonitor* m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
+    wl_event_source* long_press_timer;
 
     // for workspace swipe
     wf::touch::point_t m_vGestureLastCenter;
@@ -39,7 +45,14 @@ class GestureManager : public IGestureManager {
     void emulateSwipeUpdate(uint32_t time);
 
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
-    bool handleWorkspaceSwipe(const CompletedGesture& gev);
+    bool handleWorkspaceSwipe(const DragGesture& gev);
+
+    bool handleDragGesture(const DragGesture& gev) override;
+    void dragGestureUpdate(const wf::touch::gesture_event_t&) override;
+    void handleDragGestureEnd(const DragGesture& gev) override;
+
+    void updateLongPressTimer(uint32_t current_time, uint32_t delay) override;
+    void stopLongPressTimer() override;
 
     void sendCancelEventsToWindows() override;
 };
