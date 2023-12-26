@@ -66,23 +66,6 @@ void GestureManager::emulateSwipeUpdate(uint32_t time) {
 }
 
 bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
-    if (this->getActiveDragGesture().has_value()) {
-        switch (this->getActiveDragGesture()->type) {
-            case DragGestureType::SWIPE:
-                if (gev.type == CompletedGestureType::SWIPE) {
-                    this->emulateSwipeEnd(0, false);
-                    return true;
-                }
-            case DragGestureType::HOLD:
-                if (gev.type == CompletedGestureType::HOLD_END) {
-                    // TODO:
-                    return true;
-                }
-        };
-
-        return false;
-    }
-
     return handleGestureBind(gev.to_string(), false);
 }
 
@@ -97,8 +80,8 @@ bool GestureManager::handleDragGesture(const DragGesture& gev) {
     return handleGestureBind(gev.to_string(), true);
 }
 
-// bind is the name of the gesture event, pressed only matters for mouse binds, so only start of drag gestures should
-// set it to true
+// bind is the name of the gesture event.
+// pressed only matters for mouse binds: only start of drag gestures should set it to true
 bool handleGestureBind(std::string bind, bool pressed) {
     bool found = false;
     Debug::log(LOG, "[hyprgrass] Gesture Triggered: {}", bind);
@@ -145,15 +128,24 @@ void GestureManager::handleCancelledGesture() {
             this->emulateSwipeEnd(0, false);
             return;
         case DragGestureType::HOLD:
-            // TODO:
-            // this->handleGestureBind("")
-            return;
+            break;
     }
 }
 
 void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
-    // TODO:
-    emulateSwipeUpdate(ev.time);
+    if (!this->getActiveDragGesture().has_value()) {
+        return;
+    }
+
+    switch (this->getActiveDragGesture()->type) {
+        case DragGestureType::SWIPE:
+            emulateSwipeUpdate(ev.time);
+            return;
+        case DragGestureType::HOLD:
+            // TODO:
+            // g_pKeybindManager->mouseMoveUnified();
+            return;
+    }
 }
 
 bool GestureManager::handleWorkspaceSwipe(const DragGesture& gev) {

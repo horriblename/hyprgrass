@@ -43,6 +43,7 @@ class GestureManager : public IGestureManager {
 
     bool handleDragGesture(const DragGesture& gev) override;
     void dragGestureUpdate(const wf::touch::gesture_event_t&) override;
+    void handleDragGestureEnd(const DragGesture& gev) override;
 
     void sendCancelEventsToWindows() override;
 };
