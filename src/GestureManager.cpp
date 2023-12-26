@@ -13,7 +13,7 @@
 
 bool handleGestureBind(std::string bind, bool pressed);
 
-int handleTimer(void* data) {
+int handleLongPressTimer(void* data) {
     const auto gesture_manager = (GestureManager*)data;
     gesture_manager->onLongPressTimeout(gesture_manager->hold_gesture_next_trigger_time);
 
@@ -30,7 +30,7 @@ GestureManager::GestureManager() {
     this->addLongPress(PSENSITIVITY, HOLD_DELAY);
     this->addEdgeSwipeGesture(PSENSITIVITY, HOLD_DELAY);
 
-    this->hold_gesture_timer = wl_event_loop_add_timer(g_pCompositor->m_sWLEventLoop, handleTimer, this);
+    this->hold_gesture_timer = wl_event_loop_add_timer(g_pCompositor->m_sWLEventLoop, handleLongPressTimer, this);
 }
 
 GestureManager::~GestureManager() {
