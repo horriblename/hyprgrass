@@ -123,6 +123,7 @@ void GestureManager::handleCancelledGesture() {
         return;
     }
 
+    // FIXME: make it so handleDragGestureEnd is called instead of handling this here
     switch (this->getActiveDragGesture()->type) {
         case DragGestureType::SWIPE:
             this->emulateSwipeEnd(0, false);
@@ -146,6 +147,22 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             // g_pKeybindManager->mouseMoveUnified();
             return;
     }
+}
+
+void GestureManager::handleDragGestureEnd(const DragGesture& gev) {
+    if (!this->getActiveDragGesture().has_value()) {
+        return;
+    }
+
+    switch (this->getActiveDragGesture()->type) {
+        case DragGestureType::SWIPE:
+            emulateSwipeEnd(0, false);
+            return;
+        case DragGestureType::HOLD:
+            break;
+    }
+
+    handleGestureBind(gev.to_string(), false);
 }
 
 bool GestureManager::handleWorkspaceSwipe(const DragGesture& gev) {
