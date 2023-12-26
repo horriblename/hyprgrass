@@ -157,6 +157,7 @@ wf::touch::action_status_t LongPress::update_state(const wf::touch::gesture_stat
         case wf::touch::EVENT_TYPE_TOUCH_DOWN:
             // TODO: also reset wl_timer here
             gesture_action_t::reset(event.time);
+            this->update_external_timer_callback(event.time, *this->delay);
             break;
 
         case wf::touch::EVENT_TYPE_TOUCH_UP:
@@ -364,7 +365,10 @@ void IGestureManager::addMultiFingerTap(const float* sensitivity, const int64_t*
 
 void IGestureManager::addLongPress(const float* sensitivity, const int64_t* delay) {
     auto long_press_and_emit = std::make_unique<OnCompleteAction>(
-        std::make_unique<LongPress>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, delay), [this]() {
+        std::make_unique<LongPress>(
+            SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, delay,
+            [this](uint32_t current_time, uint32_t delay) { this->updateLongPressTimer(current_time, delay); }),
+        [this]() {
             if (this->activeDragGesture.has_value()) {
                 return;
             }
@@ -394,7 +398,10 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
             this->handleCompletedGesture(gesture);
         };
     };
-    auto cancel = [this]() { this->handleCancelledGesture(); };
+    auto cancel = [this]() {
+        this->stopLongPressTimer();
+        this->handleCancelledGesture();
+    };
 
     this->addTouchGesture(std::make_unique<wf::touch::gesture_t>(std::move(long_press_actions), ack, cancel));
 }

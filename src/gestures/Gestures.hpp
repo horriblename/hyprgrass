@@ -24,6 +24,8 @@ constexpr static uint32_t GESTURE_BASE_DURATION   = 400;
 
 constexpr static uint32_t SEND_CANCEL_EVENT_FINGER_COUNT = 3;
 
+using UpdateExternalTimerCallback = std::function<void(uint32_t current_timer, uint32_t delay)>;
+
 enum class CompletedGestureType {
     // Invalid Gesture
     SWIPE,
@@ -131,10 +133,14 @@ class LongPress : public wf::touch::gesture_action_t {
     double base_threshold;
     const float* sensitivity;
     const int64_t* delay;
+    UpdateExternalTimerCallback update_external_timer_callback;
 
   public:
-    LongPress(double base_threshold, const float* sensitivity, const int64_t* delay)
-        : base_threshold(base_threshold), sensitivity(sensitivity), delay(delay){};
+    // TODO: I hope one day I can figure out how not to pass a function for the update timer callback
+    LongPress(double base_threshold, const float* sensitivity, const int64_t* delay,
+              UpdateExternalTimerCallback update_external_timer)
+        : base_threshold(base_threshold), sensitivity(sensitivity), delay(delay),
+          update_external_timer_callback(update_external_timer){};
 
     wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
                                             const wf::touch::gesture_event_t& event) override;
@@ -250,6 +256,9 @@ class IGestureManager {
 
     // this function should cleanup after drag gestures
     virtual void handleCancelledGesture() = 0;
+
+    virtual void updateLongPressTimer(uint32_t current_time, uint32_t delay) = 0;
+    virtual void stopLongPressTimer()                                        = 0;
 
   private:
     bool inhibitTouchEvents;

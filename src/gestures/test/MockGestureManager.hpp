@@ -56,6 +56,9 @@ class CMockGestureManager final : public IGestureManager {
     void handleDragGestureEnd(const DragGesture& gev) override;
     void handleCancelledGesture() override;
 
+    void updateLongPressTimer(uint32_t current_time, uint32_t delay) override {}
+    void stopLongPressTimer() override {}
+
   protected:
     SMonitorArea getMonitorArea() const override {
         return SMonitorArea{MONITOR_X, MONITOR_Y, MONITOR_WIDTH, MONITOR_HEIGHT};
