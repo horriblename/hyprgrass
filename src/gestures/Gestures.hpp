@@ -183,6 +183,10 @@ class OnCompleteAction : public wf::touch::gesture_action_t {
 
     wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
                                             const wf::touch::gesture_event_t& event) override;
+
+    void reset(uint32_t time) override {
+        this->action->reset(time);
+    }
 };
 
 /*
