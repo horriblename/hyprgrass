@@ -119,7 +119,7 @@ bool handleGestureBind(std::string bind, bool pressed) {
             continue;
 
         if (k.handler == "mouse") {
-            DISPATCHER->second(pressed ? "1" : "0" + k.arg);
+            DISPATCHER->second((pressed ? "1" : "0") + k.arg);
         } else {
             DISPATCHER->second(k.arg);
         }
