@@ -31,13 +31,13 @@ enum class CompletedGestureType {
     SWIPE,
     EDGE_SWIPE,
     TAP,
-    HOLD_END,
+    LONG_PRESS,
     // PINCH,
 };
 
 enum class DragGestureType {
     SWIPE,
-    HOLD,
+    LONG_PRESS,
 };
 
 enum TouchGestureDirection {

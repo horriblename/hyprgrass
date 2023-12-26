@@ -45,7 +45,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers", SConfigValue{.intValue = 3});
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity", SConfigValue{.floatValue = 1.0});
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:hold_delay", SConfigValue{.intValue = 400});
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay", SConfigValue{.intValue = 400});
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel", SConfigValue{.intValue = 0});
 #pragma GCC diagnostic pop
 

@@ -10,7 +10,7 @@
 
 class GestureManager : public IGestureManager {
   public:
-    uint32_t hold_gesture_next_trigger_time;
+    uint32_t long_press_next_trigger_time;
     GestureManager();
     ~GestureManager();
     // @return whether this touch event should be blocked from forwarding to the
@@ -36,7 +36,7 @@ class GestureManager : public IGestureManager {
     std::vector<wlr_surface*> touchedSurfaces;
     CMonitor* m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
-    wl_event_source* hold_gesture_timer;
+    wl_event_source* long_press_timer;
 
     // for workspace swipe
     wf::touch::point_t m_vGestureLastCenter;

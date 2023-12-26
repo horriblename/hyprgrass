@@ -37,8 +37,8 @@ std::string CompletedGesture::to_string() const {
             break;
         case CompletedGestureType::TAP:
             return "tap:" + std::to_string(finger_count);
-        case CompletedGestureType::HOLD_END:
-            return "hold:" + std::to_string(finger_count);
+        case CompletedGestureType::LONG_PRESS:
+            return "longpress:" + std::to_string(finger_count);
     }
 
     return "";
@@ -46,8 +46,8 @@ std::string CompletedGesture::to_string() const {
 
 std::string DragGesture::to_string() const {
     switch (type) {
-        case DragGestureType::HOLD:
-            return "hold:" + std::to_string(finger_count);
+        case DragGestureType::LONG_PRESS:
+            return "longpress:" + std::to_string(finger_count);
         case DragGestureType::SWIPE:
             return "swipe:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
     }
@@ -302,6 +302,7 @@ void IGestureManager::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gest
 //   threshold.
 // * further emits a TouchGestureType::SWIPE event if the SWIPE_HOLD event was
 //   emitted and once a finger is lifted
+//   TODO: ^^^ remove
 void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int64_t* timeout) {
     auto multi_down = std::make_unique<MultiFingerDownAction>([this]() { this->cancelTouchEventsOnAllWindows(); });
     multi_down->set_duration(GESTURE_BASE_DURATION);
@@ -373,7 +374,7 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
                 return;
             }
             const auto gesture =
-                DragGesture{DragGestureType::HOLD, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
+                DragGesture{DragGestureType::LONG_PRESS, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
 
             this->activeDragGesture = this->handleDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
         });
@@ -385,14 +386,14 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
     long_press_actions.emplace_back(std::move(touch_up_or_down));
 
     auto ack = [this]() {
-        if (this->activeDragGesture.has_value() && this->activeDragGesture->type == DragGestureType::HOLD) {
+        if (this->activeDragGesture.has_value() && this->activeDragGesture->type == DragGestureType::LONG_PRESS) {
             const auto gesture =
-                DragGesture{DragGestureType::HOLD, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
+                DragGesture{DragGestureType::LONG_PRESS, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
 
             this->handleDragGestureEnd(gesture);
             this->activeDragGesture = std::nullopt;
         } else {
-            const auto gesture = CompletedGesture{CompletedGestureType::HOLD_END, 0,
+            const auto gesture = CompletedGesture{CompletedGestureType::LONG_PRESS, 0,
                                                   static_cast<int>(this->m_sGestureState.fingers.size())};
 
             this->handleCompletedGesture(gesture);

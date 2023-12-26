@@ -16,7 +16,7 @@ bool handleGestureBind(std::string bind, bool pressed);
 
 int handleLongPressTimer(void* data) {
     const auto gesture_manager = (GestureManager*)data;
-    gesture_manager->onLongPressTimeout(gesture_manager->hold_gesture_next_trigger_time);
+    gesture_manager->onLongPressTimeout(gesture_manager->long_press_next_trigger_time);
 
     return 0;
 }
@@ -24,18 +24,19 @@ int handleLongPressTimer(void* data) {
 GestureManager::GestureManager() {
     static auto* const PSENSITIVITY =
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")->floatValue;
-    static auto* const HOLD_DELAY = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:hold_delay")->intValue;
+    static auto* const LONG_PRESS_DELAY =
+        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay")->intValue;
 
-    this->addMultiFingerGesture(PSENSITIVITY, HOLD_DELAY);
-    this->addMultiFingerTap(PSENSITIVITY, HOLD_DELAY);
-    this->addLongPress(PSENSITIVITY, HOLD_DELAY);
-    this->addEdgeSwipeGesture(PSENSITIVITY, HOLD_DELAY);
+    this->addMultiFingerGesture(PSENSITIVITY, LONG_PRESS_DELAY);
+    this->addMultiFingerTap(PSENSITIVITY, LONG_PRESS_DELAY);
+    this->addLongPress(PSENSITIVITY, LONG_PRESS_DELAY);
+    this->addEdgeSwipeGesture(PSENSITIVITY, LONG_PRESS_DELAY);
 
-    this->hold_gesture_timer = wl_event_loop_add_timer(g_pCompositor->m_sWLEventLoop, handleLongPressTimer, this);
+    this->long_press_timer = wl_event_loop_add_timer(g_pCompositor->m_sWLEventLoop, handleLongPressTimer, this);
 }
 
 GestureManager::~GestureManager() {
-    wl_event_source_remove(this->hold_gesture_timer);
+    wl_event_source_remove(this->long_press_timer);
 }
 
 void GestureManager::emulateSwipeBegin(uint32_t time) {
@@ -143,7 +144,7 @@ void GestureManager::handleCancelledGesture() {
         case DragGestureType::SWIPE:
             this->emulateSwipeEnd(0, false);
             return;
-        case DragGestureType::HOLD:
+        case DragGestureType::LONG_PRESS:
             break;
     }
 }
@@ -157,7 +158,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
         case DragGestureType::SWIPE:
             emulateSwipeUpdate(ev.time);
             return;
-        case DragGestureType::HOLD: {
+        case DragGestureType::LONG_PRESS: {
             const auto pos = this->m_sGestureState.get_center().current;
             wlr_cursor_warp(g_pCompositor->m_sWLRCursor, nullptr, pos.x, pos.y);
             // HACK: g_pInputManager->onMouseMoveUnified is private so I'm using just this
@@ -176,7 +177,7 @@ void GestureManager::handleDragGestureEnd(const DragGesture& gev) {
         case DragGestureType::SWIPE:
             emulateSwipeEnd(0, false);
             return;
-        case DragGestureType::HOLD:
+        case DragGestureType::LONG_PRESS:
             break;
     }
 
@@ -208,12 +209,12 @@ bool GestureManager::handleWorkspaceSwipe(const DragGesture& gev) {
 }
 
 void GestureManager::updateLongPressTimer(uint32_t current_time, uint32_t delay) {
-    this->hold_gesture_next_trigger_time = current_time + delay + 1;
-    wl_event_source_timer_update(this->hold_gesture_timer, delay);
+    this->long_press_next_trigger_time = current_time + delay + 1;
+    wl_event_source_timer_update(this->long_press_timer, delay);
 }
 
 void GestureManager::stopLongPressTimer() {
-    wl_event_source_timer_update(this->hold_gesture_timer, 0);
+    wl_event_source_timer_update(this->long_press_timer, 0);
 }
 
 void GestureManager::sendCancelEventsToWindows() {
