@@ -119,7 +119,7 @@ TEST_CASE("Multifinger: block touch events to client surfaces when more than a "
     CHECK(gm.eventForwardingInhibited());
 }
 
-TEST_CASE("Swipe Drag: Complete upon moving more than the threshold") {
+TEST_CASE("Swipe Drag: Start drag upon moving more than the threshold") {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newDragHandler();
     gm.addMultiFingerGesture(&SENSITIVITY, &HOLD_DELAY);
