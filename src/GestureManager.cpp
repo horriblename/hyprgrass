@@ -304,6 +304,23 @@ SMonitorArea GestureManager::getMonitorArea() const {
     return this->m_sMonitorArea;
 }
 
+void GestureManager::onLongPressTimeout(uint32_t time_msec) {
+    if (this->m_sGestureState.fingers.empty()) {
+        return;
+    }
+
+    const auto finger = this->m_sGestureState.fingers.begin();
+
+    const wf::touch::gesture_event_t touch_event = {
+        .type   = wf::touch::EVENT_TYPE_MOTION,
+        .time   = time_msec,
+        .finger = finger->first,
+        .pos    = finger->second.current,
+    };
+
+    IGestureManager::onTouchMove(touch_event);
+}
+
 wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, double y) const {
     auto area = this->getMonitorArea();
     // TODO do I need to add area.x and area.y respectively?

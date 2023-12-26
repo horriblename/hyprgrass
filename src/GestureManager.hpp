@@ -22,6 +22,8 @@ class GestureManager : public IGestureManager {
     // client window/surface
     bool onTouchMove(wlr_touch_motion_event*);
 
+    void onLongPressTimeout(uint32_t time_msec);
+
   protected:
     SMonitorArea getMonitorArea() const override;
     bool handleCompletedGesture(const CompletedGesture& gev) override;
