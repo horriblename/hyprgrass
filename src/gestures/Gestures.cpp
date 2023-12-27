@@ -109,7 +109,6 @@ wf::touch::action_status_t MultiFingerDownAction::update_state(const wf::touch::
     }
 
     if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN && state.fingers.size() >= SEND_CANCEL_EVENT_FINGER_COUNT) {
-        this->callback();
         return wf::touch::ACTION_STATUS_COMPLETED;
     }
 
@@ -296,8 +295,9 @@ void IGestureManager::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gest
 }
 
 void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int64_t* timeout) {
-    auto multi_down = std::make_unique<MultiFingerDownAction>([this]() { this->cancelTouchEventsOnAllWindows(); });
-    multi_down->set_duration(GESTURE_BASE_DURATION);
+    auto multi_down_and_send_cancel = std::make_unique<OnCompleteAction>(
+        std::make_unique<MultiFingerDownAction>(), [this]() { this->cancelTouchEventsOnAllWindows(); });
+    multi_down_and_send_cancel->set_duration(GESTURE_BASE_DURATION);
 
     auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, timeout);
 
@@ -317,7 +317,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
     // swipe_liftoff->set_duration(GESTURE_BASE_DURATION / 2);
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
-    swipe_actions.emplace_back(std::move(multi_down));
+    swipe_actions.emplace_back(std::move(multi_down_and_send_cancel));
     swipe_actions.emplace_back(std::move(swipe_and_emit));
     swipe_actions.emplace_back(std::move(swipe_liftoff));
 

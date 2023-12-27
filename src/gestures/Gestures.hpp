@@ -153,13 +153,10 @@ class MultiFingerDownAction : public wf::touch::gesture_action_t {
     // Intended to be used to send cancel events to surfaces when enough fingers
     // touch down in quick succession.
   public:
-    MultiFingerDownAction(std::function<void()> callback) : callback(callback) {}
+    MultiFingerDownAction() {}
 
     wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
                                             const wf::touch::gesture_event_t& event) override;
-
-  private:
-    std::function<void()> callback;
 };
 
 // Completes upon receiving a touch up event and cancels upon receiving a touch
