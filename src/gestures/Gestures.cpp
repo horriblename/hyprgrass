@@ -1,4 +1,5 @@
 #include "Gestures.hpp"
+#include "Actions.hpp"
 #include <functional>
 #include <glm/glm.hpp>
 #include <memory>
@@ -7,7 +8,7 @@
 #include <utility>
 #include <wayfire/touch/touch.hpp>
 
-std::string stringifyDirection(gestureDirection direction) {
+std::string stringifyDirection(GestureDirection direction) {
     std::string bind;
     if (direction & GESTURE_DIRECTION_LEFT) {
         bind += 'l';
@@ -53,159 +54,6 @@ std::string DragGesture::to_string() const {
     }
 
     return "";
-}
-
-wf::touch::action_status_t CMultiAction::update_state(const wf::touch::gesture_state_t& state,
-                                                      const wf::touch::gesture_event_t& event) {
-    if (event.time - this->start_time > *this->timeout) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
-    }
-
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
-    }
-
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
-        // cancel if previous fingers moved too much
-        this->finger_count = state.fingers.size();
-        for (auto& finger : state.fingers) {
-            // TODO multiply tolerance by sensitivity?
-            if (glm::length(finger.second.delta()) > GESTURE_INITIAL_TOLERANCE) {
-                return wf::touch::ACTION_STATUS_CANCELLED;
-            }
-        }
-
-        return wf::touch::ACTION_STATUS_RUNNING;
-    }
-
-    if ((glm::length(state.get_center().delta()) >= MIN_SWIPE_DISTANCE) && (this->target_direction == 0)) {
-        this->target_direction = state.get_center().get_direction();
-    }
-
-    if (this->target_direction == 0) {
-        return wf::touch::ACTION_STATUS_RUNNING;
-    }
-
-    for (auto& finger : state.fingers) {
-        if (finger.second.get_incorrect_drag_distance(this->target_direction) > this->get_move_tolerance()) {
-            return wf::touch::ACTION_STATUS_CANCELLED;
-        }
-    }
-
-    if (state.get_center().get_drag_distance(target_direction) >= base_threshold / *sensitivity) {
-        return wf::touch::ACTION_STATUS_COMPLETED;
-    }
-    return wf::touch::ACTION_STATUS_RUNNING;
-}
-
-wf::touch::action_status_t MultiFingerDownAction::update_state(const wf::touch::gesture_state_t& state,
-                                                               const wf::touch::gesture_event_t& event) {
-    if (event.time - this->start_time > this->get_duration()) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
-    }
-
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
-    }
-
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN && state.fingers.size() >= SEND_CANCEL_EVENT_FINGER_COUNT) {
-        this->callback();
-        return wf::touch::ACTION_STATUS_COMPLETED;
-    }
-
-    return wf::touch::ACTION_STATUS_RUNNING;
-}
-
-wf::touch::action_status_t MultiFingerTap::update_state(const wf::touch::gesture_state_t& state,
-                                                        const wf::touch::gesture_event_t& event) {
-    if (event.time - this->start_time > *this->timeout) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
-    }
-
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP) {
-        return wf::touch::ACTION_STATUS_COMPLETED;
-    }
-
-    if (event.type == wf::touch::EVENT_TYPE_MOTION) {
-        for (const auto& finger : state.fingers) {
-            const auto delta = finger.second.delta();
-            if (delta.x * delta.x + delta.y + delta.y > this->base_threshold / *this->sensitivity) {
-                return wf::touch::ACTION_STATUS_CANCELLED;
-            }
-        }
-    }
-
-    return wf::touch::ACTION_STATUS_RUNNING;
-}
-
-wf::touch::action_status_t LongPress::update_state(const wf::touch::gesture_state_t& state,
-                                                   const wf::touch::gesture_event_t& event) {
-    if (event.time - this->start_time > *this->delay) {
-        return wf::touch::ACTION_STATUS_COMPLETED;
-    }
-
-    switch (event.type) {
-        case wf::touch::EVENT_TYPE_MOTION:
-            for (const auto& finger : state.fingers) {
-                const auto delta = finger.second.delta();
-                if (delta.x * delta.x + delta.y + delta.y > this->base_threshold / *this->sensitivity) {
-                    return wf::touch::ACTION_STATUS_CANCELLED;
-                }
-            }
-            break;
-
-        case wf::touch::EVENT_TYPE_TOUCH_DOWN:
-            // TODO: also reset wl_timer here
-            gesture_action_t::reset(event.time);
-            this->update_external_timer_callback(event.time, *this->delay);
-            break;
-
-        case wf::touch::EVENT_TYPE_TOUCH_UP:
-            return wf::touch::ACTION_STATUS_CANCELLED;
-    }
-
-    return wf::touch::ACTION_STATUS_RUNNING;
-}
-
-wf::touch::action_status_t LiftoffAction::update_state(const wf::touch::gesture_state_t& state,
-                                                       const wf::touch::gesture_event_t& event) {
-    if (event.time - this->start_time > this->get_duration()) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
-    }
-
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP) {
-        return wf::touch::ACTION_STATUS_COMPLETED;
-    }
-
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
-    }
-
-    return wf::touch::ACTION_STATUS_RUNNING;
-}
-
-wf::touch::action_status_t TouchUpOrDownAction::update_state(const wf::touch::gesture_state_t& state,
-                                                             const wf::touch::gesture_event_t& event) {
-    if (event.time - this->start_time > this->get_duration()) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
-    }
-
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP || event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
-        return wf::touch::ACTION_STATUS_COMPLETED;
-    }
-
-    return wf::touch::ACTION_STATUS_RUNNING;
-}
-
-wf::touch::action_status_t OnCompleteAction::update_state(const wf::touch::gesture_state_t& state,
-                                                          const wf::touch::gesture_event_t& event) {
-    auto status = this->action->update_state(state, event);
-
-    if (status == wf::touch::ACTION_STATUS_COMPLETED) {
-        this->callback();
-    }
-
-    return status;
 }
 
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
@@ -267,10 +115,10 @@ bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
     return this->eventForwardingInhibited();
 }
 
-gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
+GestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
     auto mon = this->getMonitorArea();
 
-    gestureDirection edge_directions = 0;
+    GestureDirection edge_directions = 0;
 
     if (point.x <= mon.x + EDGE_SWIPE_THRESHOLD) {
         edge_directions |= GESTURE_DIRECTION_LEFT;
@@ -295,17 +143,10 @@ void IGestureManager::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gest
     this->m_vGestures.emplace_back(std::move(gesture));
 }
 
-// Adds a Multi-fingered swipe:
-// * inhibits events to client windows/surfaces when enough fingers touch
-//   down within a short duration.
-// * emits a TouchGestureType::SWIPE_HOLD event once fingers moved over the
-//   threshold.
-// * further emits a TouchGestureType::SWIPE event if the SWIPE_HOLD event was
-//   emitted and once a finger is lifted
-//   TODO: ^^^ remove
 void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int64_t* timeout) {
-    auto multi_down = std::make_unique<MultiFingerDownAction>([this]() { this->cancelTouchEventsOnAllWindows(); });
-    multi_down->set_duration(GESTURE_BASE_DURATION);
+    auto multi_down_and_send_cancel = std::make_unique<OnCompleteAction>(
+        std::make_unique<MultiFingerDownAction>(), [this]() { this->cancelTouchEventsOnAllWindows(); });
+    multi_down_and_send_cancel->set_duration(GESTURE_BASE_DURATION);
 
     auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, timeout);
 
@@ -325,7 +166,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
     // swipe_liftoff->set_duration(GESTURE_BASE_DURATION / 2);
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
-    swipe_actions.emplace_back(std::move(multi_down));
+    swipe_actions.emplace_back(std::move(multi_down_and_send_cancel));
     swipe_actions.emplace_back(std::move(swipe_and_emit));
     swipe_actions.emplace_back(std::move(swipe_liftoff));
 
