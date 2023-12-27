@@ -1,4 +1,5 @@
 #include "Gestures.hpp"
+#include "Actions.hpp"
 #include <functional>
 #include <glm/glm.hpp>
 #include <memory>
@@ -7,7 +8,7 @@
 #include <utility>
 #include <wayfire/touch/touch.hpp>
 
-std::string stringifyDirection(gestureDirection direction) {
+std::string stringifyDirection(GestureDirection direction) {
     std::string bind;
     if (direction & GESTURE_DIRECTION_LEFT) {
         bind += 'l';
@@ -266,10 +267,10 @@ bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
     return this->eventForwardingInhibited();
 }
 
-gestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
+GestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
     auto mon = this->getMonitorArea();
 
-    gestureDirection edge_directions = 0;
+    GestureDirection edge_directions = 0;
 
     if (point.x <= mon.x + EDGE_SWIPE_THRESHOLD) {
         edge_directions |= GESTURE_DIRECTION_LEFT;

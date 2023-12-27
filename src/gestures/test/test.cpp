@@ -13,7 +13,7 @@ constexpr int64_t LONG_PRESS_DELAY = GESTURE_BASE_DURATION;
 void Tester::testFindSwipeEdges() {
     using Test = struct {
         wf::touch::point_t origin;
-        gestureDirection result;
+        GestureDirection result;
     };
     const auto L = GESTURE_DIRECTION_LEFT;
     const auto R = GESTURE_DIRECTION_RIGHT;
