@@ -295,14 +295,6 @@ void IGestureManager::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gest
     this->m_vGestures.emplace_back(std::move(gesture));
 }
 
-// Adds a Multi-fingered swipe:
-// * inhibits events to client windows/surfaces when enough fingers touch
-//   down within a short duration.
-// * emits a TouchGestureType::SWIPE_HOLD event once fingers moved over the
-//   threshold.
-// * further emits a TouchGestureType::SWIPE event if the SWIPE_HOLD event was
-//   emitted and once a finger is lifted
-//   TODO: ^^^ remove
 void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int64_t* timeout) {
     auto multi_down = std::make_unique<MultiFingerDownAction>([this]() { this->cancelTouchEventsOnAllWindows(); });
     multi_down->set_duration(GESTURE_BASE_DURATION);
