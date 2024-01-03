@@ -17,6 +17,7 @@ enum class CompletedGestureType {
 enum class DragGestureType {
     SWIPE,
     LONG_PRESS,
+    EDGE_SWIPE,
 };
 
 enum TouchGestureDirection {
@@ -51,6 +52,8 @@ struct DragGesture {
     DragGestureType type;
     GestureDirection direction;
     int finger_count;
+
+    GestureDirection edge_origin;
 
     std::string to_string() const;
 };

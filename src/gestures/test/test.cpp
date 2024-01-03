@@ -336,3 +336,17 @@ TEST_CASE("Edge Swipe: Fail check at the end for not starting swipe from an edge
     const ExpectResult expected_result = {ExpectResultType::CHECK_PROGRESS, 1.0};
     ProcessEvents(gm, expected_result, events);
 }
+
+TEST_CASE("Edge Swipe Drag: begin") {
+    std::cout << "  ==== stdout:" << std::endl;
+    auto gm = CMockGestureManager::newDragHandler();
+    gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
+
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 150, 0, {250, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 200, 0, {455, 300}},
+    };
+    const ExpectResult expected_result = {ExpectResultType::DRAG_TRIGGERED, 1.0};
+    ProcessEvents(gm, expected_result, events);
+}
