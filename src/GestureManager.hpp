@@ -1,5 +1,6 @@
 #pragma once
 #include "./gestures/Gestures.hpp"
+#include "gestures/Shared.hpp"
 #include "globals.hpp"
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/helpers/Monitor.hpp>
@@ -45,7 +46,7 @@ class GestureManager : public IGestureManager {
     void emulateSwipeUpdate(uint32_t time);
 
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
-    bool handleWorkspaceSwipe(const DragGesture& gev);
+    bool handleWorkspaceSwipe(const GestureDirection direction);
 
     bool handleDragGesture(const DragGesture& gev) override;
     void dragGestureUpdate(const wf::touch::gesture_event_t&) override;

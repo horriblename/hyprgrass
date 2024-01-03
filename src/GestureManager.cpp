@@ -86,9 +86,34 @@ bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
 }
 
 bool GestureManager::handleDragGesture(const DragGesture& gev) {
+    static auto* const WORKSPACE_SWIPE_FINGERS =
+        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")->intValue;
+    static auto* const WORKSPACE_SWIPE_EDGE =
+        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_edge")->strValue;
+
     switch (gev.type) {
         case DragGestureType::SWIPE:
-            return this->handleWorkspaceSwipe(gev);
+            if (*WORKSPACE_SWIPE_FINGERS != gev.finger_count) {
+                return false;
+            }
+            return this->handleWorkspaceSwipe(gev.direction);
+
+        case DragGestureType::EDGE_SWIPE:
+            if (*WORKSPACE_SWIPE_EDGE == "l" && gev.direction == DIRECTION_LEFT) {
+                return this->handleWorkspaceSwipe(gev.direction);
+            }
+            if (*WORKSPACE_SWIPE_EDGE == "r" && gev.edge_origin == DIRECTION_RIGHT) {
+                return this->handleWorkspaceSwipe(gev.direction);
+            }
+            if (*WORKSPACE_SWIPE_EDGE == "u" && gev.edge_origin == DIRECTION_UP) {
+                return this->handleWorkspaceSwipe(gev.direction);
+            }
+            if (*WORKSPACE_SWIPE_EDGE == "d" && gev.edge_origin == DIRECTION_DOWN) {
+                return this->handleWorkspaceSwipe(gev.direction);
+            }
+
+            return false;
+
         default:
             break;
     }
@@ -146,6 +171,9 @@ void GestureManager::handleCancelledGesture() {
             return;
         case DragGestureType::LONG_PRESS:
             break;
+        case DragGestureType::EDGE_SWIPE:
+            this->emulateSwipeEnd(0, false);
+            break;
     }
 }
 
@@ -165,6 +193,9 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             g_pLayoutManager->getCurrentLayout()->onMouseMove(Vector2D(pos.x, pos.y));
             return;
         }
+        case DragGestureType::EDGE_SWIPE:
+            emulateSwipeUpdate(ev.time);
+            return;
     }
 }
 
@@ -179,30 +210,29 @@ void GestureManager::handleDragGestureEnd(const DragGesture& gev) {
             return;
         case DragGestureType::LONG_PRESS:
             break;
+        case DragGestureType::EDGE_SWIPE:
+            emulateSwipeEnd(0, false);
+            return;
     }
 
     handleGestureBind(gev.to_string(), false);
 }
 
-bool GestureManager::handleWorkspaceSwipe(const DragGesture& gev) {
-    static auto* const PWORKSPACEFINGERS =
-        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")->intValue;
+bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     const auto VERTANIMS = g_pCompositor->getWorkspaceByID(g_pCompositor->m_pLastMonitor->activeWorkspace)
                                ->m_vRenderOffset.getConfig()
                                ->pValues->internalStyle == "slidevert";
 
-    if (gev.type == DragGestureType::SWIPE && gev.finger_count == *PWORKSPACEFINGERS) {
-        const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
-        const auto vertical             = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
-        const auto workspace_directions = VERTANIMS ? vertical : horizontal;
-        const auto anti_directions      = VERTANIMS ? horizontal : vertical;
+    const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
+    const auto vertical             = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
+    const auto workspace_directions = VERTANIMS ? vertical : horizontal;
+    const auto anti_directions      = VERTANIMS ? horizontal : vertical;
 
-        if (gev.direction & workspace_directions && !(gev.direction & anti_directions)) {
-            // FIXME time arg of @emulateSwipeBegin should probably be assigned
-            // something useful (though its not really used later)
-            this->emulateSwipeBegin(0);
-            return true;
-        }
+    if (direction & workspace_directions && !(direction & anti_directions)) {
+        // FIXME time arg of @emulateSwipeBegin should probably be assigned
+        // something useful (though its not really used later)
+        this->emulateSwipeBegin(0);
+        return true;
     }
 
     return false;
