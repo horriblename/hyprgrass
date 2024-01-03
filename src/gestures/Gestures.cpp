@@ -51,6 +51,8 @@ std::string DragGesture::to_string() const {
             return "longpress:" + std::to_string(finger_count);
         case DragGestureType::SWIPE:
             return "swipe:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
+        case DragGestureType::EDGE_SWIPE:
+            return "edge:" + stringifyDirection(this->edge_origin) + ":" + stringifyDirection(this->direction);
     }
 
     return "";
@@ -249,9 +251,19 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
 }
 
 void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout) {
-    // Edge swipe needs a quick release to be considered edge swipe
-    auto edge         = std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE, sensitivity, timeout);
-    auto edge_release = std::make_unique<wf::touch::touch_action_t>(1, false);
+    auto edge            = std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE, sensitivity, timeout);
+    auto edge_ptr        = edge.get();
+    auto edge_drag_begin = std::make_unique<OnCompleteAction>(std::move(edge), [=, this]() {
+        auto origin_edges = this->find_swipe_edges(m_sGestureState.get_center().origin);
+
+        if (origin_edges == 0) {
+            return;
+        }
+        auto direction = edge_ptr->target_direction;
+        auto gesture   = DragGesture{DragGestureType::EDGE_SWIPE, direction, edge_ptr->finger_count, origin_edges};
+        this->activeDragGesture = this->handleDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
+    });
+    auto edge_release    = std::make_unique<wf::touch::touch_action_t>(1, false);
 
     // TODO do I really need this:
     // edge->set_move_tolerance(SWIPE_INCORRECT_DRAG_TOLERANCE * *sensitivity);
@@ -261,16 +273,14 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_
     // TODO make this adjustable:
     edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * *sensitivity);
 
-    auto edge_ptr = edge.get();
-
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> edge_swipe_actions;
-    edge_swipe_actions.emplace_back(std::move(edge));
+    edge_swipe_actions.emplace_back(std::move(edge_drag_begin));
     edge_swipe_actions.emplace_back(std::move(edge_release));
 
     auto ack = [edge_ptr, this]() {
         auto origin_edges = find_swipe_edges(m_sGestureState.get_center().origin);
 
-        if (!origin_edges) {
+        if (origin_edges == 0) {
             return;
         }
         auto direction = edge_ptr->target_direction;
