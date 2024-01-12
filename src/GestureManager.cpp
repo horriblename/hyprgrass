@@ -90,6 +90,7 @@ bool GestureManager::handleDragGesture(const DragGesture& gev) {
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")->intValue;
     static auto* const WORKSPACE_SWIPE_EDGE =
         &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_edge")->strValue;
+    Debug::log(LOG, "[hyprgrass] Drag gesture begin: {}", gev.to_string());
 
     switch (gev.type) {
         case DragGestureType::SWIPE:
@@ -200,6 +201,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
 }
 
 void GestureManager::handleDragGestureEnd(const DragGesture& gev) {
+    Debug::log(LOG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
     switch (gev.type) {
         case DragGestureType::SWIPE:
             emulateSwipeEnd(0, false);
