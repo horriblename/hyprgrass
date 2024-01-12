@@ -251,7 +251,7 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
 }
 
 void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout) {
-    auto edge            = std::make_unique<CMultiAction>(MAX_SWIPE_DISTANCE, sensitivity, timeout);
+    auto edge            = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, timeout);
     auto edge_ptr        = edge.get();
     auto edge_drag_begin = std::make_unique<OnCompleteAction>(std::move(edge), [=, this]() {
         auto origin_edges = this->find_swipe_edges(m_sGestureState.get_center().origin);
