@@ -200,11 +200,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
 }
 
 void GestureManager::handleDragGestureEnd(const DragGesture& gev) {
-    if (!this->getActiveDragGesture().has_value()) {
-        return;
-    }
-
-    switch (this->getActiveDragGesture()->type) {
+    switch (gev.type) {
         case DragGestureType::SWIPE:
             emulateSwipeEnd(0, false);
             return;
