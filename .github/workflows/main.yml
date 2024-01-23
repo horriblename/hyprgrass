@@ -1,7 +1,6 @@
 name: "Nix build test"
 on:
   pull_request:
-  push:
 jobs:
   tests:
     runs-on: ubuntu-latest
