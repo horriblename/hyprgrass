@@ -10,18 +10,22 @@
     inherit (hyprland.inputs) nixpkgs;
     withPkgsFor = fn: nixpkgs.lib.genAttrs (builtins.attrNames hyprland.packages) (system: fn system nixpkgs.legacyPackages.${system});
   in {
-    packages = withPkgsFor (system: pkgs: {
-      default = pkgs.callPackage ./nix/default.nix {
+    packages = withPkgsFor (system: pkgs: let
+      hyprgrassPackage = pkgs.callPackage ./nix/default.nix {
         inherit (hyprland.packages.${system}) hyprland;
         inherit (self.packages.${system}) wf-touch;
       };
+    in {
+      default = hyprgrassPackage;
+      hyprgrass = hyprgrassPackage;
+      hyprgrassWithTests = hyprgrassPackage.override {runTests = true;};
       wf-touch = pkgs.callPackage ./nix/wf-touch.nix {};
     });
 
     devShells = withPkgsFor (system: pkgs: {
       default = pkgs.mkShell {
         shellHook = ''
-          meson setup build --reconfigure -D tests=true
+          meson setup build --reconfigure
           sed -e 's/c++23/c++2b/g' ./build/compile_commands.json > ./compile_commands.json
         '';
         name = "hyprgrass-shell";

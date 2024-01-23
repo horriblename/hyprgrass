@@ -1,1 +1,1 @@
-option('tests', type: 'boolean', value: 'false', description: 'Enable unit tests')
+option('tests', type: 'feature', value: 'auto', description: 'Enable unit tests')
