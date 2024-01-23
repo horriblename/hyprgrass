@@ -160,23 +160,7 @@ bool handleGestureBind(std::string bind, bool pressed) {
     return found;
 }
 
-void GestureManager::handleCancelledGesture() {
-    if (!this->getActiveDragGesture().has_value()) {
-        return;
-    }
-
-    // FIXME: make it so handleDragGestureEnd is called instead of handling this here
-    switch (this->getActiveDragGesture()->type) {
-        case DragGestureType::SWIPE:
-            this->emulateSwipeEnd(0, false);
-            return;
-        case DragGestureType::LONG_PRESS:
-            break;
-        case DragGestureType::EDGE_SWIPE:
-            this->emulateSwipeEnd(0, false);
-            break;
-    }
-}
+void GestureManager::handleCancelledGesture() {}
 
 void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
     if (!this->getActiveDragGesture().has_value()) {
