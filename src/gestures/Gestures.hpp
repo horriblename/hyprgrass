@@ -135,6 +135,9 @@ class IGestureManager {
     // client windows/surfaces
     virtual void sendCancelEventsToWindows() = 0;
 
+    bool emitCompletedGesture(const CompletedGesture& gev);
+    bool emitDragGesture(const DragGesture& gev);
+
     void updateGestures(const wf::touch::gesture_event_t&);
     void cancelTouchEventsOnAllWindows();
 };

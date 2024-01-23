@@ -78,6 +78,23 @@ void IGestureManager::cancelTouchEventsOnAllWindows() {
         this->sendCancelEventsToWindows();
     }
 }
+bool IGestureManager::emitCompletedGesture(const CompletedGesture& gev) {
+    bool handled = this->handleCompletedGesture(gev);
+    if (handled) {
+        this->stopLongPressTimer();
+    }
+
+    return handled;
+}
+
+bool IGestureManager::emitDragGesture(const DragGesture& gev) {
+    bool handled = this->handleDragGesture(gev);
+    if (handled) {
+        this->stopLongPressTimer();
+    }
+
+    return handled;
+}
 
 // @return whether or not to inhibit further actions
 bool IGestureManager::onTouchDown(const wf::touch::gesture_event_t& ev) {
@@ -161,7 +178,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
         const auto gesture = DragGesture{DragGestureType::SWIPE, swipe_ptr->target_direction,
                                          static_cast<int>(this->m_sGestureState.fingers.size())};
 
-        this->activeDragGesture = this->handleDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
+        this->activeDragGesture = this->emitDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
     });
 
     auto swipe_liftoff = std::make_unique<LiftoffAction>();
@@ -183,7 +200,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
             const auto gesture = CompletedGesture{CompletedGestureType::SWIPE, swipe_ptr->target_direction,
                                                   static_cast<int>(this->m_sGestureState.fingers.size())};
 
-            this->handleCompletedGesture(gesture);
+            this->emitCompletedGesture(gesture);
         }
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
@@ -200,7 +217,7 @@ void IGestureManager::addMultiFingerTap(const float* sensitivity, const int64_t*
     auto ack = [this]() {
         const auto gesture =
             CompletedGesture{CompletedGestureType::TAP, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
-        this->handleCompletedGesture(gesture);
+        this->emitCompletedGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
 
@@ -219,7 +236,7 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
             const auto gesture =
                 DragGesture{DragGestureType::LONG_PRESS, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
 
-            this->activeDragGesture = this->handleDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
+            this->activeDragGesture = this->emitDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
         });
 
     auto touch_up_or_down = std::make_unique<TouchUpOrDownAction>();
@@ -239,7 +256,7 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
             const auto gesture = CompletedGesture{CompletedGestureType::LONG_PRESS, 0,
                                                   static_cast<int>(this->m_sGestureState.fingers.size())};
 
-            this->handleCompletedGesture(gesture);
+            this->emitCompletedGesture(gesture);
         };
     };
     auto cancel = [this]() {
@@ -261,7 +278,7 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_
         }
         auto direction = edge_ptr->target_direction;
         auto gesture   = DragGesture{DragGestureType::EDGE_SWIPE, direction, edge_ptr->finger_count, origin_edges};
-        this->activeDragGesture = this->handleDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
+        this->activeDragGesture = this->emitDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
     });
     auto edge_release    = std::make_unique<wf::touch::touch_action_t>(1, false);
 
@@ -286,7 +303,7 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_
         auto direction = edge_ptr->target_direction;
         auto gesture =
             CompletedGesture{CompletedGestureType::EDGE_SWIPE, direction, edge_ptr->finger_count, origin_edges};
-        this->handleCompletedGesture(gesture);
+        this->emitCompletedGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
 
