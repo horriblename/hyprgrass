@@ -1,5 +1,6 @@
 gestures = static_library('gestures',
   'Gestures.cpp',
+  'Shared.cpp',
   'Actions.cpp',
   dependencies: [
     wftouch,
