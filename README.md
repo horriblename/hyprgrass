@@ -20,6 +20,10 @@ Asides from Hyprland (duh), this plugin has the following dependencies:
 
 ```
 glm
+
+# build dependencies
+meson
+ninja
 ```
 
 ### Install via hyprpm
