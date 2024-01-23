@@ -1,51 +1,12 @@
 #pragma once
+
+#include "CompletedGesture.hpp"
+#include "DragGesture.hpp"
 #include "Shared.hpp"
 #include <functional>
 #include <memory>
 #include <optional>
 #include <wayfire/touch/touch.hpp>
-
-enum class CompletedGestureType {
-    // Invalid Gesture
-    SWIPE,
-    EDGE_SWIPE,
-    TAP,
-    LONG_PRESS,
-    // PINCH,
-};
-
-enum class DragGestureType {
-    SWIPE,
-    LONG_PRESS,
-    EDGE_SWIPE,
-};
-
-/**
- * Represents a touch gesture.
- *
- * Finger count can be arbitrary (might be a good idea to limit to >3)
- */
-struct CompletedGesture {
-    CompletedGestureType type;
-    GestureDirection direction;
-    int finger_count;
-
-    // TODO turn this whole struct into a sum type?
-    // edge swipe specific
-    GestureDirection edge_origin;
-
-    std::string to_string() const;
-};
-
-struct DragGesture {
-    DragGestureType type;
-    GestureDirection direction;
-    int finger_count;
-
-    GestureDirection edge_origin;
-
-    std::string to_string() const;
-};
 
 struct SMonitorArea {
     double x, y, w, h;

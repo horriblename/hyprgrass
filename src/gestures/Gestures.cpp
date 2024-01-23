@@ -8,35 +8,6 @@
 #include <utility>
 #include <wayfire/touch/touch.hpp>
 
-std::string CompletedGesture::to_string() const {
-    switch (type) {
-        case CompletedGestureType::EDGE_SWIPE:
-            return "edge:" + stringifyDirection(this->edge_origin) + ":" + stringifyDirection(this->direction);
-        case CompletedGestureType::SWIPE:
-            return "swipe:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
-            break;
-        case CompletedGestureType::TAP:
-            return "tap:" + std::to_string(finger_count);
-        case CompletedGestureType::LONG_PRESS:
-            return "longpress:" + std::to_string(finger_count);
-    }
-
-    return "";
-}
-
-std::string DragGesture::to_string() const {
-    switch (type) {
-        case DragGestureType::LONG_PRESS:
-            return "longpress:" + std::to_string(finger_count);
-        case DragGestureType::SWIPE:
-            return "swipe:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
-        case DragGestureType::EDGE_SWIPE:
-            return "edge:" + stringifyDirection(this->edge_origin) + ":" + stringifyDirection(this->direction);
-    }
-
-    return "";
-}
-
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
     if (m_sGestureState.fingers.size() == 1 && ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
         this->inhibitTouchEvents = false;
