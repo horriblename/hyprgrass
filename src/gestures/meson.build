@@ -5,6 +5,4 @@ gestures = static_library('gestures',
     wftouch,
   ])
 
-if get_option('tests')
-  subdir('test')
-endif
+subdir('test')
