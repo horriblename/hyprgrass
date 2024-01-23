@@ -25,7 +25,7 @@
     devShells = withPkgsFor (system: pkgs: {
       default = pkgs.mkShell {
         shellHook = ''
-          meson setup build --reconfigure -D tests=true
+          meson setup build --reconfigure
           sed -e 's/c++23/c++2b/g' ./build/compile_commands.json > ./compile_commands.json
         '';
         name = "hyprgrass-shell";
