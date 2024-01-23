@@ -1,12 +1,62 @@
 #pragma once
-
-#include "CompletedGesture.hpp"
-#include "DragGesture.hpp"
 #include "Shared.hpp"
 #include <functional>
 #include <memory>
 #include <optional>
 #include <wayfire/touch/touch.hpp>
+
+enum class CompletedGestureType {
+    // Invalid Gesture
+    SWIPE,
+    EDGE_SWIPE,
+    TAP,
+    LONG_PRESS,
+    // PINCH,
+};
+
+enum class DragGestureType {
+    SWIPE,
+    LONG_PRESS,
+    EDGE_SWIPE,
+};
+
+enum TouchGestureDirection {
+    /* Swipe-specific */
+    GESTURE_DIRECTION_LEFT  = (1 << 0),
+    GESTURE_DIRECTION_RIGHT = (1 << 1),
+    GESTURE_DIRECTION_UP    = (1 << 2),
+    GESTURE_DIRECTION_DOWN  = (1 << 3),
+    /* Pinch-specific */
+    // GESTURE_DIRECTION_IN = (1 << 4),
+    // GESTURE_DIRECTION_OUT = (1 << 5),
+};
+
+/**
+ * Represents a touch gesture.
+ *
+ * Finger count can be arbitrary (might be a good idea to limit to >3)
+ */
+struct CompletedGesture {
+    CompletedGestureType type;
+    GestureDirection direction;
+    int finger_count;
+
+    // TODO turn this whole struct into a sum type?
+    // edge swipe specific
+    GestureDirection edge_origin;
+
+    std::string to_string() const;
+};
+
+struct DragGesture {
+    DragGestureType type;
+    GestureDirection direction;
+    int finger_count;
+
+    GestureDirection edge_origin;
+
+    std::string to_string() const;
+};
 
 struct SMonitorArea {
     double x, y, w, h;
@@ -84,9 +134,6 @@ class IGestureManager {
     // this function is called when needed to send "cancel touch" events to
     // client windows/surfaces
     virtual void sendCancelEventsToWindows() = 0;
-
-    bool emitCompletedGesture(const CompletedGesture& gev);
-    bool emitDragGesture(const DragGesture& gev);
 
     void updateGestures(const wf::touch::gesture_event_t&);
     void cancelTouchEventsOnAllWindows();

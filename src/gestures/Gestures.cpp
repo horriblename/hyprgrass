@@ -8,6 +8,56 @@
 #include <utility>
 #include <wayfire/touch/touch.hpp>
 
+std::string stringifyDirection(GestureDirection direction) {
+    std::string bind;
+    if (direction & GESTURE_DIRECTION_LEFT) {
+        bind += 'l';
+    }
+
+    if (direction & GESTURE_DIRECTION_RIGHT) {
+        bind += 'r';
+    }
+
+    if (direction & GESTURE_DIRECTION_UP) {
+        bind += 'u';
+    }
+
+    if (direction & GESTURE_DIRECTION_DOWN) {
+        bind += 'd';
+    }
+
+    return bind;
+}
+
+std::string CompletedGesture::to_string() const {
+    switch (type) {
+        case CompletedGestureType::EDGE_SWIPE:
+            return "edge:" + stringifyDirection(this->edge_origin) + ":" + stringifyDirection(this->direction);
+        case CompletedGestureType::SWIPE:
+            return "swipe:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
+            break;
+        case CompletedGestureType::TAP:
+            return "tap:" + std::to_string(finger_count);
+        case CompletedGestureType::LONG_PRESS:
+            return "longpress:" + std::to_string(finger_count);
+    }
+
+    return "";
+}
+
+std::string DragGesture::to_string() const {
+    switch (type) {
+        case DragGestureType::LONG_PRESS:
+            return "longpress:" + std::to_string(finger_count);
+        case DragGestureType::SWIPE:
+            return "swipe:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
+        case DragGestureType::EDGE_SWIPE:
+            return "edge:" + stringifyDirection(this->edge_origin) + ":" + stringifyDirection(this->direction);
+    }
+
+    return "";
+}
+
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
     if (m_sGestureState.fingers.size() == 1 && ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
         this->inhibitTouchEvents = false;
@@ -27,23 +77,6 @@ void IGestureManager::cancelTouchEventsOnAllWindows() {
         this->inhibitTouchEvents = true;
         this->sendCancelEventsToWindows();
     }
-}
-bool IGestureManager::emitCompletedGesture(const CompletedGesture& gev) {
-    bool handled = this->handleCompletedGesture(gev);
-    if (handled) {
-        this->stopLongPressTimer();
-    }
-
-    return handled;
-}
-
-bool IGestureManager::emitDragGesture(const DragGesture& gev) {
-    bool handled = this->handleDragGesture(gev);
-    if (handled) {
-        this->stopLongPressTimer();
-    }
-
-    return handled;
 }
 
 // @return whether or not to inhibit further actions
@@ -128,7 +161,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
         const auto gesture = DragGesture{DragGestureType::SWIPE, swipe_ptr->target_direction,
                                          static_cast<int>(this->m_sGestureState.fingers.size())};
 
-        this->activeDragGesture = this->emitDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
+        this->activeDragGesture = this->handleDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
     });
 
     auto swipe_liftoff = std::make_unique<LiftoffAction>();
@@ -150,7 +183,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
             const auto gesture = CompletedGesture{CompletedGestureType::SWIPE, swipe_ptr->target_direction,
                                                   static_cast<int>(this->m_sGestureState.fingers.size())};
 
-            this->emitCompletedGesture(gesture);
+            this->handleCompletedGesture(gesture);
         }
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
@@ -167,7 +200,7 @@ void IGestureManager::addMultiFingerTap(const float* sensitivity, const int64_t*
     auto ack = [this]() {
         const auto gesture =
             CompletedGesture{CompletedGestureType::TAP, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
-        this->emitCompletedGesture(gesture);
+        this->handleCompletedGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
 
@@ -186,7 +219,7 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
             const auto gesture =
                 DragGesture{DragGestureType::LONG_PRESS, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
 
-            this->activeDragGesture = this->emitDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
+            this->activeDragGesture = this->handleDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
         });
 
     auto touch_up_or_down = std::make_unique<TouchUpOrDownAction>();
@@ -206,7 +239,7 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
             const auto gesture = CompletedGesture{CompletedGestureType::LONG_PRESS, 0,
                                                   static_cast<int>(this->m_sGestureState.fingers.size())};
 
-            this->emitCompletedGesture(gesture);
+            this->handleCompletedGesture(gesture);
         };
     };
     auto cancel = [this]() {
@@ -228,7 +261,7 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_
         }
         auto direction = edge_ptr->target_direction;
         auto gesture   = DragGesture{DragGestureType::EDGE_SWIPE, direction, edge_ptr->finger_count, origin_edges};
-        this->activeDragGesture = this->emitDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
+        this->activeDragGesture = this->handleDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
     });
     auto edge_release    = std::make_unique<wf::touch::touch_action_t>(1, false);
 
@@ -253,7 +286,7 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_
         auto direction = edge_ptr->target_direction;
         auto gesture =
             CompletedGesture{CompletedGestureType::EDGE_SWIPE, direction, edge_ptr->finger_count, origin_edges};
-        this->emitCompletedGesture(gesture);
+        this->handleCompletedGesture(gesture);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
 
