@@ -5,17 +5,20 @@
   hyprland,
   wf-touch,
   doctest,
+  runTests ? false,
 }: let
   pluginInfo = builtins.fromTOML (builtins.readFile ../hyprload.toml);
 in
   gcc13Stdenv.mkDerivation {
     pname = "hyprgrass";
-    version = pluginInfo.hyprgrass.version;
+    inherit (pluginInfo.hyprgrass) version;
     src = ./..;
 
-    nativeBuildInputs = hyprland.nativeBuildInputs ++ [cmake];
+    nativeBuildInputs = hyprland.nativeBuildInputs ++ [cmake] ++ lib.optional runTests doctest;
 
     buildInputs = [hyprland wf-touch doctest] ++ hyprland.buildInputs;
+
+    doCheck = true;
 
     # CMake is just used for finding doctest.
     dontUseCmakeConfigure = true;
