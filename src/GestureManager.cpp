@@ -7,6 +7,7 @@
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprlang.hpp>
 #include <memory>
 #include <optional>
 
@@ -22,10 +23,11 @@ int handleLongPressTimer(void* data) {
 }
 
 GestureManager::GestureManager() {
-    static auto* const PSENSITIVITY =
-        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")->floatValue;
-    static auto* const LONG_PRESS_DELAY =
-        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay")->intValue;
+    static auto const PSENSITIVITY =
+        (Hyprlang::FLOAT*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")->getDataStaticPtr();
+    static auto const LONG_PRESS_DELAY =
+        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay")
+            ->getDataStaticPtr();
 
     this->addMultiFingerGesture(PSENSITIVITY, LONG_PRESS_DELAY);
     this->addMultiFingerTap(PSENSITIVITY, LONG_PRESS_DELAY);
@@ -40,8 +42,8 @@ GestureManager::~GestureManager() {
 }
 
 void GestureManager::emulateSwipeBegin(uint32_t time) {
-    static auto* const PSWIPEFINGERS =
-        &HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_fingers")->intValue;
+    static auto const PSWIPEFINGERS =
+        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_fingers")->getDataStaticPtr();
 
     // HACK .pointer is not used by g_pInputManager->onSwipeBegin so it's fine I
     // think
@@ -58,8 +60,8 @@ void GestureManager::emulateSwipeEnd(uint32_t time, bool cancelled) {
 }
 
 void GestureManager::emulateSwipeUpdate(uint32_t time) {
-    static auto* const PSWIPEDIST =
-        &HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")->intValue;
+    static auto const PSWIPEDIST =
+        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")->getDataStaticPtr();
 
     if (!g_pInputManager->m_sActiveSwipe.pMonitor) {
         Debug::log(ERR, "ignoring touch gesture motion event due to missing monitor!");
@@ -86,10 +88,12 @@ bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
 }
 
 bool GestureManager::handleDragGesture(const DragGesture& gev) {
-    static auto* const WORKSPACE_SWIPE_FINGERS =
-        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")->intValue;
-    static auto* const WORKSPACE_SWIPE_EDGE =
-        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_edge")->strValue;
+    static auto const WORKSPACE_SWIPE_FINGERS =
+        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
+            ->getDataStaticPtr();
+    static auto const WORKSPACE_SWIPE_EDGE =
+        (Hyprlang::STRING*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_edge")
+            ->getDataStaticPtr();
     Debug::log(LOG, "[hyprgrass] Drag gesture begin: {}", gev.to_string());
 
     switch (gev.type) {
@@ -100,16 +104,16 @@ bool GestureManager::handleDragGesture(const DragGesture& gev) {
             return this->handleWorkspaceSwipe(gev.direction);
 
         case DragGestureType::EDGE_SWIPE:
-            if (*WORKSPACE_SWIPE_EDGE == "l" && gev.direction == GESTURE_DIRECTION_LEFT) {
+            if (strcmp(*WORKSPACE_SWIPE_EDGE, "l") == 0 && gev.direction == GESTURE_DIRECTION_LEFT) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
-            if (*WORKSPACE_SWIPE_EDGE == "r" && gev.edge_origin == GESTURE_DIRECTION_RIGHT) {
+            if (strcmp(*WORKSPACE_SWIPE_EDGE, "r") == 0 && gev.edge_origin == GESTURE_DIRECTION_RIGHT) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
-            if (*WORKSPACE_SWIPE_EDGE == "u" && gev.edge_origin == GESTURE_DIRECTION_UP) {
+            if (strcmp(*WORKSPACE_SWIPE_EDGE, "u") == 0 && gev.edge_origin == GESTURE_DIRECTION_UP) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
-            if (*WORKSPACE_SWIPE_EDGE == "d" && gev.edge_origin == GESTURE_DIRECTION_DOWN) {
+            if (strcmp(*WORKSPACE_SWIPE_EDGE, "d") == 0 && gev.edge_origin == GESTURE_DIRECTION_DOWN) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
 
@@ -230,8 +234,9 @@ void GestureManager::stopLongPressTimer() {
 }
 
 void GestureManager::sendCancelEventsToWindows() {
-    static auto* const SEND_CANCEL =
-        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")->intValue;
+    static auto const SEND_CANCEL =
+        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
+            ->getDataStaticPtr();
 
     if (*SEND_CANCEL == 0) {
         return;
@@ -247,8 +252,9 @@ void GestureManager::sendCancelEventsToWindows() {
 
 // @return whether or not to inhibit further actions
 bool GestureManager::onTouchDown(wlr_touch_down_event* ev) {
-    static auto* const SEND_CANCEL =
-        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")->intValue;
+    static auto const SEND_CANCEL =
+        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
+            ->getDataStaticPtr();
 
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
@@ -292,8 +298,9 @@ bool GestureManager::onTouchDown(wlr_touch_down_event* ev) {
 }
 
 bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
-    static auto* const SEND_CANCEL =
-        &HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")->intValue;
+    static auto const SEND_CANCEL =
+        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
+            ->getDataStaticPtr();
 
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;

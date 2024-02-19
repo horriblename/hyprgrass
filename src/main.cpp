@@ -7,6 +7,7 @@
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/version.h>
+#include <hyprlang.hpp>
 #include <vector>
 
 const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
@@ -43,11 +44,16 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers", SConfigValue{.intValue = 3});
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_edge", SConfigValue{.strValue = "d"});
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity", SConfigValue{.floatValue = 1.0});
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay", SConfigValue{.intValue = 400});
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel", SConfigValue{.intValue = 0});
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers",
+                                Hyprlang::CConfigValue((Hyprlang::INT)3));
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_edge",
+                                Hyprlang::CConfigValue((Hyprlang::STRING) "d"));
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity",
+                                Hyprlang::CConfigValue((Hyprlang::FLOAT)1.0));
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay",
+                                Hyprlang::CConfigValue((Hyprlang::INT)400));
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel",
+                                Hyprlang::CConfigValue((Hyprlang::INT)0));
 #pragma GCC diagnostic pop
 
     const auto hlTargetVersion = GIT_COMMIT_HASH;
