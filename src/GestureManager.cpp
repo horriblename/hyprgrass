@@ -24,15 +24,16 @@ int handleLongPressTimer(void* data) {
 
 GestureManager::GestureManager() {
     static auto const PSENSITIVITY =
-        (Hyprlang::FLOAT*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")->getDataStaticPtr();
+        (Hyprlang::FLOAT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")
+            ->getDataStaticPtr();
     static auto const LONG_PRESS_DELAY =
-        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay")
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay")
             ->getDataStaticPtr();
 
-    this->addMultiFingerGesture(PSENSITIVITY, LONG_PRESS_DELAY);
-    this->addMultiFingerTap(PSENSITIVITY, LONG_PRESS_DELAY);
-    this->addLongPress(PSENSITIVITY, LONG_PRESS_DELAY);
-    this->addEdgeSwipeGesture(PSENSITIVITY, LONG_PRESS_DELAY);
+    this->addMultiFingerGesture(*PSENSITIVITY, *LONG_PRESS_DELAY);
+    this->addMultiFingerTap(*PSENSITIVITY, *LONG_PRESS_DELAY);
+    this->addLongPress(*PSENSITIVITY, *LONG_PRESS_DELAY);
+    this->addEdgeSwipeGesture(*PSENSITIVITY, *LONG_PRESS_DELAY);
 
     this->long_press_timer = wl_event_loop_add_timer(g_pCompositor->m_sWLEventLoop, handleLongPressTimer, this);
 }
@@ -43,12 +44,13 @@ GestureManager::~GestureManager() {
 
 void GestureManager::emulateSwipeBegin(uint32_t time) {
     static auto const PSWIPEFINGERS =
-        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_fingers")->getDataStaticPtr();
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_fingers")
+            ->getDataStaticPtr();
 
     // HACK .pointer is not used by g_pInputManager->onSwipeBegin so it's fine I
     // think
     auto emulated_swipe =
-        wlr_pointer_swipe_begin_event{.pointer = nullptr, .time_msec = time, .fingers = (uint32_t)*PSWIPEFINGERS};
+        wlr_pointer_swipe_begin_event{.pointer = nullptr, .time_msec = time, .fingers = (uint32_t) * *PSWIPEFINGERS};
     g_pInputManager->onSwipeBegin(&emulated_swipe);
 
     m_vGestureLastCenter = m_sGestureState.get_center().origin;
@@ -61,7 +63,8 @@ void GestureManager::emulateSwipeEnd(uint32_t time, bool cancelled) {
 
 void GestureManager::emulateSwipeUpdate(uint32_t time) {
     static auto const PSWIPEDIST =
-        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")->getDataStaticPtr();
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
+            ->getDataStaticPtr();
 
     if (!g_pInputManager->m_sActiveSwipe.pMonitor) {
         Debug::log(ERR, "ignoring touch gesture motion event due to missing monitor!");
@@ -76,8 +79,8 @@ void GestureManager::emulateSwipeUpdate(uint32_t time) {
         .pointer   = nullptr,
         .time_msec = time,
         .fingers   = (uint32_t)m_sGestureState.fingers.size(),
-        .dx        = (currentCenter.x - m_vGestureLastCenter.x) / m_sMonitorArea.w * *PSWIPEDIST,
-        .dy        = (currentCenter.y - m_vGestureLastCenter.y) / m_sMonitorArea.h * *PSWIPEDIST};
+        .dx        = (currentCenter.x - m_vGestureLastCenter.x) / m_sMonitorArea.w * **PSWIPEDIST,
+        .dy        = (currentCenter.y - m_vGestureLastCenter.y) / m_sMonitorArea.h * **PSWIPEDIST};
 
     g_pInputManager->onSwipeUpdate(&emulated_swipe);
     m_vGestureLastCenter = currentCenter;
@@ -89,31 +92,33 @@ bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
 
 bool GestureManager::handleDragGesture(const DragGesture& gev) {
     static auto const WORKSPACE_SWIPE_FINGERS =
-        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
             ->getDataStaticPtr();
     static auto const WORKSPACE_SWIPE_EDGE =
-        (Hyprlang::STRING*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_edge")
+        (Hyprlang::STRING const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_edge")
             ->getDataStaticPtr();
     Debug::log(LOG, "[hyprgrass] Drag gesture begin: {}", gev.to_string());
 
+    auto const workspace_swipe_edge_str = std::string{*WORKSPACE_SWIPE_EDGE};
+
     switch (gev.type) {
         case DragGestureType::SWIPE:
-            if (*WORKSPACE_SWIPE_FINGERS != gev.finger_count) {
+            if (**WORKSPACE_SWIPE_FINGERS != gev.finger_count) {
                 return false;
             }
             return this->handleWorkspaceSwipe(gev.direction);
 
         case DragGestureType::EDGE_SWIPE:
-            if (strcmp(*WORKSPACE_SWIPE_EDGE, "l") == 0 && gev.direction == GESTURE_DIRECTION_LEFT) {
+            if (workspace_swipe_edge_str == "l" && gev.direction == GESTURE_DIRECTION_LEFT) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
-            if (strcmp(*WORKSPACE_SWIPE_EDGE, "r") == 0 && gev.edge_origin == GESTURE_DIRECTION_RIGHT) {
+            if (workspace_swipe_edge_str == "r" && gev.edge_origin == GESTURE_DIRECTION_RIGHT) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
-            if (strcmp(*WORKSPACE_SWIPE_EDGE, "u") == 0 && gev.edge_origin == GESTURE_DIRECTION_UP) {
+            if (workspace_swipe_edge_str == "u" && gev.edge_origin == GESTURE_DIRECTION_UP) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
-            if (strcmp(*WORKSPACE_SWIPE_EDGE, "d") == 0 && gev.edge_origin == GESTURE_DIRECTION_DOWN) {
+            if (workspace_swipe_edge_str == "d" && gev.edge_origin == GESTURE_DIRECTION_DOWN) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
 
@@ -235,10 +240,10 @@ void GestureManager::stopLongPressTimer() {
 
 void GestureManager::sendCancelEventsToWindows() {
     static auto const SEND_CANCEL =
-        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
-    if (*SEND_CANCEL == 0) {
+    if (**SEND_CANCEL == 0) {
         return;
     }
 
@@ -253,13 +258,13 @@ void GestureManager::sendCancelEventsToWindows() {
 // @return whether or not to inhibit further actions
 bool GestureManager::onTouchDown(wlr_touch_down_event* ev) {
     static auto const SEND_CANCEL =
-        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
         return false;
 
-    if (!eventForwardingInhibited() && *SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
+    if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
         // remember which surfaces were touched, to later send cancel events
         const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
         const auto TOUCHED = std::find(touchedSurfaces.begin(), touchedSurfaces.end(), surface);
@@ -299,7 +304,7 @@ bool GestureManager::onTouchDown(wlr_touch_down_event* ev) {
 
 bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
     static auto const SEND_CANCEL =
-        (Hyprlang::INT*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
     if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
@@ -320,7 +325,7 @@ bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
     };
 
     const auto BLOCK = IGestureManager::onTouchUp(gesture_event);
-    if (*SEND_CANCEL) {
+    if (**SEND_CANCEL) {
         return BLOCK;
     } else {
         // send_cancel is turned off; we need to rely on touchup events
