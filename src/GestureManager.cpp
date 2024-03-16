@@ -10,10 +10,42 @@
 #include <hyprlang.hpp>
 #include <memory>
 #include <optional>
+#include <ranges>
 
 // constexpr double SWIPE_THRESHOLD = 30.;
 
-bool handleGestureBind(std::string bind, bool pressed);
+std::string trim(const std::string& str) {
+    size_t first = str.find_first_not_of(' ');
+    if (std::string::npos == first) {
+        return str;
+    }
+    size_t last = str.find_last_not_of(' ');
+    return str.substr(first, (last - first + 1));
+}
+
+std::vector<std::string> splitString(const std::string& s, char delimiter, int numSubstrings) {
+    std::vector<std::string> substrings;
+    auto split_view = std::ranges::views::split(s, delimiter);
+    auto iter       = split_view.begin();
+
+    for (int i = 0; i < numSubstrings - 1 && iter != split_view.end(); ++i, ++iter) {
+        std::string substring;
+        for (char c : *iter) {
+            substring.push_back(c);
+        }
+        substrings.push_back(substring);
+    }
+
+    if (iter != split_view.end()) {
+        std::string rest;
+        for (char c : *iter) {
+            rest.push_back(c);
+        }
+        substrings.push_back(rest);
+    }
+
+    return substrings;
+}
 
 int handleLongPressTimer(void* data) {
     const auto gesture_manager = (GestureManager*)data;
@@ -87,7 +119,7 @@ void GestureManager::emulateSwipeUpdate(uint32_t time) {
 }
 
 bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
-    return handleGestureBind(gev.to_string(), false);
+    return this->handleGestureBind(gev.to_string(), false);
 }
 
 bool GestureManager::handleDragGesture(const DragGesture& gev) {
@@ -128,16 +160,18 @@ bool GestureManager::handleDragGesture(const DragGesture& gev) {
             break;
     }
 
-    return handleGestureBind(gev.to_string(), true);
+    return this->handleGestureBind(gev.to_string(), true);
 }
 
 // bind is the name of the gesture event.
 // pressed only matters for mouse binds: only start of drag gestures should set it to true
-bool handleGestureBind(std::string bind, bool pressed) {
+bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
     bool found = false;
     Debug::log(LOG, "[hyprgrass] Gesture Triggered: {}", bind);
 
-    for (const auto& k : g_pKeybindManager->m_lKeybinds) {
+    auto allBinds = std::ranges::views::join(std::array{g_pKeybindManager->m_lKeybinds, this->internalBinds});
+
+    for (const auto& k : allBinds) {
         if (k.key != bind)
             continue;
 
@@ -374,4 +408,22 @@ wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, doubl
     auto area = this->getMonitorArea();
     // TODO do I need to add area.x and area.y respectively?
     return wf::touch::point_t{x * area.w, y * area.h};
+}
+
+void GestureManager::touchBindDispatcher(std::string args) {
+    auto argsSplit = splitString(args, ',', 4);
+    if (argsSplit.size() < 4) {
+        Debug::log(ERR, "touchBind called with not enough args: {}", args);
+        return;
+    }
+    const auto _modifier      = trim(argsSplit[0]);
+    const auto key            = trim(argsSplit[1]);
+    const auto dispatcher     = trim(argsSplit[2]);
+    const auto dispatcherArgs = trim(argsSplit[3]);
+
+    this->internalBinds.emplace_back(SKeybind{
+        .key     = key,
+        .handler = dispatcher,
+        .arg     = dispatcherArgs,
+    });
 }

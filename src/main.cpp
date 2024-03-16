@@ -1,14 +1,14 @@
 #include "GestureManager.hpp"
 #include "globals.hpp"
 
-#include <algorithm>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/version.h>
 #include <hyprlang.hpp>
-#include <vector>
+#include <string>
 
 const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
 
@@ -55,6 +55,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel",
                                 Hyprlang::CConfigValue((Hyprlang::INT)0));
 #pragma GCC diagnostic pop
+
+    HyprlandAPI::addDispatcher(PHANDLE, "touchBind",
+                               [&](std::string args) { g_pGestureManager->touchBindDispatcher(args); });
 
     const auto hlTargetVersion = GIT_COMMIT_HASH;
     const auto hlVersion       = HyprlandAPI::getHyprlandVersion(PHANDLE);

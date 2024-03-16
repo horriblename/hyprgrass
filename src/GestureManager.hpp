@@ -5,6 +5,8 @@
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/helpers/Monitor.hpp>
 #include <hyprland/src/includes.hpp>
+#include <hyprland/src/managers/KeybindManager.hpp>
+#include <list>
 #include <vector>
 #include <wayfire/touch/touch.hpp>
 #include <wayland-server-core.h>
@@ -28,6 +30,9 @@ class GestureManager : public IGestureManager {
 
     void onLongPressTimeout(uint32_t time_msec);
 
+    // workaround
+    void touchBindDispatcher(std::string args);
+
   protected:
     SMonitorArea getMonitorArea() const override;
     bool handleCompletedGesture(const CompletedGesture& gev) override;
@@ -38,12 +43,15 @@ class GestureManager : public IGestureManager {
     CMonitor* m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
     wl_event_source* long_press_timer;
+    std::list<SKeybind> internalBinds;
 
     // for workspace swipe
     wf::touch::point_t m_vGestureLastCenter;
     void emulateSwipeBegin(uint32_t time);
     void emulateSwipeEnd(uint32_t time, bool cancelled);
     void emulateSwipeUpdate(uint32_t time);
+
+    bool handleGestureBind(std::string bind, bool pressed);
 
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
     bool handleWorkspaceSwipe(const GestureDirection direction);
