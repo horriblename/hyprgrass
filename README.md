@@ -1,6 +1,6 @@
 # Hyprland Touch Gestures
 
-> [!INFO] 
+> [!TIP] 
 > I don't have a touch device at the moment so I can't really work on this plugin. I'll try to fix critical bugs but there's only so much I can do. 
 
 > [!WARNING]
