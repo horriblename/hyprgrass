@@ -78,7 +78,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     g_pGestureManager = std::make_unique<GestureManager>();
 
-    return {"hyprgrass", "Touchscreen gestures", "horriblename", "0.5"};
+    return {"hyprgrass", "Touchscreen gestures", "horriblename", "0.6"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
