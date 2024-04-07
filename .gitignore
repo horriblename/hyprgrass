@@ -1,5 +1,7 @@
 *.so
 compile_flags.txt
+compile_commands.json
+.cache/
 .ccls-cache
 .ccls
 .direnv

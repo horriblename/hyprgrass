@@ -244,8 +244,12 @@ void GestureManager::handleDragGestureEnd(const DragGesture& gev) {
 }
 
 bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
-    const bool VERTANIMS  = g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()->pValues->internalStyle == "slidevert" ||
-        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()->pValues->internalStyle.starts_with("slidefadevert");
+    const bool VERTANIMS = g_pCompositor->m_pLastMonitor->activeWorkspace
+        ->m_vRenderOffset.getConfig()
+        ->pValues->internalStyle == "slidevert" ||
+        g_pCompositor->m_pLastMonitor->activeWorkspace
+        ->m_vRenderOffset.getConfig()
+        ->pValues->internalStyle.starts_with("slidevert");
 
     const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
     const auto vertical             = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
