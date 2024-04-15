@@ -244,12 +244,11 @@ void GestureManager::handleDragGestureEnd(const DragGesture& gev) {
 }
 
 bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
-    const bool VERTANIMS = g_pCompositor->m_pLastMonitor->activeWorkspace
-        ->m_vRenderOffset.getConfig()
-        ->pValues->internalStyle == "slidevert" ||
-        g_pCompositor->m_pLastMonitor->activeWorkspace
-        ->m_vRenderOffset.getConfig()
-        ->pValues->internalStyle.starts_with("slidevert");
+    const bool VERTANIMS =
+        g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset.getConfig()->pValues->internalStyle ==
+            "slidevert" ||
+        g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset.getConfig()->pValues->internalStyle.starts_with(
+            "slidevert");
 
     const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
     const auto vertical             = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
@@ -287,7 +286,17 @@ void GestureManager::sendCancelEventsToWindows() {
     for (const auto& surface : this->touchedSurfaces) {
         if (!surface)
             continue;
-        wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, surface);
+
+        // Retrieve the client from the surface
+        wl_client* client = wl_resource_get_client(surface->resource);
+        if (!client)
+            continue;
+
+        wlr_seat_client* seat_client = wlr_seat_client_for_wl_client(g_pCompositor->m_sSeat.seat, client);
+
+        if (seat_client) {
+            wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, seat_client);
+        }
     }
     this->touchedSurfaces.clear();
 }
