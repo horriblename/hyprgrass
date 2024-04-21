@@ -70,9 +70,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         Debug::log(ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion.hash);
     }
 
-    HyprlandAPI::registerCallbackStatic(PHANDLE, "touchDown", &gTouchDownCallback);
-    HyprlandAPI::registerCallbackStatic(PHANDLE, "touchUp", &gTouchUpCallback);
-    HyprlandAPI::registerCallbackStatic(PHANDLE, "touchMove", &gTouchMoveCallback);
+    HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchDown", gTouchDownCallback);
+    HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchUp", gTouchUpCallback);
+    HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchMove", gTouchMoveCallback);
 
     HyprlandAPI::reloadConfig();
 
