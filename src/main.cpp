@@ -30,9 +30,9 @@ void hkOnTouchMove(void* _, SCallbackInfo& cbinfo, std::any e) {
     cbinfo.cancelled = g_pGestureManager->onTouchMove(ev);
 }
 
-HOOK_CALLBACK_FN gTouchDownCallback = hkOnTouchDown;
-HOOK_CALLBACK_FN gTouchUpCallback   = hkOnTouchUp;
-HOOK_CALLBACK_FN gTouchMoveCallback = hkOnTouchMove;
+std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchDownHook;
+std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchUpHook;
+std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchMoveHook;
 
 // Do NOT change this function.
 APICALL EXPORT std::string PLUGIN_API_VERSION() {
@@ -70,9 +70,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         Debug::log(ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion.hash);
     }
 
-    HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchDown", gTouchDownCallback);
-    HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchUp", gTouchUpCallback);
-    HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchMove", gTouchMoveCallback);
+    g_pTouchDownHook = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchDown", hkOnTouchDown);
+    g_pTouchUpHook = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchUp", hkOnTouchUp);
+    g_pTouchMoveHook = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchMove", hkOnTouchMove);
 
     HyprlandAPI::reloadConfig();
 
