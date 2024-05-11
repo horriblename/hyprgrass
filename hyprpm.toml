@@ -1,0 +1,16 @@
+[repository]
+name = "hyprgrass"
+authors = ["horriblename"]
+commit_pins = [
+    ["e93fbd7c4f991cb8ef03e433ccc4d43587923e15", "091d0e9a9877d08d5d4f51eb71e255b8c78ffd89"],
+    ["fe7b748eb668136dd0558b7c8279bfcd7ab4d759", "091d0e9a9877d08d5d4f51eb71e255b8c78ffd89"],
+]
+
+[hyprgrass]
+description = "Touch screen gestures plugin"
+authors = ["horriblename"]
+output = "build/src/libhyprgrass.so"
+build = [
+    "meson setup build",
+    "ninja -C build",
+]
