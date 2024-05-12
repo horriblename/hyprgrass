@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/debug/Log.hpp>
+#include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprlang.hpp>
@@ -319,15 +320,16 @@ bool GestureManager::onTouchDown(wlr_touch_down_event* ev) {
         }
     }
 
-    m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(ev->touch->output_name ? ev->touch->output_name : "");
+    this->m_pLastTouchedMonitor =
+        g_pCompositor->getMonitorFromName(ev->touch->output_name ? ev->touch->output_name : "");
 
-    const auto PDEVIT = std::find_if(g_pInputManager->m_lTouchDevices.begin(), g_pInputManager->m_lTouchDevices.end(),
-                                     [&](const STouchDevice& other) { return other.pWlrDevice == &ev->touch->base; });
+    const auto PDEVIT = std::find_if(g_pInputManager->m_vTouches.begin(), g_pInputManager->m_vTouches.end(),
+                                     [&](const auto& other) { return other->wlr() == ev->touch; });
 
-    if (PDEVIT != g_pInputManager->m_lTouchDevices.end() && !PDEVIT->boundOutput.empty()) {
-        m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName(PDEVIT->boundOutput);
-    }
-    m_pLastTouchedMonitor = m_pLastTouchedMonitor ? m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor;
+    if (PDEVIT != g_pInputManager->m_vTouches.end() && !(*PDEVIT)->boundOutput.empty())
+        m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName((*PDEVIT)->boundOutput);
+
+    this->m_pLastTouchedMonitor = m_pLastTouchedMonitor ? m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor;
 
     const auto& position = m_pLastTouchedMonitor->vecPosition;
     const auto& geometry = m_pLastTouchedMonitor->vecSize;
