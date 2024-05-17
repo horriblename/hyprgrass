@@ -82,16 +82,22 @@ void GestureManager::emulateSwipeBegin(uint32_t time) {
 
     // HACK .pointer is not used by g_pInputManager->onSwipeBegin so it's fine I
     // think
-    auto emulated_swipe =
-        wlr_pointer_swipe_begin_event{.pointer = nullptr, .time_msec = time, .fingers = (uint32_t) * *PSWIPEFINGERS};
-    g_pInputManager->onSwipeBegin(&emulated_swipe);
+    auto emulated_swipe = IPointer::SSwipeBeginEvent{
+        .timeMs  = time,
+        .fingers = (uint32_t) * *PSWIPEFINGERS,
+    };
+
+    g_pInputManager->onSwipeBegin(emulated_swipe);
 
     m_vGestureLastCenter = m_sGestureState.get_center().origin;
 }
 
 void GestureManager::emulateSwipeEnd(uint32_t time, bool cancelled) {
-    auto emulated_swipe = wlr_pointer_swipe_end_event{.pointer = nullptr, .time_msec = time, .cancelled = cancelled};
-    g_pInputManager->onSwipeEnd(&emulated_swipe);
+    auto emulated_swipe = IPointer::SSwipeEndEvent{
+        .timeMs    = time,
+        .cancelled = cancelled,
+    };
+    g_pInputManager->onSwipeEnd(emulated_swipe);
 }
 
 void GestureManager::emulateSwipeUpdate(uint32_t time) {
@@ -108,14 +114,13 @@ void GestureManager::emulateSwipeUpdate(uint32_t time) {
 
     // touch coords are within 0 to 1, we need to scale it with PSWIPEDIST for
     // one to one gesture
-    auto emulated_swipe = wlr_pointer_swipe_update_event{
-        .pointer   = nullptr,
-        .time_msec = time,
-        .fingers   = (uint32_t)m_sGestureState.fingers.size(),
-        .dx        = (currentCenter.x - m_vGestureLastCenter.x) / m_sMonitorArea.w * **PSWIPEDIST,
-        .dy        = (currentCenter.y - m_vGestureLastCenter.y) / m_sMonitorArea.h * **PSWIPEDIST};
+    auto emulated_swipe = IPointer::SSwipeUpdateEvent{
+        .timeMs  = time,
+        .fingers = (uint32_t)m_sGestureState.fingers.size(),
+        .delta   = Vector2D((currentCenter.x - m_vGestureLastCenter.x) / m_sMonitorArea.w * **PSWIPEDIST,
+                            (currentCenter.y - m_vGestureLastCenter.y) / m_sMonitorArea.h * **PSWIPEDIST)};
 
-    g_pInputManager->onSwipeUpdate(&emulated_swipe);
+    g_pInputManager->onSwipeUpdate(emulated_swipe);
     m_vGestureLastCenter = currentCenter;
 }
 
@@ -217,7 +222,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             return;
         case DragGestureType::LONG_PRESS: {
             const auto pos = this->m_sGestureState.get_center().current;
-            wlr_cursor_warp(g_pCompositor->m_sWLRCursor, nullptr, pos.x, pos.y);
+            g_pCompositor->warpCursorTo(Vector2D(pos.x, pos.y));
             // HACK: g_pInputManager->onMouseMoveUnified is private so I'm using just this
             g_pLayoutManager->getCurrentLayout()->onMouseMove(Vector2D(pos.x, pos.y));
             return;
@@ -293,23 +298,24 @@ void GestureManager::sendCancelEventsToWindows() {
         if (!client)
             continue;
 
-        wlr_seat_client* seat_client = wlr_seat_client_for_wl_client(g_pCompositor->m_sSeat.seat, client);
-
-        if (seat_client) {
-            wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, seat_client);
-        }
+        // FIXME: couldn't find replacement for g_pCompositor->m_sSeat
+        // wlr_seat_client* seat_client = wlr_seat_client_for_wl_client(g_pCompositor->m_sSeat.seat, client);
+        //
+        // if (seat_client) {
+        //     wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, seat_client);
+        // }
     }
     this->touchedSurfaces.clear();
 }
 
 // @return whether or not to inhibit further actions
-bool GestureManager::onTouchDown(wlr_touch_down_event* ev) {
+bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     static auto const SEND_CANCEL =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
-    if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
-        return false;
+    // if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
+    //     return false;
 
     if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
         // remember which surfaces were touched, to later send cancel events
@@ -319,17 +325,11 @@ bool GestureManager::onTouchDown(wlr_touch_down_event* ev) {
             touchedSurfaces.push_back(surface);
         }
     }
+    this->m_pLastTouchedMonitor =
+        g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
 
     this->m_pLastTouchedMonitor =
-        g_pCompositor->getMonitorFromName(ev->touch->output_name ? ev->touch->output_name : "");
-
-    const auto PDEVIT = std::find_if(g_pInputManager->m_vTouches.begin(), g_pInputManager->m_vTouches.end(),
-                                     [&](const auto& other) { return other->wlr() == ev->touch; });
-
-    if (PDEVIT != g_pInputManager->m_vTouches.end() && !(*PDEVIT)->boundOutput.empty())
-        m_pLastTouchedMonitor = g_pCompositor->getMonitorFromName((*PDEVIT)->boundOutput);
-
-    this->m_pLastTouchedMonitor = m_pLastTouchedMonitor ? m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor;
+        this->m_pLastTouchedMonitor ? this->m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor.get();
 
     const auto& position = m_pLastTouchedMonitor->vecPosition;
     const auto& geometry = m_pLastTouchedMonitor->vecSize;
@@ -338,37 +338,37 @@ bool GestureManager::onTouchDown(wlr_touch_down_event* ev) {
     // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
     // represent "how many percent of screen" whereas
     // @wf::touch::gesture_event_t uses PIXELS as unit
-    auto pos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
+    auto pos = wlrTouchEventPositionAsPixels(ev.pos.x, ev.pos.y);
 
     const wf::touch::gesture_event_t gesture_event = {
         .type   = wf::touch::EVENT_TYPE_TOUCH_DOWN,
-        .time   = ev->time_msec,
-        .finger = ev->touch_id,
+        .time   = ev.timeMs,
+        .finger = ev.touchID,
         .pos    = pos,
     };
 
     return IGestureManager::onTouchDown(gesture_event);
 }
 
-bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
+bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
     static auto const SEND_CANCEL =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
-    if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
-        return false;
+    // if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
+    //     return false;
 
     wf::touch::point_t lift_off_pos;
     try {
-        lift_off_pos = this->m_sGestureState.fingers.at(ev->touch_id).current;
+        lift_off_pos = this->m_sGestureState.fingers.at(ev.touchID).current;
     } catch (const std::out_of_range&) {
         return false;
     }
 
     const wf::touch::gesture_event_t gesture_event = {
         .type   = wf::touch::EVENT_TYPE_TOUCH_UP,
-        .time   = ev->time_msec,
-        .finger = ev->touch_id,
+        .time   = ev.timeMs,
+        .finger = ev.touchID,
         .pos    = {lift_off_pos.x, lift_off_pos.y},
     };
 
@@ -381,16 +381,16 @@ bool GestureManager::onTouchUp(wlr_touch_up_event* ev) {
     }
 }
 
-bool GestureManager::onTouchMove(wlr_touch_motion_event* ev) {
-    if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
-        return false;
+bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
+    // if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
+    //     return false;
 
-    auto pos = wlrTouchEventPositionAsPixels(ev->x, ev->y);
+    auto pos = wlrTouchEventPositionAsPixels(ev.pos.x, ev.pos.y);
 
     const wf::touch::gesture_event_t gesture_event = {
         .type   = wf::touch::EVENT_TYPE_MOTION,
-        .time   = ev->time_msec,
-        .finger = ev->touch_id,
+        .time   = ev.timeMs,
+        .finger = ev.touchID,
         .pos    = pos,
     };
 
