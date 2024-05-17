@@ -13,19 +13,19 @@
 const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
 
 void hkOnTouchDown(void* _, SCallbackInfo& cbinfo, std::any e) {
-    auto ev = std::any_cast<wlr_touch_down_event*>(e);
+    auto ev = std::any_cast<ITouch::SDownEvent>(e);
 
     cbinfo.cancelled = g_pGestureManager->onTouchDown(ev);
 }
 
 void hkOnTouchUp(void* _, SCallbackInfo& cbinfo, std::any e) {
-    auto ev = std::any_cast<wlr_touch_up_event*>(e);
+    auto ev = std::any_cast<ITouch::SUpEvent>(e);
 
     cbinfo.cancelled = g_pGestureManager->onTouchUp(ev);
 }
 
 void hkOnTouchMove(void* _, SCallbackInfo& cbinfo, std::any e) {
-    auto ev = std::any_cast<wlr_touch_motion_event*>(e);
+    auto ev = std::any_cast<ITouch::SMotionEvent>(e);
 
     cbinfo.cancelled = g_pGestureManager->onTouchMove(ev);
 }
@@ -70,9 +70,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         Debug::log(ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion.hash);
     }
 
-    g_pTouchDownHook = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchDown", hkOnTouchDown);
-    g_pTouchUpHook = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchUp", hkOnTouchUp);
-    g_pTouchMoveHook = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchMove", hkOnTouchMove);
+    static auto P1 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchDown", hkOnTouchDown);
+    static auto P2 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchUp", hkOnTouchUp);
+    static auto P3 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchMove", hkOnTouchMove);
 
     HyprlandAPI::reloadConfig();
 

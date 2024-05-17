@@ -18,15 +18,15 @@ class GestureManager : public IGestureManager {
     ~GestureManager();
     // @return whether this touch event should be blocked from forwarding to the
     // client window/surface
-    bool onTouchDown(wlr_touch_down_event*);
+    bool onTouchDown(ITouch::SDownEvent e);
 
     // @return whether this touch event should be blocked from forwarding to the
     // client window/surface
-    bool onTouchUp(wlr_touch_up_event*);
+    bool onTouchUp(ITouch::SUpEvent e);
 
     // @return whether this touch event should be blocked from forwarding to the
     // client window/surface
-    bool onTouchMove(wlr_touch_motion_event*);
+    bool onTouchMove(ITouch::SMotionEvent e);
 
     void onLongPressTimeout(uint32_t time_msec);
 
