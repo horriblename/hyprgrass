@@ -420,8 +420,7 @@ void GestureManager::onLongPressTimeout(uint32_t time_msec) {
 
 wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, double y) const {
     auto area = this->getMonitorArea();
-    // TODO do I need to add area.x and area.y respectively?
-    return wf::touch::point_t{x * area.w, y * area.h};
+    return wf::touch::point_t{x * area.w + area.x, y * area.h + area.y};
 }
 
 void GestureManager::touchBindDispatcher(std::string args) {
