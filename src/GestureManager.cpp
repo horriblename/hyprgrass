@@ -1,13 +1,17 @@
 #include "GestureManager.hpp"
-#include "hyprland/src/managers/LayoutManager.hpp"
 #include "wayfire/touch/touch.hpp"
 #include <algorithm>
 #include <cstdint>
+
+#define private public
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
+#include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#undef private
+
 #include <hyprlang.hpp>
 #include <memory>
 #include <optional>
@@ -223,8 +227,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
         case DragGestureType::LONG_PRESS: {
             const auto pos = this->m_sGestureState.get_center().current;
             g_pCompositor->warpCursorTo(Vector2D(pos.x, pos.y));
-            // HACK: g_pInputManager->onMouseMoveUnified is private so I'm using just this
-            g_pLayoutManager->getCurrentLayout()->onMouseMove(Vector2D(pos.x, pos.y));
+            g_pInputManager->mouseMoveUnified(ev.time);
             return;
         }
         case DragGestureType::EDGE_SWIPE:
