@@ -2,10 +2,14 @@
 #include "./gestures/Gestures.hpp"
 #include "gestures/Shared.hpp"
 #include "globals.hpp"
+
+#define private public
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/helpers/Monitor.hpp>
 #include <hyprland/src/includes.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
+#undef private
+
 #include <list>
 #include <vector>
 #include <wayfire/touch/touch.hpp>
