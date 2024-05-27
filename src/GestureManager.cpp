@@ -182,7 +182,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
                     ->pValues->internalStyle.starts_with("slidefadevert");
 
             const auto delta = this->m_sGestureState.get_center().delta();
-            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? delta.y : delta.x);
+            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -delta.y : -delta.x);
             return;
         }
         case DragGestureType::LONG_PRESS: {
@@ -201,7 +201,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
                     ->pValues->internalStyle.starts_with("slidefadevert");
 
             const auto delta = this->m_sGestureState.get_center().delta();
-            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? delta.y : delta.x);
+            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -delta.y : -delta.x);
             return;
     }
 }
