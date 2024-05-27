@@ -31,6 +31,10 @@ void hkOnTouchMove(void* _, SCallbackInfo& cbinfo, std::any e) {
     cbinfo.cancelled = g_pGestureManager->onTouchMove(ev);
 }
 
+static void onPreConfigReload() {
+    g_pGestureManager->internalBinds.clear();
+}
+
 Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
     std::string v = V;
     auto vars     = CVarList(v, 4);
@@ -88,6 +92,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     HyprlandAPI::addConfigKeyword(PHANDLE, "hyprgrass-bind", onNewBind, Hyprlang::SHandlerOptions{});
     HyprlandAPI::addConfigKeyword(PHANDLE, "hyprgrass-bindm", onNewBind, Hyprlang::SHandlerOptions{});
+    static auto P0 = HyprlandAPI::registerCallbackDynamic(
+        PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) { onPreConfigReload(); });
+
 
     HyprlandAPI::addDispatcher(PHANDLE, "touchBind",
                                [&](std::string args) { g_pGestureManager->touchBindDispatcher(args); });
