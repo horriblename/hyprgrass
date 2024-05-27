@@ -50,12 +50,6 @@ class GestureManager : public IGestureManager {
     SMonitorArea m_sMonitorArea;
     wl_event_source* long_press_timer;
 
-    // for workspace swipe
-    wf::touch::point_t m_vGestureLastCenter;
-    void emulateSwipeBegin(uint32_t time);
-    void emulateSwipeEnd(uint32_t time, bool cancelled);
-    void emulateSwipeUpdate(uint32_t time);
-
     bool handleGestureBind(std::string bind, bool pressed);
 
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;

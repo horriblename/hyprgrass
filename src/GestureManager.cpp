@@ -80,55 +80,6 @@ GestureManager::~GestureManager() {
     wl_event_source_remove(this->long_press_timer);
 }
 
-void GestureManager::emulateSwipeBegin(uint32_t time) {
-    static auto const PSWIPEFINGERS =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_fingers")
-            ->getDataStaticPtr();
-
-    // HACK .pointer is not used by g_pInputManager->onSwipeBegin so it's fine I
-    // think
-    auto emulated_swipe = IPointer::SSwipeBeginEvent{
-        .timeMs  = time,
-        .fingers = (uint32_t) * *PSWIPEFINGERS,
-    };
-
-    g_pInputManager->onSwipeBegin(emulated_swipe);
-
-    m_vGestureLastCenter = m_sGestureState.get_center().origin;
-}
-
-void GestureManager::emulateSwipeEnd(uint32_t time, bool cancelled) {
-    auto emulated_swipe = IPointer::SSwipeEndEvent{
-        .timeMs    = time,
-        .cancelled = cancelled,
-    };
-    g_pInputManager->onSwipeEnd(emulated_swipe);
-}
-
-void GestureManager::emulateSwipeUpdate(uint32_t time) {
-    static auto const PSWIPEDIST =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
-            ->getDataStaticPtr();
-
-    if (!g_pInputManager->m_sActiveSwipe.pMonitor) {
-        Debug::log(ERR, "ignoring touch gesture motion event due to missing monitor!");
-        return;
-    }
-
-    auto currentCenter = m_sGestureState.get_center().current;
-
-    // touch coords are within 0 to 1, we need to scale it with PSWIPEDIST for
-    // one to one gesture
-    auto emulated_swipe = IPointer::SSwipeUpdateEvent{
-        .timeMs  = time,
-        .fingers = (uint32_t)m_sGestureState.fingers.size(),
-        .delta   = Vector2D((currentCenter.x - m_vGestureLastCenter.x) / m_sMonitorArea.w * **PSWIPEDIST,
-                            (currentCenter.y - m_vGestureLastCenter.y) / m_sMonitorArea.h * **PSWIPEDIST)};
-
-    g_pInputManager->onSwipeUpdate(emulated_swipe);
-    m_vGestureLastCenter = currentCenter;
-}
-
 bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
     return this->handleGestureBind(gev.to_string(), false);
 }
