@@ -95,16 +95,19 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     static auto P0 = HyprlandAPI::registerCallbackDynamic(
         PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) { onPreConfigReload(); });
 
-
-    HyprlandAPI::addDispatcher(PHANDLE, "touchBind",
-                               [&](std::string args) { g_pGestureManager->touchBindDispatcher(args); });
+    HyprlandAPI::addDispatcher(PHANDLE, "touchBind", [&](std::string args) {
+        HyprlandAPI::addNotification(
+            PHANDLE, "[hyprgrass] touchBind dispatcher deprecated, use the plugin:touch_gestures:bind keyword instead",
+            CColor(0.8, 0.2, 0.2, 1.0), 5000);
+        g_pGestureManager->touchBindDispatcher(args);
+    });
 
     const auto hlTargetVersion = GIT_COMMIT_HASH;
     const auto hlVersion       = HyprlandAPI::getHyprlandVersion(PHANDLE);
 
     if (hlVersion.hash != hlTargetVersion) {
         HyprlandAPI::addNotification(PHANDLE, "Mismatched Hyprland version! check logs for details",
-                                     CColor(0.8, 0.2, 0.2, 1.0), 5000);
+                                     CColor(0.8, 0.7, 0.26, 1.0), 5000);
         Debug::log(ERR, "[hyprgrass] version mismatch!");
         Debug::log(ERR, "[hyprgrass] | hyprgrass was built against: {}", hlTargetVersion);
         Debug::log(ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion.hash);
