@@ -217,14 +217,23 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
 void GestureManager::handleCancelledGesture() {}
 
 void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
+
     if (!this->getActiveDragGesture().has_value()) {
         return;
     }
 
     switch (this->getActiveDragGesture()->type) {
-        case DragGestureType::SWIPE:
-            emulateSwipeUpdate(ev.time);
+        case DragGestureType::SWIPE: {
+            const bool VERTANIMS =
+                g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()->pValues->internalStyle ==
+                    "slidevert" ||
+                g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()
+                    ->pValues->internalStyle.starts_with("slidefadevert");
+
+            const auto delta = this->m_sGestureState.get_center().delta();
+            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? delta.y : delta.x);
             return;
+        }
         case DragGestureType::LONG_PRESS: {
             const auto pos         = this->m_sGestureState.get_center().current;
             const auto monitor_pos = this->m_sMonitorArea;
@@ -234,7 +243,14 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             return;
         }
         case DragGestureType::EDGE_SWIPE:
-            emulateSwipeUpdate(ev.time);
+            const bool VERTANIMS =
+                g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()->pValues->internalStyle ==
+                    "slidevert" ||
+                g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()
+                    ->pValues->internalStyle.starts_with("slidefadevert");
+
+            const auto delta = this->m_sGestureState.get_center().delta();
+            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? delta.y : delta.x);
             return;
     }
 }
@@ -243,12 +259,12 @@ void GestureManager::handleDragGestureEnd(const DragGesture& gev) {
     Debug::log(LOG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
     switch (gev.type) {
         case DragGestureType::SWIPE:
-            emulateSwipeEnd(0, false);
+            g_pInputManager->endWorkspaceSwipe();
             return;
         case DragGestureType::LONG_PRESS:
             break;
         case DragGestureType::EDGE_SWIPE:
-            emulateSwipeEnd(0, false);
+            g_pInputManager->endWorkspaceSwipe();
             return;
     }
 
@@ -268,10 +284,12 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     const auto anti_directions      = VERTANIMS ? horizontal : vertical;
 
     if (direction & workspace_directions && !(direction & anti_directions)) {
-        // FIXME time arg of @emulateSwipeBegin should probably be assigned
-        // something useful (though its not really used later)
-        this->emulateSwipeBegin(0);
-        return true;
+        g_pInputManager->beginWorkspaceSwipe();
+        if (VERTANIMS) {
+            g_pInputManager->m_sActiveSwipe.initialDirection = (direction & GESTURE_DIRECTION_DOWN) ? 1 : -1;
+        } else {
+            g_pInputManager->m_sActiveSwipe.initialDirection = (direction & GESTURE_DIRECTION_RIGHT) ? 1 : -1;
+        }
     }
 
     return false;
