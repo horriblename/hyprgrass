@@ -31,6 +31,35 @@ void hkOnTouchMove(void* _, SCallbackInfo& cbinfo, std::any e) {
     cbinfo.cancelled = g_pGestureManager->onTouchMove(ev);
 }
 
+Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
+    std::string v = V;
+    auto vars     = CVarList(v, 4);
+    Hyprlang::CParseResult result;
+
+    if (vars.size() < 3) {
+        result.setError("must have at least 3 fields: <empty>, <gesture_event>, <dispatcher>, [args]");
+        return result;
+    }
+
+    if (!vars[0].empty()) {
+        result.setError("MODIFIER keys not currently supported");
+        return result;
+    }
+
+    const auto key            = vars[1];
+    const auto dispatcher     = vars[2];
+    const auto dispatcherArgs = vars[3];
+
+    g_pGestureManager->internalBinds.emplace_back(SKeybind{
+        .key     = key,
+        .handler = dispatcher,
+        .arg     = dispatcherArgs,
+        .mouse   = std::string("bindm") == K,
+    });
+
+    return result;
+}
+
 std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchDownHook;
 std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchUpHook;
 std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchMoveHook;
@@ -56,6 +85,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel",
                                 Hyprlang::CConfigValue((Hyprlang::INT)0));
 #pragma GCC diagnostic pop
+
+    HyprlandAPI::addConfigKeyword(PHANDLE, "hyprgrass-bind", onNewBind, Hyprlang::SHandlerOptions{});
+    HyprlandAPI::addConfigKeyword(PHANDLE, "hyprgrass-bindm", onNewBind, Hyprlang::SHandlerOptions{});
 
     HyprlandAPI::addDispatcher(PHANDLE, "touchBind",
                                [&](std::string args) { g_pGestureManager->touchBindDispatcher(args); });
