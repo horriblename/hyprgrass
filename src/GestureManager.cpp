@@ -236,6 +236,7 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
 
     if (direction & workspace_directions && !(direction & anti_directions)) {
         g_pInputManager->beginWorkspaceSwipe();
+        return true;
     }
 
     return false;
