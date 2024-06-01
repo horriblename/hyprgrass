@@ -31,6 +31,39 @@ void hkOnTouchMove(void* _, SCallbackInfo& cbinfo, std::any e) {
     cbinfo.cancelled = g_pGestureManager->onTouchMove(ev);
 }
 
+static void onPreConfigReload() {
+    g_pGestureManager->internalBinds.clear();
+}
+
+Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
+    std::string v = V;
+    auto vars     = CVarList(v, 4);
+    Hyprlang::CParseResult result;
+
+    if (vars.size() < 3) {
+        result.setError("must have at least 3 fields: <empty>, <gesture_event>, <dispatcher>, [args]");
+        return result;
+    }
+
+    if (!vars[0].empty()) {
+        result.setError("MODIFIER keys not currently supported");
+        return result;
+    }
+
+    const auto key            = vars[1];
+    const auto dispatcher     = vars[2];
+    const auto dispatcherArgs = vars[3];
+
+    g_pGestureManager->internalBinds.emplace_back(SKeybind{
+        .key     = key,
+        .handler = dispatcher,
+        .arg     = dispatcherArgs,
+        .mouse   = std::string("bindm") == K,
+    });
+
+    return result;
+}
+
 std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchDownHook;
 std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchUpHook;
 std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchMoveHook;
@@ -57,15 +90,24 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
                                 Hyprlang::CConfigValue((Hyprlang::INT)0));
 #pragma GCC diagnostic pop
 
-    HyprlandAPI::addDispatcher(PHANDLE, "touchBind",
-                               [&](std::string args) { g_pGestureManager->touchBindDispatcher(args); });
+    HyprlandAPI::addConfigKeyword(PHANDLE, "touchbind", onNewBind, Hyprlang::SHandlerOptions{});
+    HyprlandAPI::addConfigKeyword(PHANDLE, "touchbindm", onNewBind, Hyprlang::SHandlerOptions{});
+    static auto P0 = HyprlandAPI::registerCallbackDynamic(
+        PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) { onPreConfigReload(); });
+
+    HyprlandAPI::addDispatcher(PHANDLE, "touchBind", [&](std::string args) {
+        HyprlandAPI::addNotification(
+            PHANDLE, "[hyprgrass] touchBind dispatcher deprecated, use the plugin:touch_gestures:bind keyword instead",
+            CColor(0.8, 0.2, 0.2, 1.0), 5000);
+        g_pGestureManager->touchBindDispatcher(args);
+    });
 
     const auto hlTargetVersion = GIT_COMMIT_HASH;
     const auto hlVersion       = HyprlandAPI::getHyprlandVersion(PHANDLE);
 
     if (hlVersion.hash != hlTargetVersion) {
         HyprlandAPI::addNotification(PHANDLE, "Mismatched Hyprland version! check logs for details",
-                                     CColor(0.8, 0.2, 0.2, 1.0), 5000);
+                                     CColor(0.8, 0.7, 0.26, 1.0), 5000);
         Debug::log(ERR, "[hyprgrass] version mismatch!");
         Debug::log(ERR, "[hyprgrass] | hyprgrass was built against: {}", hlTargetVersion);
         Debug::log(ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion.hash);

@@ -18,6 +18,8 @@
 class GestureManager : public IGestureManager {
   public:
     uint32_t long_press_next_trigger_time;
+    std::list<SKeybind> internalBinds;
+
     GestureManager();
     ~GestureManager();
     // @return whether this touch event should be blocked from forwarding to the
@@ -47,7 +49,6 @@ class GestureManager : public IGestureManager {
     CMonitor* m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
     wl_event_source* long_press_timer;
-    std::list<SKeybind> internalBinds;
 
     // for workspace swipe
     wf::touch::point_t m_vGestureLastCenter;
