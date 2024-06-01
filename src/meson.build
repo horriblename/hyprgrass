@@ -14,7 +14,7 @@ shared_module('hyprgrass',
   'GestureManager.cpp',
   'VecSet.cpp',
   cpp_args: ['-DWLR_USE_UNSTABLE'],
-  link_with: [gestures],
+  link_with: [gestures, custom_bindm],
   dependencies: [
     wftouch,
     dependency('pixman-1'),
