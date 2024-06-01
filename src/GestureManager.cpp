@@ -103,7 +103,7 @@ bool GestureManager::handleDragGesture(const DragGesture& gev) {
             return this->handleWorkspaceSwipe(gev.direction);
 
         case DragGestureType::EDGE_SWIPE:
-            if (workspace_swipe_edge_str == "l" && gev.direction == GESTURE_DIRECTION_LEFT) {
+            if (workspace_swipe_edge_str == "l" && gev.edge_origin == GESTURE_DIRECTION_LEFT) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
             if (workspace_swipe_edge_str == "r" && gev.edge_origin == GESTURE_DIRECTION_RIGHT) {
