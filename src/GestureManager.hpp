@@ -4,6 +4,8 @@
 #include "VecSet.hpp"
 #include "gestures/Shared.hpp"
 #include <memory>
+#include "globals.hpp"
+#include <functional>
 
 #define private public
 #include <hyprland/src/debug/Log.hpp>
@@ -16,6 +18,8 @@
 #include <list>
 #include <wayfire/touch/touch.hpp>
 #include <wayland-server-core.h>
+
+using DispatcherFn = std::function<void(std::string)>;
 
 class GestureManager : public IGestureManager {
   public:
@@ -55,6 +59,7 @@ class GestureManager : public IGestureManager {
         bool active = false;
         CCssGapData old_gaps_in;
     } resizeOnBorderInfo;
+    std::optional<DispatcherFn> active_custom_bindm;
 
     bool handleGestureBind(std::string bind, bool pressed);
 

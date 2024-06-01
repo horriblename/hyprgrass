@@ -1,4 +1,5 @@
 #include "GestureManager.hpp"
+#include "bindm/MouseDispatcherArg.hpp"
 #include "globals.hpp"
 #include "wayfire/touch/touch.hpp"
 #include <algorithm>
@@ -206,9 +207,14 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
         if (k.key != bind)
             continue;
 
-        const auto DISPATCHER = g_pKeybindManager->m_mDispatchers.find(k.mouse ? "mouse" : k.handler);
+        std::string dispatcherName = k.handler;
+        const bool isCustomBindm   = k.handler.starts_with("__hyprgrass_bindm");
+        if (k.mouse && !isCustomBindm) {
+            dispatcherName = "mouse";
+        }
+        const auto DISPATCHER = g_pKeybindManager->m_mDispatchers.find(dispatcherName);
 
-        // Should never happen, as we check in the ConfigManager, but oh well
+        // TODO: check dispatcher exists in config (preReloadConfig?)
         if (DISPATCHER == g_pKeybindManager->m_mDispatchers.end()) {
             Debug::log(ERR, "Invalid handler in a keybind! (handler {} does not exist)", k.handler);
             continue;
@@ -220,7 +226,14 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
         if (k.handler == "pass")
             continue;
 
-        if (k.handler == "mouse") {
+        if (k.mouse && isCustomBindm) {
+            const auto args = Hyprgrass::MouseDispatcherArg{
+                .event = pressed ? Hyprgrass::EventType::BEGIN : Hyprgrass::EventType::END,
+                .x     = 0,
+                .y     = 0,
+            };
+            DISPATCHER->second(Hyprgrass::MouseDispatcherArgEncoding::encode(args));
+        } else if (k.handler == "mouse") {
             DISPATCHER->second((pressed ? "1" : "0") + k.arg);
         } else {
             DISPATCHER->second(k.arg);
@@ -249,6 +262,15 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             const auto pos = this->m_sGestureState.get_center().current;
             g_pCompositor->warpCursorTo(Vector2D(pos.x, pos.y));
             g_pInputManager->mouseMoveUnified(ev.time);
+            if (this->active_custom_bindm.has_value()) {
+                const auto arg = Hyprgrass::MouseDispatcherArg{
+                    .event = Hyprgrass::EventType::UPDATE,
+                    .x     = ev.pos.x,
+                    .y     = ev.pos.y,
+                };
+
+                this->active_custom_bindm.value()(Hyprgrass::MouseDispatcherArgEncoding::encode(arg));
+            }
             return;
         }
         case DragGestureType::EDGE_SWIPE:
