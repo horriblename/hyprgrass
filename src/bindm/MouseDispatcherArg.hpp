@@ -1,7 +1,11 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+
+#define HYPRGRASS_CUSTOM_BINDM_LAYOUT_VERSION 0
+
 namespace Hyprgrass {
+
 enum class EventType : uint32_t {
     BEGIN,
     UPDATE,
@@ -9,15 +13,20 @@ enum class EventType : uint32_t {
 };
 
 struct MouseDispatcherArg {
-    uint32_t version;
     EventType event;
     double x;
     double y;
 
-    std::string encode() const;
-    static std::optional<MouseDispatcherArg> decode(std::string s);
-
     auto operator<=>(const MouseDispatcherArg&) const = default;
+};
+
+struct MouseDispatcherArgEncoding {
+    static uint32_t version() {
+        return HYPRGRASS_CUSTOM_BINDM_LAYOUT_VERSION;
+    }
+
+    static std::string encode(const MouseDispatcherArg&);
+    static std::optional<MouseDispatcherArg> decode(std::string s);
 };
 
 } // namespace Hyprgrass

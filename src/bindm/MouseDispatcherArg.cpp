@@ -4,16 +4,31 @@
 #include <string>
 
 namespace Hyprgrass {
-std::string MouseDispatcherArg::encode() const {
-    return std::string(reinterpret_cast<const char*>(this), sizeof(*this));
+struct MouseDispatcherArgMessage {
+    uint32_t version;
+    MouseDispatcherArg payload;
+};
+
+std::string MouseDispatcherArgEncoding::encode(const MouseDispatcherArg& arg) {
+    MouseDispatcherArgMessage payload = {
+        .version = HYPRGRASS_CUSTOM_BINDM_LAYOUT_VERSION,
+        .payload = arg,
+    };
+
+    return std::string(reinterpret_cast<const char*>(&payload), sizeof(payload));
 }
 
-std::optional<MouseDispatcherArg> MouseDispatcherArg::decode(std::string s) {
-    if (s.length() < sizeof(MouseDispatcherArg)) {
+std::optional<MouseDispatcherArg> MouseDispatcherArgEncoding::decode(std::string s) {
+    if (s.length() < sizeof(MouseDispatcherArgMessage)) {
         return std::nullopt;
     }
 
-    auto data = reinterpret_cast<const MouseDispatcherArg*>(s.c_str());
-    return *data;
+    auto msg = reinterpret_cast<const MouseDispatcherArgMessage*>(s.c_str());
+
+    if (msg->version != HYPRGRASS_CUSTOM_BINDM_LAYOUT_VERSION) {
+        return std::nullopt;
+    }
+
+    return msg->payload;
 }
 } // namespace Hyprgrass
