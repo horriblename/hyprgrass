@@ -28,4 +28,6 @@ if not wftouch.found()
   wftouch = subproject('wf-touch').get_variable('wftouch')
 endif
 
+doctest = dependency('doctest', required: get_option('tests'))
+
 subdir('src')

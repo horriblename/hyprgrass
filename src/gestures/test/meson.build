@@ -1,4 +1,3 @@
-doctest = dependency('doctest', required: get_option('tests'))
 if doctest.found()
   test_exe = executable('test-gestures',
     'MockGestureManager.cpp',

@@ -1,4 +1,5 @@
 subdir('gestures')
+subdir('bindm')
 
 version_header = configure_file(
   input: 'version.hpp.in',
