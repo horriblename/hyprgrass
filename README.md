@@ -145,13 +145,13 @@ gestures {
 
 ### Custom Commands
 
-You can also bind gesture events to dispatchers, using touchbind keyword.
+You can also bind gesture events to dispatchers, using hyprgrass-bind keyword.
 The syntax is like normal keybinds.
 
 #### Syntax
 
 ```
-touchbind = , <gesture_name>, <dispatcher>, <args>
+hyprgrass-bind = , <gesture_name>, <dispatcher>, <args>
 ```
 
 where (skip to [examples](#examples) if this is confusing):
@@ -173,29 +173,29 @@ where (skip to [examples](#examples) if this is confusing):
 ```
 plugin:touch_gestures {
     # swipe left from right edge
-    touchbind = , edge:r:l, workspace, +1
+    hyprgrass-bind = , edge:r:l, workspace, +1
 
     # swipe up from bottom edge
-    touchbind = , edge:d:u, exec, firefox
+    hyprgrass-bind = , edge:d:u, exec, firefox
 
     # swipe down from left edge
-    touchbind = , edge:l:d, exec, pactl set-sink-volume @DEFAULT_SINK@ -4%
+    hyprgrass-bind = , edge:l:d, exec, pactl set-sink-volume @DEFAULT_SINK@ -4%
 
     # swipe down with 4 fingers
     # NOTE: swipe events only trigger for finger count of >= 3
-    touchbind = , swipe:4:d, killactive
+    hyprgrass-bind = , swipe:4:d, killactive
 
     # swipe diagonally left and down with 3 fingers
     # l (or r) must come before d and u
-    touchbind = , swipe:3:ld, exec, foot
+    hyprgrass-bind = , swipe:3:ld, exec, foot
 
     # tap with 3 fingers
     # NOTE: tap events only trigger for finger count of >= 3
-    touchbind = , tap:3, exec, foot
+    hyprgrass-bind = , tap:3, exec, foot
 
     # longpress can trigger mouse binds:
-    touchbindm = , longpress:2, movewindow
-    touchbindm = , longpress:3, resizewindow
+    hyprgrass-bindm = , longpress:2, movewindow
+    hyprgrass-bindm = , longpress:3, resizewindow
 }
 ```
 
