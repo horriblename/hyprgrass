@@ -1,7 +1,11 @@
 #include "GestureManager.hpp"
+#include "bindm/MouseDispatcherArg.hpp"
 #include "globals.hpp"
 #include "version.hpp"
 
+#include <chrono>
+#include <cstdlib>
+#include <format>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/debug/Log.hpp>
@@ -77,6 +81,35 @@ Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
     return result;
 }
 
+void brightnessctlBindm(std::string args) {
+    static auto lastTriggered    = std::chrono::steady_clock::now();
+    static Vector2D lastPosition = {0, 0};
+
+    const auto arg = Hyprgrass::MouseDispatcherArgEncoding::decode(args);
+    if (!arg.has_value()) {
+        Debug::log(LogLevel::ERR, "could not decode args");
+        return;
+    }
+
+    if (arg->event == Hyprgrass::EventType::BEGIN) {
+        lastPosition = {0, 0};
+    }
+
+    if (arg->event != Hyprgrass::EventType::UPDATE) {
+        return;
+    }
+
+    const auto now  = std::chrono::steady_clock::now();
+    const auto diff = now - lastTriggered;
+    if (diff < std::chrono::milliseconds(100)) {
+        return;
+    }
+
+    system(std::format("brightnessctl set {}%", lastPosition.y > arg->y ? 5 : -5).c_str());
+    lastTriggered = now;
+    lastPosition  = {arg->x, arg->y};
+}
+
 std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchDownHook;
 std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchUpHook;
 std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchMoveHook;
@@ -118,6 +151,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
             CColor(0.8, 0.2, 0.2, 1.0), 5000);
         g_pGestureManager->touchBindDispatcher(args);
     });
+    HyprlandAPI::addDispatcher(PHANDLE, "__hyprgrass_bindm:brightnessctl", brightnessctlBindm);
 
     HyprlandAPI::addDispatcher(PHANDLE, "hyprgrass:debug:binds", listInternalBinds);
 
