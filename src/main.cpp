@@ -97,7 +97,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     HyprlandAPI::addDispatcher(PHANDLE, "touchBind", [&](std::string args) {
         HyprlandAPI::addNotification(
-            PHANDLE, "[hyprgrass] touchBind dispatcher deprecated, use the plugin:touch_gestures:bind keyword instead",
+            PHANDLE, "[hyprgrass] touchBind dispatcher deprecated, use the hyprgrass-bind keyword instead",
             CColor(0.8, 0.2, 0.2, 1.0), 5000);
         g_pGestureManager->touchBindDispatcher(args);
     });
