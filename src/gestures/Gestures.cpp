@@ -246,7 +246,7 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_
     // The release action needs longer duration to handle the case where the
     // gesture is actually longer than the max distance.
     // TODO make this adjustable:
-    edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * *sensitivity);
+    // edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * *sensitivity);
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> edge_swipe_actions;
     edge_swipe_actions.emplace_back(std::move(edge_drag_begin));
