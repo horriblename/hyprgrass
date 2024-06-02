@@ -178,7 +178,7 @@ bool GestureManager::handleDragGesture(const DragGesture& gev) {
 // pressed only matters for mouse binds: only start of drag gestures should set it to true
 bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
     bool found = false;
-    Debug::log(LOG, "[hyprgrass] Gesture Triggered: {}", bind);
+    Debug::log(LOG, "[hyprgrass] Looking for binds matching: {}", bind);
 
     auto allBinds = std::ranges::views::join(std::array{g_pKeybindManager->m_lKeybinds, this->internalBinds});
 
