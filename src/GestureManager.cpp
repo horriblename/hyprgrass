@@ -207,12 +207,8 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
         if (k.key != bind)
             continue;
 
-        std::string dispatcherName = k.handler;
-        const bool isCustomBindm   = k.handler.starts_with("__hyprgrass_bindm");
-        if (k.mouse && !isCustomBindm) {
-            dispatcherName = "mouse";
-        }
-        const auto DISPATCHER = g_pKeybindManager->m_mDispatchers.find(dispatcherName);
+        const bool isCustomBindm = k.mouse && k.handler.starts_with("__hyprgrass_bindm");
+        const auto DISPATCHER    = g_pKeybindManager->m_mDispatchers.find(k.handler);
 
         // TODO: check dispatcher exists in config (preReloadConfig?)
         if (DISPATCHER == g_pKeybindManager->m_mDispatchers.end()) {
