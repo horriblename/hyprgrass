@@ -221,8 +221,6 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
         }
 
         // call the dispatcher
-        Debug::log(LOG, "[hyprgrass] calling dispatcher ({})", bind);
-
         if (k.handler == "pass")
             continue;
 
