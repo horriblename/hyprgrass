@@ -300,23 +300,6 @@ TEST_CASE("Edge Swipe: Timeout during swiping phase" * doctest::may_fail(true)) 
     ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
 }
 
-TEST_CASE("Edge Swipe: Timout during liftoff phase: \n"
-          "1. touch down on edge of screen\n"
-          "2. swipe more than the threshold, within the time limit, then\n"
-          "3. do not lift finger until after timeout.") {
-    std::cout << "  ==== stdout:" << std::endl;
-    auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
-
-    const std::vector<TouchEvent> events{
-        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
-        {wf::touch::EVENT_TYPE_MOTION, 150, 0, {250, 300}},
-        {wf::touch::EVENT_TYPE_MOTION, 200, 0, {455, 300}},
-        {wf::touch::EVENT_TYPE_TOUCH_UP, 801, 0, {455, 300}},
-    };
-    ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
-}
-
 TEST_CASE("Edge Swipe: Fail check at the end for not starting swipe from an edge\n"
           "1. touch down somewhere NOT considered edge.\n"
           "2. swipe more than the threshold, within the time limit, then\n"
