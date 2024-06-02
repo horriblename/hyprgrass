@@ -86,9 +86,11 @@ void ProcessEvents(CMockGestureManager& gm, ExpectResult expect,
             break;
         case ExpectResultType::DRAG_TRIGGERED:
             CHECK(gm.getActiveDragGesture().has_value());
+            CHECK(gm.eventForwardingInhibited());
             break;
         case ExpectResultType::DRAG_ENDED:
             CHECK(gm.dragEnded);
+            CHECK(gm.eventForwardingInhibited());
             break;
         case ExpectResultType::CANCELLED:
             CHECK(gm.cancelled);
