@@ -107,7 +107,7 @@ void brightnessctlBindm(std::string args) {
         return;
     }
 
-    system(std::format("brightnessctl set {}%", lastPosition.y > arg->y ? 5 : -5).c_str());
+    system(std::format("brightnessctl set {}", lastPosition.y > arg->y ? "+5%" : "5%-").c_str());
     lastTriggered = now;
     lastPosition  = {arg->x, arg->y};
 }
