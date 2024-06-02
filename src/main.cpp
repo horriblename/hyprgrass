@@ -67,9 +67,10 @@ Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
     }
 
     const auto mouse          = std::string("hyprgrass-bindm") == K;
+    const auto isCustomBindm  = mouse && vars[2].starts_with("__hyprgrass_bindm");
     const auto key            = vars[1];
-    const auto dispatcher     = mouse ? "mouse" : vars[2];
-    const auto dispatcherArgs = mouse ? vars[2] : vars[3];
+    const auto dispatcher     = (mouse && !isCustomBindm) ? "mouse" : vars[2];
+    const auto dispatcherArgs = (mouse && !isCustomBindm) ? vars[2] : vars[3];
 
     g_pGestureManager->internalBinds.emplace_back(SKeybind{
         .key     = key,
