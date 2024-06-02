@@ -226,6 +226,7 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
                 .x     = 0,
                 .y     = 0,
             };
+            this->active_custom_bindm = DISPATCHER->second;
             DISPATCHER->second(Hyprgrass::MouseDispatcherArgEncoding::encode(args));
         } else if (k.handler == "mouse") {
             DISPATCHER->second((pressed ? "1" : "0") + k.arg);
