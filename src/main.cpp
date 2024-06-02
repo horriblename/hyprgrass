@@ -61,7 +61,7 @@ Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
         return result;
     }
 
-    const auto mouse          = std::string("bindm") == K;
+    const auto mouse          = std::string("hyprgrass-bindm") == K;
     const auto key            = vars[1];
     const auto dispatcher     = mouse ? "mouse" : vars[2];
     const auto dispatcherArgs = mouse ? vars[2] : vars[3];
