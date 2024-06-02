@@ -50,15 +50,14 @@ Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
         return result;
     }
 
+    const auto mouse          = std::string("bindm") == K;
     const auto key            = vars[1];
-    const auto dispatcher     = vars[2];
-    const auto dispatcherArgs = vars[3];
-
-    const auto mouse = std::string("bindm") == K;
+    const auto dispatcher     = mouse ? "mouse" : vars[2];
+    const auto dispatcherArgs = mouse ? vars[2] : vars[3];
 
     g_pGestureManager->internalBinds.emplace_back(SKeybind{
         .key     = key,
-        .handler = mouse ? "mouse" : dispatcher,
+        .handler = dispatcher,
         .arg     = dispatcherArgs,
         .mouse   = mouse,
     });
