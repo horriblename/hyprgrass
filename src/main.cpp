@@ -35,6 +35,17 @@ static void onPreConfigReload() {
     g_pGestureManager->internalBinds.clear();
 }
 
+void listInternalBinds(std::string) {
+    Debug::log(LogLevel::LOG, "[hyprgrass] Listing internal binds:");
+    for (const auto& bind : g_pGestureManager->internalBinds) {
+        Debug::log(LogLevel::LOG, "[hyprgrass] | gesture: {}", bind.key);
+        Debug::log(LogLevel::LOG, "[hyprgrass] |     dispatcher: {}", bind.handler);
+        Debug::log(LogLevel::LOG, "[hyprgrass] |     arg: {}", bind.arg);
+        Debug::log(LogLevel::LOG, "[hyprgrass] |     mouse: {}", bind.mouse);
+        Debug::log(LogLevel::LOG, "[hyprgrass] |");
+    }
+}
+
 Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
     std::string v = V;
     auto vars     = CVarList(v, 4);
@@ -102,6 +113,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
             CColor(0.8, 0.2, 0.2, 1.0), 5000);
         g_pGestureManager->touchBindDispatcher(args);
     });
+
+    HyprlandAPI::addDispatcher(PHANDLE, "hyprgrass:debug:binds", listInternalBinds);
 
     const auto hlTargetVersion = GIT_COMMIT_HASH;
     const auto hlVersion       = HyprlandAPI::getHyprlandVersion(PHANDLE);
