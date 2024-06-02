@@ -1,5 +1,5 @@
 #include <cstdint>
-#include <optional>
+#include <expected>
 #include <string>
 
 #define HYPRGRASS_CUSTOM_BINDM_LAYOUT_VERSION 0
@@ -20,13 +20,19 @@ struct MouseDispatcherArg {
     auto operator<=>(const MouseDispatcherArg&) const = default;
 };
 
+enum class ArgDecodeErr {
+    STRING_TOO_SHORT,
+    VERSION_MISMATCH,
+};
+inline int gArgDecodeErrInfo;
+
 struct MouseDispatcherArgEncoding {
     static uint32_t version() {
         return HYPRGRASS_CUSTOM_BINDM_LAYOUT_VERSION;
     }
 
     static std::string encode(const MouseDispatcherArg&);
-    static std::optional<MouseDispatcherArg> decode(std::string s);
+    static std::expected<MouseDispatcherArg, ArgDecodeErr> decode(std::string s);
 };
 
 } // namespace Hyprgrass

@@ -87,7 +87,8 @@ void brightnessctlBindm(std::string args) {
 
     const auto arg = Hyprgrass::MouseDispatcherArgEncoding::decode(args);
     if (!arg.has_value()) {
-        Debug::log(LogLevel::ERR, "could not decode args");
+        Debug::log(LogLevel::ERR, "could not decode args: {}, ErrInfo: {}", (int)arg.error(),
+                   Hyprgrass::gArgDecodeErrInfo);
         return;
     }
 
