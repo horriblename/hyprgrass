@@ -167,7 +167,9 @@ void IGestureManager::addMultiFingerTap(const float* sensitivity, const int64_t*
     auto ack = [this]() {
         const auto gesture =
             CompletedGesture{CompletedGestureType::TAP, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
-        this->emitCompletedGesture(gesture);
+        if (this->emitCompletedGesture(gesture)) {
+            this->cancelTouchEventsOnAllWindows();
+        }
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
 
@@ -186,7 +188,10 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
             const auto gesture =
                 DragGesture{DragGestureType::LONG_PRESS, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
 
-            this->activeDragGesture = this->emitDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
+            if (this->emitDragGesture(gesture)) {
+                this->activeDragGesture = std::optional(gesture);
+                this->cancelTouchEventsOnAllWindows();
+            }
         });
 
     auto touch_up_or_down = std::make_unique<TouchUpOrDownAction>();
@@ -228,7 +233,10 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_
         }
         auto direction = edge_ptr->target_direction;
         auto gesture   = DragGesture{DragGestureType::EDGE_SWIPE, direction, edge_ptr->finger_count, origin_edges};
-        this->activeDragGesture = this->emitDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
+        if (this->emitDragGesture(gesture)) {
+            this->activeDragGesture = std::optional(gesture);
+            this->cancelTouchEventsOnAllWindows();
+        }
     });
     auto edge_release    = std::make_unique<wf::touch::touch_action_t>(1, false);
 
@@ -238,7 +246,7 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_
     // The release action needs longer duration to handle the case where the
     // gesture is actually longer than the max distance.
     // TODO make this adjustable:
-    edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * *sensitivity);
+    // edge_release->set_duration(GESTURE_BASE_DURATION * 1.5 * *sensitivity);
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> edge_swipe_actions;
     edge_swipe_actions.emplace_back(std::move(edge_drag_begin));
