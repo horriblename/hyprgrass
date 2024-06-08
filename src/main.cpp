@@ -1,5 +1,7 @@
 #include "GestureManager.hpp"
+#include "TouchVisualizer.hpp"
 #include "globals.hpp"
+#include "src/SharedDefs.hpp"
 #include "version.hpp"
 
 #include <hyprland/src/Compositor.hpp>
@@ -11,30 +13,48 @@
 
 #include <hyprlang.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
+#include <memory>
 #include <string>
 
 const CHyprColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
 
+inline std::unique_ptr<Visualizer> g_pVisualizer;
+
 void hkOnTouchDown(void* _, SCallbackInfo& cbinfo, std::any e) {
     auto ev = std::any_cast<ITouch::SDownEvent>(e);
 
+    g_pVisualizer->onTouchDown(ev);
     cbinfo.cancelled = g_pGestureManager->onTouchDown(ev);
 }
 
 void hkOnTouchUp(void* _, SCallbackInfo& cbinfo, std::any e) {
     auto ev = std::any_cast<ITouch::SUpEvent>(e);
 
+    g_pVisualizer->onTouchUp(ev);
     cbinfo.cancelled = g_pGestureManager->onTouchUp(ev);
 }
 
 void hkOnTouchMove(void* _, SCallbackInfo& cbinfo, std::any e) {
     auto ev = std::any_cast<ITouch::SMotionEvent>(e);
 
+    g_pVisualizer->onTouchMotion(ev);
     cbinfo.cancelled = g_pGestureManager->onTouchMove(ev);
 }
 
 static void onPreConfigReload() {
     g_pGestureManager->internalBinds.clear();
+}
+
+void onRenderStage(eRenderStage stage) {
+    static auto const LONG_PRESS_DELAY =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
+            ->getDataStaticPtr();
+
+    if (stage != RENDER_LAST_MOMENT || **LONG_PRESS_DELAY) {
+        return;
+    }
+
+    g_pVisualizer->onRender();
 }
 
 void listInternalBinds(std::string) {
@@ -115,7 +135,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigKeyword(PHANDLE, "hyprgrass-bind", onNewBind, Hyprlang::SHandlerOptions{});
     HyprlandAPI::addConfigKeyword(PHANDLE, "hyprgrass-bindm", onNewBind, Hyprlang::SHandlerOptions{});
     static auto P0 = HyprlandAPI::registerCallbackDynamic(
-        PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) { onPreConfigReload(); });
+        PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) {
+        onPreConfigReload(); });
 
     HyprlandAPI::addDispatcher(PHANDLE, "touchBind", [&](std::string args) {
         HyprlandAPI::addNotification(
@@ -144,6 +165,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::reloadConfig();
 
     g_pGestureManager = std::make_unique<GestureManager>();
+    g_pVisualizer     = std::make_unique<Visualizer>();
 
     return {"hyprgrass", "Touchscreen gestures", "horriblename", HYPRGRASS_VERSION};
 }
