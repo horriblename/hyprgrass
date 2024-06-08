@@ -13,6 +13,7 @@
 #include <hyprland/src/managers/input/InputManager.hpp>
 #undef private
 
+#include <algorithm>
 #include <hyprlang.hpp>
 #include <memory>
 #include <optional>
@@ -181,8 +182,16 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
                 g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()
                     ->pValues->internalStyle.starts_with("slidefadevert");
 
-            const auto delta = this->m_sGestureState.get_center().delta();
-            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -delta.y : -delta.x);
+            static auto const PSWIPEDIST =
+                (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
+                    ->getDataStaticPtr();
+            const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
+
+            const auto delta_percent =
+                this->pixelPositionToPercentagePosition(this->m_sGestureState.get_center().delta());
+            const auto swipe_delta = delta_percent * SWIPEDISTANCE;
+
+            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -swipe_delta.y : -swipe_delta.x);
             return;
         }
         case DragGestureType::LONG_PRESS: {
@@ -193,16 +202,25 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             g_pInputManager->mouseMoveUnified(ev.time);
             return;
         }
-        case DragGestureType::EDGE_SWIPE:
+        case DragGestureType::EDGE_SWIPE: {
             const bool VERTANIMS =
                 g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()->pValues->internalStyle ==
                     "slidevert" ||
                 g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()
                     ->pValues->internalStyle.starts_with("slidefadevert");
 
-            const auto delta = this->m_sGestureState.get_center().delta();
-            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -delta.y : -delta.x);
+            static auto const PSWIPEDIST =
+                (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
+                    ->getDataStaticPtr();
+            const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
+
+            const auto delta_percent =
+                this->pixelPositionToPercentagePosition(this->m_sGestureState.get_center().delta());
+            const auto swipe_delta = delta_percent * SWIPEDISTANCE;
+
+            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -swipe_delta.y : -swipe_delta.x);
             return;
+        }
     }
 }
 
@@ -392,6 +410,11 @@ void GestureManager::onLongPressTimeout(uint32_t time_msec) {
 wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, double y) const {
     auto area = this->getMonitorArea();
     return wf::touch::point_t{x * area.w + area.x, y * area.h + area.y};
+}
+
+Vector2D GestureManager::pixelPositionToPercentagePosition(wf::touch::point_t point) const {
+    auto monitorArea = this->getMonitorArea();
+    return Vector2D((point.x - monitorArea.x) / monitorArea.w, (point.y - monitorArea.y) / monitorArea.h);
 }
 
 void GestureManager::touchBindDispatcher(std::string args) {

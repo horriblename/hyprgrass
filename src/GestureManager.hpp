@@ -52,7 +52,11 @@ class GestureManager : public IGestureManager {
 
     bool handleGestureBind(std::string bind, bool pressed);
 
+    // converts wlr touch event positions (number between 0.0 to 1.0) to pixel position,
+    // takes into consideration monitor size and offset
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
+    // reverse of wlrTouchEventPositionAsPixels
+    Vector2D pixelPositionToPercentagePosition(wf::touch::point_t) const;
     bool handleWorkspaceSwipe(const GestureDirection direction);
 
     bool handleDragGesture(const DragGesture& gev) override;
