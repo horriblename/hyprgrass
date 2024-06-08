@@ -108,6 +108,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
                                 Hyprlang::CConfigValue((Hyprlang::INT)1));
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:emulate_touchpad_swipe",
                                 Hyprlang::CConfigValue((Hyprlang::INT)0));
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch",
+                                Hyprlang::CConfigValue((Hyprlang::INT)0));
 #pragma GCC diagnostic pop
 
     HyprlandAPI::addConfigKeyword(PHANDLE, "hyprgrass-bind", onNewBind, Hyprlang::SHandlerOptions{});
