@@ -1,6 +1,6 @@
 #include "CompletedGesture.hpp"
 
-std::string CompletedGesture::to_string() const {
+std::string CompletedGestureEvent::to_string() const {
     switch (type) {
         case CompletedGestureType::EDGE_SWIPE:
             return "edge:" + stringifyDirection(this->edge_origin) + ":" + stringifyDirection(this->direction);

@@ -50,7 +50,7 @@ class CMockGestureManager final : public IGestureManager {
         return {pos->x, pos->y};
     }
 
-    bool handleCompletedGesture(const CompletedGesture& gev) override;
+    bool handleCompletedGesture(const CompletedGestureEvent& gev) override;
     bool handleDragGesture(const DragGestureEvent& gev) override;
     void dragGestureUpdate(const wf::touch::gesture_event_t&) override;
     void handleDragGestureEnd(const DragGestureEvent& gev) override;

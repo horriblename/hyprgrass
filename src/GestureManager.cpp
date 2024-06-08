@@ -81,7 +81,7 @@ GestureManager::~GestureManager() {
     wl_event_source_remove(this->long_press_timer);
 }
 
-bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
+bool GestureManager::handleCompletedGesture(const CompletedGestureEvent& gev) {
     return this->handleGestureBind(gev.to_string(), false);
 }
 

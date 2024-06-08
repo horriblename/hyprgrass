@@ -60,7 +60,7 @@ class IGestureManager {
     virtual SMonitorArea getMonitorArea() const = 0;
 
     // handles gesture events and returns whether or not the event is used.
-    virtual bool handleCompletedGesture(const CompletedGesture& gev) = 0;
+    virtual bool handleCompletedGesture(const CompletedGestureEvent& gev) = 0;
 
     // called at the start of drag evetns and returns whether or not the event is used.
     virtual bool handleDragGesture(const DragGestureEvent& gev) = 0;
@@ -85,7 +85,7 @@ class IGestureManager {
     // client windows/surfaces
     virtual void sendCancelEventsToWindows() = 0;
 
-    bool emitCompletedGesture(const CompletedGesture& gev);
+    bool emitCompletedGesture(const CompletedGestureEvent& gev);
     bool emitDragGesture(const DragGestureEvent& gev);
 
     void updateGestures(const wf::touch::gesture_event_t&);
