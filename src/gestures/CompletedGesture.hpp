@@ -11,7 +11,7 @@ enum class CompletedGestureType {
     // PINCH,
 };
 
-struct CompletedGesture {
+struct CompletedGestureEvent {
     CompletedGestureType type;
     GestureDirection direction;
     int finger_count;

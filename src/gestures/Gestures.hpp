@@ -42,7 +42,7 @@ class IGestureManager {
     void addLongPress(const float* sensitivity, const int64_t* delay);
     void addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout);
 
-    std::optional<DragGesture> getActiveDragGesture() const {
+    std::optional<DragGestureEvent> getActiveDragGesture() const {
         return activeDragGesture;
     }
 
@@ -60,16 +60,16 @@ class IGestureManager {
     virtual SMonitorArea getMonitorArea() const = 0;
 
     // handles gesture events and returns whether or not the event is used.
-    virtual bool handleCompletedGesture(const CompletedGesture& gev) = 0;
+    virtual bool handleCompletedGesture(const CompletedGestureEvent& gev) = 0;
 
     // called at the start of drag evetns and returns whether or not the event is used.
-    virtual bool handleDragGesture(const DragGesture& gev) = 0;
+    virtual bool handleDragGesture(const DragGestureEvent& gev) = 0;
 
     // called on every touch event while a drag gesture is active
     virtual void dragGestureUpdate(const wf::touch::gesture_event_t&) = 0;
 
     // called at the end of a drag event
-    virtual void handleDragGestureEnd(const DragGesture& gev) = 0;
+    virtual void handleDragGestureEnd(const DragGestureEvent& gev) = 0;
 
     // this function should cleanup after drag gestures
     virtual void handleCancelledGesture() = 0;
@@ -79,14 +79,15 @@ class IGestureManager {
 
   private:
     bool inhibitTouchEvents;
-    std::optional<DragGesture> activeDragGesture;
+    std::optional<DragGestureEvent> activeDragGesture;
 
     // this function is called when needed to send "cancel touch" events to
     // client windows/surfaces
     virtual void sendCancelEventsToWindows() = 0;
 
-    bool emitCompletedGesture(const CompletedGesture& gev);
-    bool emitDragGesture(const DragGesture& gev);
+    bool emitCompletedGesture(const CompletedGestureEvent& gev);
+    bool emitDragGesture(const DragGestureEvent& gev);
+    bool emitDragGestureEnd(const DragGestureEvent& gev);
 
     void updateGestures(const wf::touch::gesture_event_t&);
     void cancelTouchEventsOnAllWindows();

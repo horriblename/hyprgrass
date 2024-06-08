@@ -1,6 +1,6 @@
 #include "DragGesture.hpp"
 
-std::string DragGesture::to_string() const {
+std::string DragGestureEvent::to_string() const {
     switch (type) {
         case DragGestureType::LONG_PRESS:
             return "longpress:" + std::to_string(finger_count);

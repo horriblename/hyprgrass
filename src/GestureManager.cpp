@@ -81,11 +81,11 @@ GestureManager::~GestureManager() {
     wl_event_source_remove(this->long_press_timer);
 }
 
-bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
+bool GestureManager::handleCompletedGesture(const CompletedGestureEvent& gev) {
     return this->handleGestureBind(gev.to_string(), false);
 }
 
-bool GestureManager::handleDragGesture(const DragGesture& gev) {
+bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
     static auto const WORKSPACE_SWIPE_FINGERS =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
             ->getDataStaticPtr();
@@ -224,7 +224,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
     }
 }
 
-void GestureManager::handleDragGestureEnd(const DragGesture& gev) {
+void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
     Debug::log(LOG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
     switch (gev.type) {
         case DragGestureType::SWIPE:

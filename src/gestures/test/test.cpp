@@ -52,7 +52,7 @@ struct ExpectResult {
     float progress = 0.0;
 
     // which of the m_vGestures to use
-    // usually the first (0)
+    // usually the first (0) in tests
     int gesture_index = 0;
 };
 
@@ -334,5 +334,19 @@ TEST_CASE("Edge Swipe Drag: begin") {
         {wf::touch::EVENT_TYPE_MOTION, 200, 0, {455, 300}},
     };
     const ExpectResult expected_result = {ExpectResultType::DRAG_TRIGGERED, 1.0};
+    ProcessEvents(gm, expected_result, events);
+}
+
+TEST_CASE("Edge Swipe Drag: emits drag end event") {
+    auto gm = CMockGestureManager::newDragHandler();
+    gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
+
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}}, {wf::touch::EVENT_TYPE_MOTION, 150, 0, {250, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 200, 0, {455, 300}},   {wf::touch::EVENT_TYPE_MOTION, 250, 0, {600, 300}},
+        {wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {700, 400}},
+    };
+
+    const ExpectResult expected_result = {ExpectResultType::DRAG_ENDED, 1.0};
     ProcessEvents(gm, expected_result, events);
 }
