@@ -13,6 +13,7 @@
 #include <hyprland/src/managers/input/InputManager.hpp>
 #undef private
 
+#include <algorithm>
 #include <hyprlang.hpp>
 #include <memory>
 #include <optional>
@@ -80,55 +81,6 @@ GestureManager::~GestureManager() {
     wl_event_source_remove(this->long_press_timer);
 }
 
-void GestureManager::emulateSwipeBegin(uint32_t time) {
-    static auto const PSWIPEFINGERS =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_fingers")
-            ->getDataStaticPtr();
-
-    // HACK .pointer is not used by g_pInputManager->onSwipeBegin so it's fine I
-    // think
-    auto emulated_swipe = IPointer::SSwipeBeginEvent{
-        .timeMs  = time,
-        .fingers = (uint32_t) * *PSWIPEFINGERS,
-    };
-
-    g_pInputManager->onSwipeBegin(emulated_swipe);
-
-    m_vGestureLastCenter = m_sGestureState.get_center().origin;
-}
-
-void GestureManager::emulateSwipeEnd(uint32_t time, bool cancelled) {
-    auto emulated_swipe = IPointer::SSwipeEndEvent{
-        .timeMs    = time,
-        .cancelled = cancelled,
-    };
-    g_pInputManager->onSwipeEnd(emulated_swipe);
-}
-
-void GestureManager::emulateSwipeUpdate(uint32_t time) {
-    static auto const PSWIPEDIST =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
-            ->getDataStaticPtr();
-
-    if (!g_pInputManager->m_sActiveSwipe.pMonitor) {
-        Debug::log(ERR, "ignoring touch gesture motion event due to missing monitor!");
-        return;
-    }
-
-    auto currentCenter = m_sGestureState.get_center().current;
-
-    // touch coords are within 0 to 1, we need to scale it with PSWIPEDIST for
-    // one to one gesture
-    auto emulated_swipe = IPointer::SSwipeUpdateEvent{
-        .timeMs  = time,
-        .fingers = (uint32_t)m_sGestureState.fingers.size(),
-        .delta   = Vector2D((currentCenter.x - m_vGestureLastCenter.x) / m_sMonitorArea.w * **PSWIPEDIST,
-                            (currentCenter.y - m_vGestureLastCenter.y) / m_sMonitorArea.h * **PSWIPEDIST)};
-
-    g_pInputManager->onSwipeUpdate(emulated_swipe);
-    m_vGestureLastCenter = currentCenter;
-}
-
 bool GestureManager::handleCompletedGesture(const CompletedGesture& gev) {
     return this->handleGestureBind(gev.to_string(), false);
 }
@@ -152,7 +104,7 @@ bool GestureManager::handleDragGesture(const DragGesture& gev) {
             return this->handleWorkspaceSwipe(gev.direction);
 
         case DragGestureType::EDGE_SWIPE:
-            if (workspace_swipe_edge_str == "l" && gev.direction == GESTURE_DIRECTION_LEFT) {
+            if (workspace_swipe_edge_str == "l" && gev.edge_origin == GESTURE_DIRECTION_LEFT) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
             if (workspace_swipe_edge_str == "r" && gev.edge_origin == GESTURE_DIRECTION_RIGHT) {
@@ -217,14 +169,31 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
 void GestureManager::handleCancelledGesture() {}
 
 void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
+
     if (!this->getActiveDragGesture().has_value()) {
         return;
     }
 
     switch (this->getActiveDragGesture()->type) {
-        case DragGestureType::SWIPE:
-            emulateSwipeUpdate(ev.time);
+        case DragGestureType::SWIPE: {
+            const bool VERTANIMS =
+                g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()->pValues->internalStyle ==
+                    "slidevert" ||
+                g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()
+                    ->pValues->internalStyle.starts_with("slidefadevert");
+
+            static auto const PSWIPEDIST =
+                (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
+                    ->getDataStaticPtr();
+            const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
+
+            const auto delta_percent =
+                this->pixelPositionToPercentagePosition(this->m_sGestureState.get_center().delta());
+            const auto swipe_delta = delta_percent * SWIPEDISTANCE;
+
+            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -swipe_delta.y : -swipe_delta.x);
             return;
+        }
         case DragGestureType::LONG_PRESS: {
             const auto pos         = this->m_sGestureState.get_center().current;
             const auto monitor_pos = this->m_sMonitorArea;
@@ -233,9 +202,25 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             g_pInputManager->mouseMoveUnified(ev.time);
             return;
         }
-        case DragGestureType::EDGE_SWIPE:
-            emulateSwipeUpdate(ev.time);
+        case DragGestureType::EDGE_SWIPE: {
+            const bool VERTANIMS =
+                g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()->pValues->internalStyle ==
+                    "slidevert" ||
+                g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()
+                    ->pValues->internalStyle.starts_with("slidefadevert");
+
+            static auto const PSWIPEDIST =
+                (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
+                    ->getDataStaticPtr();
+            const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
+
+            const auto delta_percent =
+                this->pixelPositionToPercentagePosition(this->m_sGestureState.get_center().delta());
+            const auto swipe_delta = delta_percent * SWIPEDISTANCE;
+
+            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -swipe_delta.y : -swipe_delta.x);
             return;
+        }
     }
 }
 
@@ -243,12 +228,12 @@ void GestureManager::handleDragGestureEnd(const DragGesture& gev) {
     Debug::log(LOG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
     switch (gev.type) {
         case DragGestureType::SWIPE:
-            emulateSwipeEnd(0, false);
+            g_pInputManager->endWorkspaceSwipe();
             return;
         case DragGestureType::LONG_PRESS:
             break;
         case DragGestureType::EDGE_SWIPE:
-            emulateSwipeEnd(0, false);
+            g_pInputManager->endWorkspaceSwipe();
             return;
     }
 
@@ -268,9 +253,7 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     const auto anti_directions      = VERTANIMS ? horizontal : vertical;
 
     if (direction & workspace_directions && !(direction & anti_directions)) {
-        // FIXME time arg of @emulateSwipeBegin should probably be assigned
-        // something useful (though its not really used later)
-        this->emulateSwipeBegin(0);
+        g_pInputManager->beginWorkspaceSwipe();
         return true;
     }
 
@@ -427,6 +410,11 @@ void GestureManager::onLongPressTimeout(uint32_t time_msec) {
 wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, double y) const {
     auto area = this->getMonitorArea();
     return wf::touch::point_t{x * area.w + area.x, y * area.h + area.y};
+}
+
+Vector2D GestureManager::pixelPositionToPercentagePosition(wf::touch::point_t point) const {
+    auto monitorArea = this->getMonitorArea();
+    return Vector2D((point.x - monitorArea.x) / monitorArea.w, (point.y - monitorArea.y) / monitorArea.h);
 }
 
 void GestureManager::touchBindDispatcher(std::string args) {
