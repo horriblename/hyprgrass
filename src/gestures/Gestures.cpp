@@ -37,7 +37,7 @@ bool IGestureManager::emitCompletedGesture(const CompletedGesture& gev) {
     return handled;
 }
 
-bool IGestureManager::emitDragGesture(const DragGesture& gev) {
+bool IGestureManager::emitDragGesture(const DragGestureEvent& gev) {
     bool handled = this->handleDragGesture(gev);
     if (handled) {
         this->stopLongPressTimer();
@@ -125,8 +125,8 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
         if (this->activeDragGesture.has_value()) {
             return;
         }
-        const auto gesture = DragGesture{DragGestureType::SWIPE, swipe_ptr->target_direction,
-                                         static_cast<int>(this->m_sGestureState.fingers.size())};
+        const auto gesture = DragGestureEvent{DragGestureType::SWIPE, swipe_ptr->target_direction,
+                                              static_cast<int>(this->m_sGestureState.fingers.size())};
 
         this->activeDragGesture = this->emitDragGesture(gesture) ? std::optional(gesture) : std::nullopt;
     });
@@ -142,7 +142,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
     auto ack = [swipe_ptr, this]() {
         if (this->activeDragGesture.has_value() && this->activeDragGesture->type == DragGestureType::SWIPE) {
             const auto gesture =
-                DragGesture{DragGestureType::SWIPE, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
+                DragGestureEvent{DragGestureType::SWIPE, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
 
             this->handleDragGestureEnd(gesture);
             this->activeDragGesture = std::nullopt;
@@ -185,8 +185,8 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
             if (this->activeDragGesture.has_value()) {
                 return;
             }
-            const auto gesture =
-                DragGesture{DragGestureType::LONG_PRESS, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
+            const auto gesture = DragGestureEvent{DragGestureType::LONG_PRESS, 0,
+                                                  static_cast<int>(this->m_sGestureState.fingers.size())};
 
             if (this->emitDragGesture(gesture)) {
                 this->activeDragGesture = std::optional(gesture);
@@ -202,8 +202,8 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
 
     auto ack = [this]() {
         if (this->activeDragGesture.has_value() && this->activeDragGesture->type == DragGestureType::LONG_PRESS) {
-            const auto gesture =
-                DragGesture{DragGestureType::LONG_PRESS, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
+            const auto gesture = DragGestureEvent{DragGestureType::LONG_PRESS, 0,
+                                                  static_cast<int>(this->m_sGestureState.fingers.size())};
 
             this->handleDragGestureEnd(gesture);
             this->activeDragGesture = std::nullopt;
@@ -232,7 +232,7 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_
             return;
         }
         auto direction = edge_ptr->target_direction;
-        auto gesture   = DragGesture{DragGestureType::EDGE_SWIPE, direction, edge_ptr->finger_count, origin_edges};
+        auto gesture   = DragGestureEvent{DragGestureType::EDGE_SWIPE, direction, edge_ptr->finger_count, origin_edges};
         if (this->emitDragGesture(gesture)) {
             this->activeDragGesture = std::optional(gesture);
             this->cancelTouchEventsOnAllWindows();
@@ -256,10 +256,10 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_
         auto origin_edges = find_swipe_edges(m_sGestureState.get_center().origin);
 
         if (this->activeDragGesture.has_value() && this->activeDragGesture->type == DragGestureType::EDGE_SWIPE) {
-            const auto gesture = DragGesture{.type         = DragGestureType::EDGE_SWIPE,
-                                             .direction    = edge_ptr->target_direction,
-                                             .finger_count = edge_ptr->finger_count,
-                                             .edge_origin  = origin_edges};
+            const auto gesture = DragGestureEvent{.type         = DragGestureType::EDGE_SWIPE,
+                                                  .direction    = edge_ptr->target_direction,
+                                                  .finger_count = edge_ptr->finger_count,
+                                                  .edge_origin  = origin_edges};
 
             this->handleDragGestureEnd(gesture);
             this->activeDragGesture = std::nullopt;

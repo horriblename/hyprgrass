@@ -51,9 +51,9 @@ class CMockGestureManager final : public IGestureManager {
     }
 
     bool handleCompletedGesture(const CompletedGesture& gev) override;
-    bool handleDragGesture(const DragGesture& gev) override;
+    bool handleDragGesture(const DragGestureEvent& gev) override;
     void dragGestureUpdate(const wf::touch::gesture_event_t&) override;
-    void handleDragGestureEnd(const DragGesture& gev) override;
+    void handleDragGestureEnd(const DragGestureEvent& gev) override;
     void handleCancelledGesture() override;
 
     void updateLongPressTimer(uint32_t current_time, uint32_t delay) override {}

@@ -7,7 +7,7 @@ enum class DragGestureType {
     EDGE_SWIPE,
 };
 
-struct DragGesture {
+struct DragGestureEvent {
     DragGestureType type;
     GestureDirection direction;
     int finger_count;

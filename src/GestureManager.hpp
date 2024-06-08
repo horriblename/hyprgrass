@@ -59,9 +59,9 @@ class GestureManager : public IGestureManager {
     Vector2D pixelPositionToPercentagePosition(wf::touch::point_t) const;
     bool handleWorkspaceSwipe(const GestureDirection direction);
 
-    bool handleDragGesture(const DragGesture& gev) override;
+    bool handleDragGesture(const DragGestureEvent& gev) override;
     void dragGestureUpdate(const wf::touch::gesture_event_t&) override;
-    void handleDragGestureEnd(const DragGesture& gev) override;
+    void handleDragGestureEnd(const DragGestureEvent& gev) override;
 
     void updateLongPressTimer(uint32_t current_time, uint32_t delay) override;
     void stopLongPressTimer() override;
