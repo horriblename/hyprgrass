@@ -87,6 +87,7 @@ class IGestureManager {
 
     bool emitCompletedGesture(const CompletedGestureEvent& gev);
     bool emitDragGesture(const DragGestureEvent& gev);
+    bool emitDragGestureEnd(const DragGestureEvent& gev);
 
     void updateGestures(const wf::touch::gesture_event_t&);
     void cancelTouchEventsOnAllWindows();
