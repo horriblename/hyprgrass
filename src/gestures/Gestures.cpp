@@ -255,6 +255,17 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_
     auto ack = [edge_ptr, this]() {
         auto origin_edges = find_swipe_edges(m_sGestureState.get_center().origin);
 
+        if (this->activeDragGesture.has_value() && this->activeDragGesture->type == DragGestureType::EDGE_SWIPE) {
+            const auto gesture = DragGesture{.type         = DragGestureType::EDGE_SWIPE,
+                                             .direction    = edge_ptr->target_direction,
+                                             .finger_count = edge_ptr->finger_count,
+                                             .edge_origin  = origin_edges};
+
+            this->handleDragGestureEnd(gesture);
+            this->activeDragGesture = std::nullopt;
+            return;
+        }
+
         if (origin_edges == 0) {
             return;
         }
