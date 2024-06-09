@@ -65,8 +65,6 @@ void Visualizer::onRender() {
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, monSize.x, monSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
-    Debug::log(LOG, "drawing at {}, {}, {}, {}", dmg.x, dmg.y, dmg.w, dmg.h);
-
     g_pHyprOpenGL->renderTexture(this->texture, &dmg, 1.f, 0, true);
 }
 
