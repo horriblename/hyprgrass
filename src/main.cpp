@@ -50,7 +50,7 @@ void onRenderStage(eRenderStage stage) {
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
             ->getDataStaticPtr();
 
-    if (stage != RENDER_LAST_MOMENT || **LONG_PRESS_DELAY) {
+    if (stage != RENDER_LAST_MOMENT || !**LONG_PRESS_DELAY) {
         return;
     }
 
