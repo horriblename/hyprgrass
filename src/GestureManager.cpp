@@ -195,10 +195,8 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             return;
         }
         case DragGestureType::LONG_PRESS: {
-            const auto pos         = this->m_sGestureState.get_center().current;
-            const auto monitor_pos = this->m_sMonitorArea;
-            // FIXME: shouldn't I handle monitor offset from within IGestureManager?
-            g_pCompositor->warpCursorTo(Vector2D(pos.x + monitor_pos.x, pos.y + monitor_pos.y));
+            const auto pos = this->m_sGestureState.get_center().current;
+            g_pCompositor->warpCursorTo(Vector2D(pos.x, pos.y));
             g_pInputManager->mouseMoveUnified(ev.time);
             return;
         }
