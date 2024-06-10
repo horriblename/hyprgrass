@@ -274,7 +274,7 @@ void GestureManager::sendCancelEventsToWindows() {
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
-    if (**SEND_CANCEL == 0) {
+    if (!**SEND_CANCEL) {
         return;
     }
 
@@ -283,9 +283,9 @@ void GestureManager::sendCancelEventsToWindows() {
             continue;
 
         // Retrieve the client from the surface
-        wl_client* client = wl_resource_get_client(surface->resource);
-        if (!client)
-            continue;
+        // wl_client* client = wl_resource_get_client(surface->resource);
+        // if (!client)
+        //     continue;
 
         // FIXME: couldn't find replacement for g_pCompositor->m_sSeat
         // wlr_seat_client* seat_client = wlr_seat_client_for_wl_client(g_pCompositor->m_sSeat.seat, client);
