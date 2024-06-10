@@ -58,6 +58,7 @@ class GestureManager : public IGestureManager {
     // reverse of wlrTouchEventPositionAsPixels
     Vector2D pixelPositionToPercentagePosition(wf::touch::point_t) const;
     bool handleWorkspaceSwipe(const GestureDirection direction);
+    void updateWorkspaceSwipe();
 
     bool handleDragGesture(const DragGestureEvent& gev) override;
     void dragGestureUpdate(const wf::touch::gesture_event_t&) override;
