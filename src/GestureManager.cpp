@@ -187,9 +187,11 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
                     ->getDataStaticPtr();
             const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
 
+            const auto monArea = this->getMonitorArea();
             const auto delta_percent =
-                this->pixelPositionToPercentagePosition(this->m_sGestureState.get_center().delta());
-            const auto swipe_delta = delta_percent * SWIPEDISTANCE;
+                this->m_sGestureState.get_center().delta() / wf::touch::point_t(monArea.w, monArea.h);
+
+            const auto swipe_delta = Vector2D(delta_percent.x * SWIPEDISTANCE, delta_percent.y * SWIPEDISTANCE);
 
             g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -swipe_delta.y : -swipe_delta.x);
             return;
@@ -212,9 +214,11 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
                     ->getDataStaticPtr();
             const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
 
+            const auto monArea = this->getMonitorArea();
             const auto delta_percent =
-                this->pixelPositionToPercentagePosition(this->m_sGestureState.get_center().delta());
-            const auto swipe_delta = delta_percent * SWIPEDISTANCE;
+                this->m_sGestureState.get_center().delta() / wf::touch::point_t(monArea.w, monArea.h);
+
+            const auto swipe_delta = Vector2D(delta_percent.x * SWIPEDISTANCE, delta_percent.y * SWIPEDISTANCE);
 
             g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -swipe_delta.y : -swipe_delta.x);
             return;
