@@ -175,52 +175,16 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
     }
 
     switch (this->getActiveDragGesture()->type) {
-        case DragGestureType::SWIPE: {
-            const bool VERTANIMS =
-                g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()->pValues->internalStyle ==
-                    "slidevert" ||
-                g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()
-                    ->pValues->internalStyle.starts_with("slidefadevert");
-
-            static auto const PSWIPEDIST =
-                (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
-                    ->getDataStaticPtr();
-            const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
-
-            const auto delta_percent =
-                this->pixelPositionToPercentagePosition(this->m_sGestureState.get_center().delta());
-            const auto swipe_delta = delta_percent * SWIPEDISTANCE;
-
-            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -swipe_delta.y : -swipe_delta.x);
-            return;
-        }
+        case DragGestureType::SWIPE:
+            this->updateWorkspaceSwipe();
         case DragGestureType::LONG_PRESS: {
-            const auto pos         = this->m_sGestureState.get_center().current;
-            const auto monitor_pos = this->m_sMonitorArea;
-            // FIXME: shouldn't I handle monitor offset from within IGestureManager?
-            g_pCompositor->warpCursorTo(Vector2D(pos.x + monitor_pos.x, pos.y + monitor_pos.y));
+            const auto pos = this->m_sGestureState.get_center().current;
+            g_pCompositor->warpCursorTo(Vector2D(pos.x, pos.y));
             g_pInputManager->mouseMoveUnified(ev.time);
             return;
         }
-        case DragGestureType::EDGE_SWIPE: {
-            const bool VERTANIMS =
-                g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()->pValues->internalStyle ==
-                    "slidevert" ||
-                g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()
-                    ->pValues->internalStyle.starts_with("slidefadevert");
-
-            static auto const PSWIPEDIST =
-                (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
-                    ->getDataStaticPtr();
-            const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
-
-            const auto delta_percent =
-                this->pixelPositionToPercentagePosition(this->m_sGestureState.get_center().delta());
-            const auto swipe_delta = delta_percent * SWIPEDISTANCE;
-
-            g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -swipe_delta.y : -swipe_delta.x);
-            return;
-        }
+        case DragGestureType::EDGE_SWIPE:
+            this->updateWorkspaceSwipe();
     }
 }
 
@@ -258,6 +222,27 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     }
 
     return false;
+}
+
+void GestureManager::updateWorkspaceSwipe() {
+    const bool VERTANIMS =
+        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()->pValues->internalStyle ==
+            "slidevert" ||
+        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()
+            ->pValues->internalStyle.starts_with("slidefadevert");
+
+    static auto const PSWIPEDIST =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
+            ->getDataStaticPtr();
+    const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
+
+    const auto monArea       = this->getMonitorArea();
+    const auto delta_percent = this->m_sGestureState.get_center().delta() / wf::touch::point_t(monArea.w, monArea.h);
+
+    const auto swipe_delta = Vector2D(delta_percent.x * SWIPEDISTANCE, delta_percent.y * SWIPEDISTANCE);
+
+    g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -swipe_delta.y : -swipe_delta.x);
+    return;
 }
 
 void GestureManager::updateLongPressTimer(uint32_t current_time, uint32_t delay) {
