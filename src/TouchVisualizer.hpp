@@ -1,4 +1,5 @@
 #include "src/devices/ITouch.hpp"
+#include "src/helpers/memory/SharedPtr.hpp"
 #include "src/render/Texture.hpp"
 #include <cairo/cairo.h>
 #include <hyprland/src/render/OpenGL.hpp>
@@ -18,7 +19,7 @@ class Visualizer {
     void onTouchMotion(ITouch::SMotionEvent);
 
   private:
-    CTexture texture;
+    SP<CTexture> texture = makeShared<CTexture>();
     cairo_surface_t* cairoSurface;
     bool tempDamaged             = false;
     const int TOUCH_POINT_RADIUS = 15;
