@@ -10,6 +10,9 @@
     inherit (hyprland.inputs) nixpkgs;
     withPkgsFor = fn: nixpkgs.lib.genAttrs (builtins.attrNames hyprland.packages) (system: fn system nixpkgs.legacyPackages.${system});
   in {
+    # for debugging
+    inherit inputs;
+
     packages = withPkgsFor (system: pkgs: let
       hyprgrassPackage = pkgs.callPackage ./nix/default.nix {
         inherit (hyprland.packages.${system}) hyprland;
