@@ -37,7 +37,7 @@ void Visualizer::onRender() {
 
     // FIXME: I am almost 100% certain this is wrong
     const auto monitor = g_pCompositor->m_pLastMonitor.get();
-    const auto monSize = monitor->vecSize;
+    const auto monSize = monitor->vecPixelSize;
 
     const auto pos      = this->finger_positions[0] * monSize;
     const auto last_pos = this->prev_finger_positions[0] * monSize;
