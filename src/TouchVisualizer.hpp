@@ -22,7 +22,7 @@ class Visualizer {
     SP<CTexture> texture = makeShared<CTexture>();
     cairo_surface_t* cairoSurface;
     bool tempDamaged             = false;
-    const int TOUCH_POINT_RADIUS = 15;
+    const int TOUCH_POINT_RADIUS = 30;
     std::unordered_map<int32_t, Vector2D> finger_positions;
     std::unordered_map<int32_t, Vector2D> prev_finger_positions;
 };

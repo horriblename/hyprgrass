@@ -19,7 +19,7 @@ Visualizer::Visualizer() {
     auto cairo = cairo_create(cairoSurface);
 
     cairo_arc(cairo, R, R, R, 0, 2 * PI);
-    cairo_set_source_rgba(cairo, 0.8, 0.8, 0.1, 0.8);
+    cairo_set_source_rgba(cairo, 0.8, 0.8, 0.1, 0.6);
     cairo_fill(cairo);
 
     cairo_destroy(cairo);
