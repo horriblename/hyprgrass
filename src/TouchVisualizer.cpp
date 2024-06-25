@@ -39,28 +39,31 @@ void Visualizer::onRender() {
     const auto monitor = g_pCompositor->m_pLastMonitor.get();
     const auto monSize = monitor->vecPixelSize;
 
-    const auto pos      = this->finger_positions[0] * monSize;
-    const auto last_pos = this->prev_finger_positions[0] * monSize;
-    auto dmg            = boxAroundCenter(pos, TOUCH_POINT_RADIUS);
-    auto last_dmg       = boxAroundCenter(last_pos, TOUCH_POINT_RADIUS);
+    for (int i = 0; i < this->finger_positions.size(); i++) {
+        const auto pos                 = this->finger_positions[i] * monSize + monitor->vecPosition;
+        const auto last_pos            = this->prev_finger_positions[i] * monSize + monitor->vecPosition;
+        this->prev_finger_positions[i] = this->finger_positions[i];
+        auto dmg                       = boxAroundCenter(pos, TOUCH_POINT_RADIUS);
+        auto last_dmg                  = boxAroundCenter(last_pos, TOUCH_POINT_RADIUS);
 
-    g_pHyprRenderer->damageBox(&dmg);
-    g_pHyprRenderer->damageBox(&last_dmg);
+        g_pHyprRenderer->damageBox(&dmg);
+        g_pHyprRenderer->damageBox(&last_dmg);
 
-    // idk what this does
-    g_pCompositor->scheduleFrameForMonitor(monitor);
+        // idk what this does
+        g_pCompositor->scheduleFrameForMonitor(monitor);
 
-    const unsigned char* data = cairo_image_surface_get_data(this->cairoSurface);
+        const unsigned char* data = cairo_image_surface_get_data(this->cairoSurface);
 
-    this->texture->allocate();
-    glBindTexture(GL_TEXTURE_2D, this->texture->m_iTexID);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        this->texture->allocate();
+        glBindTexture(GL_TEXTURE_2D, this->texture->m_iTexID);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2 * TOUCH_POINT_RADIUS, 2 * TOUCH_POINT_RADIUS, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2 * TOUCH_POINT_RADIUS, 2 * TOUCH_POINT_RADIUS, 0, GL_RGBA,
+                     GL_UNSIGNED_BYTE, data);
 
-    g_pHyprOpenGL->renderTexture(this->texture, &dmg, 1.f, 0, true);
+        g_pHyprOpenGL->renderTexture(this->texture, &dmg, 1.f, 0, true);
+    }
 }
 
 void Visualizer::onTouchDown(ITouch::SDownEvent ev) {
@@ -74,8 +77,7 @@ void Visualizer::onTouchUp(ITouch::SUpEvent ev) {
 }
 
 void Visualizer::onTouchMotion(ITouch::SMotionEvent ev) {
-    this->prev_finger_positions[ev.touchID] = this->finger_positions[ev.touchID];
-    this->finger_positions[ev.touchID]      = ev.pos;
+    this->finger_positions[ev.touchID] = ev.pos;
 }
 
 void Visualizer::damageAll() {
