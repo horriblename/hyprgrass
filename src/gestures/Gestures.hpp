@@ -40,7 +40,7 @@ class IGestureManager {
     void addMultiFingerGesture(const float* sensitivity, const int64_t* timeout);
     void addMultiFingerTap(const float* sensitivity, const int64_t* timeout);
     void addLongPress(const float* sensitivity, const int64_t* delay);
-    void addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout);
+    void addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout, const long* edge_margin);
 
     std::optional<DragGestureEvent> getActiveDragGesture() const {
         return activeDragGesture;
@@ -56,7 +56,7 @@ class IGestureManager {
     std::vector<std::unique_ptr<wf::touch::gesture_t>> m_vGestures;
     wf::touch::gesture_state_t m_sGestureState;
 
-    GestureDirection find_swipe_edges(wf::touch::point_t point);
+    GestureDirection find_swipe_edges(wf::touch::point_t point, int edge_margin);
     virtual SMonitorArea getMonitorArea() const = 0;
 
     // handles gesture events and returns whether or not the event is used.

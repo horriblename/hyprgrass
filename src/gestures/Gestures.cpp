@@ -94,24 +94,24 @@ bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
     return this->eventForwardingInhibited();
 }
 
-GestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point) {
+GestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point, int edge_margin) {
     auto mon = this->getMonitorArea();
 
     GestureDirection edge_directions = 0;
 
-    if (point.x <= mon.x + EDGE_SWIPE_THRESHOLD) {
+    if (point.x <= mon.x + edge_margin) {
         edge_directions |= GESTURE_DIRECTION_LEFT;
     }
 
-    if (point.x >= mon.x + mon.w - EDGE_SWIPE_THRESHOLD) {
+    if (point.x >= mon.x + mon.w - edge_margin) {
         edge_directions |= GESTURE_DIRECTION_RIGHT;
     }
 
-    if (point.y <= mon.y + EDGE_SWIPE_THRESHOLD) {
+    if (point.y <= mon.y + edge_margin) {
         edge_directions |= GESTURE_DIRECTION_UP;
     }
 
-    if (point.y >= mon.y + mon.h - EDGE_SWIPE_THRESHOLD) {
+    if (point.y >= mon.y + mon.h - edge_margin) {
         edge_directions |= GESTURE_DIRECTION_DOWN;
     }
 
@@ -228,11 +228,12 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
     this->addTouchGesture(std::make_unique<wf::touch::gesture_t>(std::move(long_press_actions), ack, cancel));
 }
 
-void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout) {
+void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout,
+                                          const long int* edge_margin) {
     auto edge            = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, timeout);
     auto edge_ptr        = edge.get();
     auto edge_drag_begin = std::make_unique<OnCompleteAction>(std::move(edge), [=, this]() {
-        auto origin_edges = this->find_swipe_edges(m_sGestureState.get_center().origin);
+        auto origin_edges = this->find_swipe_edges(m_sGestureState.get_center().origin, *edge_margin);
 
         if (origin_edges == 0) {
             return;
@@ -258,8 +259,8 @@ void IGestureManager::addEdgeSwipeGesture(const float* sensitivity, const int64_
     edge_swipe_actions.emplace_back(std::move(edge_drag_begin));
     edge_swipe_actions.emplace_back(std::move(edge_release));
 
-    auto ack = [edge_ptr, this]() {
-        auto origin_edges = find_swipe_edges(m_sGestureState.get_center().origin);
+    auto ack = [edge_ptr, edge_margin, this]() {
+        auto origin_edges = find_swipe_edges(m_sGestureState.get_center().origin, *edge_margin);
         auto direction    = edge_ptr->target_direction;
         auto dragEvent    = DragGestureEvent{
                .type         = DragGestureType::EDGE_SWIPE,
