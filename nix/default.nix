@@ -2,6 +2,9 @@
   lib,
   gcc13Stdenv,
   cmake,
+  meson,
+  ninja,
+  pkg-config,
   hyprland,
   wf-touch,
   doctest,
@@ -14,7 +17,10 @@ in
     inherit (pluginInfo.hyprgrass) version;
     src = ./..;
 
-    nativeBuildInputs = hyprland.nativeBuildInputs ++ [cmake] ++ lib.optional runTests doctest;
+    nativeBuildInputs =
+      hyprland.nativeBuildInputs
+      ++ [cmake ninja meson pkg-config]
+      ++ lib.optional runTests doctest;
 
     buildInputs = [hyprland wf-touch doctest] ++ hyprland.buildInputs;
 
