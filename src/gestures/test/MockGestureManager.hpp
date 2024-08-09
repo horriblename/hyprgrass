@@ -25,6 +25,14 @@ class CMockGestureManager final : public IGestureManager {
     bool cancelled = false;
     bool dragEnded = false;
 
+    struct {
+        double x, y;
+    } mon_offset = {MONITOR_X, MONITOR_Y};
+
+    struct {
+        double w, h;
+    } mon_size = {MONITOR_WIDTH, MONITOR_HEIGHT};
+
     // creates a gesture manager that handles all drag gestures
     static CMockGestureManager newDragHandler() {
         return CMockGestureManager(true);
@@ -61,7 +69,7 @@ class CMockGestureManager final : public IGestureManager {
 
   protected:
     SMonitorArea getMonitorArea() const override {
-        return SMonitorArea{MONITOR_X, MONITOR_Y, MONITOR_WIDTH, MONITOR_HEIGHT};
+        return SMonitorArea{this->mon_offset.x, this->mon_offset.y, this->mon_size.w, this->mon_size.h};
     }
 
   private:
