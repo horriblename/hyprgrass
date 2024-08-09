@@ -1,10 +1,8 @@
 #include "Gestures.hpp"
 #include "Actions.hpp"
-#include <functional>
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
-#include <string>
 #include <utility>
 #include <wayfire/touch/touch.hpp>
 

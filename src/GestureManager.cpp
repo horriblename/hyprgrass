@@ -1,4 +1,5 @@
 #include "GestureManager.hpp"
+#include "globals.hpp"
 #include "wayfire/touch/touch.hpp"
 #include <algorithm>
 #include <cstdint>
@@ -61,7 +62,7 @@ int handleLongPressTimer(void* data) {
     return 0;
 }
 
-GestureManager::GestureManager() {
+GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>()) {
     static auto const PSENSITIVITY =
         (Hyprlang::FLOAT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")
             ->getDataStaticPtr();

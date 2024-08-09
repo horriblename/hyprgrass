@@ -2,8 +2,8 @@
 
 #include "CompletedGesture.hpp"
 #include "DragGesture.hpp"
+#include "Logger.hpp"
 #include "Shared.hpp"
-#include <functional>
 #include <memory>
 #include <optional>
 #include <wayfire/touch/touch.hpp>
@@ -23,6 +23,7 @@ struct SMonitorArea {
  */
 class IGestureManager {
   public:
+    IGestureManager(std::unique_ptr<Logger> logger) : logger(std::move(logger)) {}
     virtual ~IGestureManager() {}
     // @return whether this touch event should be blocked from forwarding to the
     // client window/surface
@@ -78,6 +79,7 @@ class IGestureManager {
     virtual void stopLongPressTimer()                                        = 0;
 
   private:
+    std::unique_ptr<Logger> logger;
     bool inhibitTouchEvents;
     std::optional<DragGestureEvent> activeDragGesture;
 

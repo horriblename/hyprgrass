@@ -1,6 +1,8 @@
 #pragma once
 #include "../Gestures.hpp"
+#include "CoutLogger.hpp"
 #include "wayfire/touch/touch.hpp"
+#include <memory>
 #include <vector>
 
 constexpr double MONITOR_X      = 0;
@@ -15,7 +17,8 @@ class Tester {
 
 class CMockGestureManager final : public IGestureManager {
   public:
-    CMockGestureManager(bool handlesDragEvents) : handlesDragEvents(handlesDragEvents) {}
+    CMockGestureManager(bool handlesDragEvents)
+        : IGestureManager(std::make_unique<CoutLogger>()), handlesDragEvents(handlesDragEvents) {}
     ~CMockGestureManager() {}
 
     // if set to true, handleDragGesture() will return true
