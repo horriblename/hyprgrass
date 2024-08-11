@@ -1,7 +1,8 @@
 #pragma once
 #include "./gestures/Gestures.hpp"
+#include "HyprLogger.hpp"
 #include "gestures/Shared.hpp"
-#include "globals.hpp"
+#include <memory>
 
 #define private public
 #include <hyprland/src/debug/Log.hpp>

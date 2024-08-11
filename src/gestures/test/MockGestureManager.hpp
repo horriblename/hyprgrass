@@ -1,6 +1,8 @@
 #pragma once
 #include "../Gestures.hpp"
+#include "CoutLogger.hpp"
 #include "wayfire/touch/touch.hpp"
+#include <memory>
 #include <vector>
 
 constexpr double MONITOR_X      = 0;
@@ -15,7 +17,8 @@ class Tester {
 
 class CMockGestureManager final : public IGestureManager {
   public:
-    CMockGestureManager(bool handlesDragEvents) : handlesDragEvents(handlesDragEvents) {}
+    CMockGestureManager(bool handlesDragEvents)
+        : IGestureManager(std::make_unique<CoutLogger>()), handlesDragEvents(handlesDragEvents) {}
     ~CMockGestureManager() {}
 
     // if set to true, handleDragGesture() will return true
@@ -24,6 +27,14 @@ class CMockGestureManager final : public IGestureManager {
     bool triggered = false;
     bool cancelled = false;
     bool dragEnded = false;
+
+    struct {
+        double x, y;
+    } mon_offset = {MONITOR_X, MONITOR_Y};
+
+    struct {
+        double w, h;
+    } mon_size = {MONITOR_WIDTH, MONITOR_HEIGHT};
 
     // creates a gesture manager that handles all drag gestures
     static CMockGestureManager newDragHandler() {
@@ -61,7 +72,7 @@ class CMockGestureManager final : public IGestureManager {
 
   protected:
     SMonitorArea getMonitorArea() const override {
-        return SMonitorArea{MONITOR_X, MONITOR_Y, MONITOR_WIDTH, MONITOR_HEIGHT};
+        return SMonitorArea{this->mon_offset.x, this->mon_offset.y, this->mon_size.w, this->mon_size.h};
     }
 
   private:
