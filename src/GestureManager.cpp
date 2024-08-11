@@ -11,7 +11,10 @@
 #include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
+#include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/protocols/core/Compositor.hpp>
+#include <hyprland/src/protocols/core/Seat.hpp>
 #undef private
 
 #include <algorithm>
@@ -271,17 +274,20 @@ void GestureManager::sendCancelEventsToWindows() {
         if (!surface)
             continue;
 
-        // Retrieve the client from the surface
-        // wl_client* client = wl_resource_get_client(surface->resource);
-        // if (!client)
-        //     continue;
+        wl_client* client = surface.get()->client();
+        if (!client)
+            continue;
 
-        // FIXME: couldn't find replacement for g_pCompositor->m_sSeat
-        // wlr_seat_client* seat_client = wlr_seat_client_for_wl_client(g_pCompositor->m_sSeat.seat, client);
-        //
-        // if (seat_client) {
-        //     wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, seat_client);
-        // }
+        SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
+
+        if (!seat)
+            continue;
+
+        // idk wtf is supposed to happen here lol
+        auto touches = seat.get()->touches;
+        for (const auto& touch : touches) {
+            touch->sendCancel();
+        }
     }
     this->touchedSurfaces.clear();
 }
