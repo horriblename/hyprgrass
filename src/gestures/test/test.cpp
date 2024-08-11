@@ -403,3 +403,16 @@ TEST_CASE("Edge Swipe: margins") {
         ProcessEvents(gm, expected_result, events);
     }
 }
+
+TEST_CASE("Edge swipe: block touch events") {
+    std::cout << "  ==== stdout:" << std::endl;
+    auto gm = CMockGestureManager::newDragHandler();
+    gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
+    const std::vector<TouchEvent> events{
+        {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {10, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 200, 0, {455, 300}},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::CHECK_PROGRESS, .progress = 1.0 / 2.0}, events);
+
+    CHECK(gm.eventForwardingInhibited());
+}
