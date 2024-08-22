@@ -8,6 +8,9 @@ shared_module('hyprgrass',
   dependencies: [
     wftouch,
     dependency('pixman-1'),
+    dependency('libinput'),
+    dependency('wayland-server'),
+    dependency('xkbcommon'),
     dependency('libdrm'),
     hyprland_headers
   ],
