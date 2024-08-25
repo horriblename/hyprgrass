@@ -1,12 +1,12 @@
 {
   description = "Hyprland plugin for touch gestures";
 
-  inputs.hyprland.url = "git+https://github.com/hyprwm/Hyprland?submodules=1";
+  inputs.hyprland.url = "git+https://github.com/hyprwm/Hyprland?submodules=1&tag=v0.42.0";
 
   outputs = {
     self,
     hyprland,
-  }: let
+  } @ inputs: let
     inherit (hyprland.inputs) nixpkgs;
     withPkgsFor = fn: nixpkgs.lib.genAttrs (builtins.attrNames hyprland.packages) (system: fn system nixpkgs.legacyPackages.${system});
   in {
@@ -16,6 +16,7 @@
         inherit (self.packages.${system}) wf-touch;
       };
     in {
+      inherit inputs;
       default = hyprgrassPackage;
       hyprgrass = hyprgrassPackage;
       hyprgrassWithTests = hyprgrassPackage.override {runTests = true;};

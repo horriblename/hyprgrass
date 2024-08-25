@@ -11,7 +11,10 @@
 #include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
+#include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/protocols/core/Compositor.hpp>
+#include <hyprland/src/protocols/core/Seat.hpp>
 #undef private
 
 #include <algorithm>
@@ -267,23 +270,12 @@ void GestureManager::sendCancelEventsToWindows() {
         return;
     }
 
-    for (const auto& surface : this->touchedSurfaces) {
-        if (!surface)
-            continue;
-
-        // Retrieve the client from the surface
-        // wl_client* client = wl_resource_get_client(surface->resource);
-        // if (!client)
-        //     continue;
-
-        // FIXME: couldn't find replacement for g_pCompositor->m_sSeat
-        // wlr_seat_client* seat_client = wlr_seat_client_for_wl_client(g_pCompositor->m_sSeat.seat, client);
-        //
-        // if (seat_client) {
-        //     wlr_seat_touch_notify_cancel(g_pCompositor->m_sSeat.seat, seat_client);
-        // }
+    for (const auto& touch : this->touchedResources.all()) {
+        const auto t = touch.lock();
+        if (t.impl_) { // FIXME: idk how to check weak pointer validity
+            t->sendCancel();
+        }
     }
-    this->touchedSurfaces.clear();
 }
 
 // @return whether or not to inhibit further actions
@@ -295,23 +287,43 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     // if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
     //     return false;
 
-    if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
-        // remember which surfaces were touched, to later send cancel events
-        const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
-        const auto TOUCHED = std::find(touchedSurfaces.begin(), touchedSurfaces.end(), surface);
-        if (TOUCHED == touchedSurfaces.end()) {
-            touchedSurfaces.push_back(surface);
-        }
-    }
     this->m_pLastTouchedMonitor =
         g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
 
     this->m_pLastTouchedMonitor =
         this->m_pLastTouchedMonitor ? this->m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor.get();
 
-    const auto& position = m_pLastTouchedMonitor->vecPosition;
-    const auto& geometry = m_pLastTouchedMonitor->vecSize;
-    this->m_sMonitorArea = {position.x, position.y, geometry.x, geometry.y};
+    const auto& monitorPos  = m_pLastTouchedMonitor->vecPosition;
+    const auto& monitorSize = m_pLastTouchedMonitor->vecSize;
+    this->m_sMonitorArea    = {monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
+
+    g_pCompositor->warpCursorTo({
+        monitorPos.x + ev.pos.x * monitorSize.x,
+        monitorPos.y + ev.pos.y * monitorSize.y,
+    });
+
+    g_pInputManager->refocus();
+
+    if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
+        // remember which surfaces were touched, to later send cancel events
+        const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
+
+        if (this->m_sGestureState.fingers.size() == 0) {
+            this->touchedResources.clear();
+        }
+
+        wl_client* client = surface.get()->client();
+        if (client) {
+            SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
+
+            if (seat) {
+                auto touches = seat.get()->touches;
+                for (const auto& touch : touches) {
+                    this->touchedResources.insert(touch);
+                }
+            }
+        }
+    }
 
     // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
     // represent "how many percent of screen" whereas
@@ -352,6 +364,20 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
 
     const auto BLOCK = IGestureManager::onTouchUp(gesture_event);
     if (**SEND_CANCEL) {
+        const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
+
+        wl_client* client = surface.get()->client();
+        if (client) {
+            SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
+
+            if (seat) {
+                auto touches = seat.get()->touches;
+                for (const auto& touch : touches) {
+                    this->touchedResources.remove(touch);
+                }
+            }
+        }
+
         return BLOCK;
     } else {
         // send_cancel is turned off; we need to rely on touchup events

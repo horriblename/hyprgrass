@@ -1,6 +1,7 @@
 #pragma once
 #include "./gestures/Gestures.hpp"
 #include "HyprLogger.hpp"
+#include "VecSet.hpp"
 #include "gestures/Shared.hpp"
 #include <memory>
 
@@ -9,6 +10,7 @@
 #include <hyprland/src/helpers/Monitor.hpp>
 #include <hyprland/src/includes.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
+#include <hyprland/src/protocols/core/Seat.hpp>
 #undef private
 
 #include <list>
@@ -46,7 +48,7 @@ class GestureManager : public IGestureManager {
     void handleCancelledGesture() override;
 
   private:
-    std::vector<CWeakPointer<CWLSurfaceResource>> touchedSurfaces;
+    VecSet<CWeakPointer<CWLTouchResource>> touchedResources;
     CMonitor* m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
     wl_event_source* long_press_timer;

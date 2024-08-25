@@ -4,6 +4,6 @@
 class HyprLogger : public Logger {
   public:
     void debug(std::string s) {
-        Debug::log(INFO, s);
+        Debug::log(INFO, "[hyprgrass] {}", s);
     }
 };

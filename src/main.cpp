@@ -101,7 +101,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:edge_margin",
                                 Hyprlang::CConfigValue((Hyprlang::INT)10));
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel",
-                                Hyprlang::CConfigValue((Hyprlang::INT)0));
+                                Hyprlang::CConfigValue((Hyprlang::INT)1));
 #pragma GCC diagnostic pop
 
     HyprlandAPI::addConfigKeyword(PHANDLE, "hyprgrass-bind", onNewBind, Hyprlang::SHandlerOptions{});
