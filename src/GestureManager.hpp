@@ -54,6 +54,7 @@ class GestureManager : public IGestureManager {
     wl_event_source* long_press_timer;
 
     bool handleGestureBind(std::string bind, bool pressed);
+    bool hasGestureBind(std::string gev) const;
 
     // converts wlr touch event positions (number between 0.0 to 1.0) to pixel position,
     // takes into consideration monitor size and offset

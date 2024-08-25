@@ -1,4 +1,5 @@
 #include "GestureManager.hpp"
+#include "gestures/Shared.hpp"
 #include "globals.hpp"
 #include "wayfire/touch/touch.hpp"
 #include <algorithm>
@@ -124,7 +125,9 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
 
-            return false;
+            // Gesture binds are triggered on CompletedGestureEvent, but we pretend handle it
+            // to send cancel events to surfaces early
+            return this->hasGestureBind(gev.to_string());
 
         default:
             break;
@@ -171,6 +174,18 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
     }
 
     return found;
+}
+
+bool GestureManager::hasGestureBind(std::string bind) const {
+    auto allBinds = std::ranges::views::join(std::array{g_pKeybindManager->m_lKeybinds, this->internalBinds});
+
+    for (const auto& k : allBinds) {
+        if (k.key == bind) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void GestureManager::handleCancelledGesture() {}
