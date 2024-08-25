@@ -37,3 +37,7 @@ template <class T> bool VecSet<T>::remove(const T x) {
 template <class T> void VecSet<T>::clear() {
     this->set.clear();
 }
+
+template <class T> const std::vector<T>& VecSet<T>::all() const {
+    return this->set;
+}

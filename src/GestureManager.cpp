@@ -270,23 +270,10 @@ void GestureManager::sendCancelEventsToWindows() {
         return;
     }
 
-    for (const auto& surface : this->touchedSurfaces) {
-        if (!surface)
-            continue;
-
-        wl_client* client = surface.get()->client();
-        if (!client)
-            continue;
-
-        SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
-
-        if (!seat)
-            continue;
-
-        // idk wtf is supposed to happen here lol
-        auto touches = seat.get()->touches;
-        for (const auto& touch : touches) {
-            touch->sendCancel();
+    for (const auto& touch : this->touchedResources.all()) {
+        const auto t = touch.lock();
+        if (t) {
+            t->sendCancel();
         }
     }
     this->touchedSurfaces.clear();
@@ -301,6 +288,23 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     // if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
     //     return false;
 
+    this->m_pLastTouchedMonitor =
+        g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
+
+    this->m_pLastTouchedMonitor =
+        this->m_pLastTouchedMonitor ? this->m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor.get();
+
+    const auto& monitorPos  = m_pLastTouchedMonitor->vecPosition;
+    const auto& monitorSize = m_pLastTouchedMonitor->vecSize;
+    this->m_sMonitorArea    = {monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
+
+    g_pCompositor->warpCursorTo({
+        monitorPos.x + ev.pos.x * monitorSize.x,
+        monitorPos.y + ev.pos.y * monitorSize.y,
+    });
+
+    g_pInputManager->refocus();
+
     if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
         // remember which surfaces were touched, to later send cancel events
         const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
@@ -308,16 +312,23 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         if (TOUCHED == touchedSurfaces.end()) {
             touchedSurfaces.push_back(surface);
         }
+
+        if (this->m_sGestureState.fingers.size() == 0) {
+            this->touchedResources.clear();
+        }
+
+        wl_client* client = surface.get()->client();
+        if (client) {
+            SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
+
+            if (seat) {
+                auto touches = seat.get()->touches;
+                for (const auto& touch : touches) {
+                    this->touchedResources.insert(touch);
+                }
+            }
+        }
     }
-    this->m_pLastTouchedMonitor =
-        g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
-
-    this->m_pLastTouchedMonitor =
-        this->m_pLastTouchedMonitor ? this->m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor.get();
-
-    const auto& position = m_pLastTouchedMonitor->vecPosition;
-    const auto& geometry = m_pLastTouchedMonitor->vecSize;
-    this->m_sMonitorArea = {position.x, position.y, geometry.x, geometry.y};
 
     // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
     // represent "how many percent of screen" whereas
