@@ -366,16 +366,23 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
     if (**SEND_CANCEL) {
         const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
 
-        wl_client* client = surface.get()->client();
-        if (client) {
-            SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
+        if (!surface.impl_) {
+            return true;
+        }
 
-            if (seat) {
-                auto touches = seat.get()->touches;
-                for (const auto& touch : touches) {
-                    this->touchedResources.remove(touch);
-                }
-            }
+        wl_client* client = surface.get()->client();
+        if (!client) {
+            return true;
+        }
+
+        SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
+        if (!seat.impl_) {
+            return true;
+        }
+
+        auto touches = seat.get()->touches;
+        for (const auto& touch : touches) {
+            this->touchedResources.remove(touch);
         }
 
         return BLOCK;
