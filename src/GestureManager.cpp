@@ -364,6 +364,20 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
 
     const auto BLOCK = IGestureManager::onTouchUp(gesture_event);
     if (**SEND_CANCEL) {
+        const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
+
+        wl_client* client = surface.get()->client();
+        if (client) {
+            SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
+
+            if (seat) {
+                auto touches = seat.get()->touches;
+                for (const auto& touch : touches) {
+                    this->touchedResources.remove(touch);
+                }
+            }
+        }
+
         return BLOCK;
     } else {
         // send_cancel is turned off; we need to rely on touchup events
