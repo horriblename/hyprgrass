@@ -272,7 +272,7 @@ void GestureManager::sendCancelEventsToWindows() {
 
     for (const auto& touch : this->touchedResources.all()) {
         const auto t = touch.lock();
-        if (t) {
+        if (t.impl_) { // FIXME: idk how to check weak pointer validity
             t->sendCancel();
         }
     }
