@@ -276,7 +276,6 @@ void GestureManager::sendCancelEventsToWindows() {
             t->sendCancel();
         }
     }
-    this->touchedSurfaces.clear();
 }
 
 // @return whether or not to inhibit further actions
@@ -308,10 +307,6 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
         // remember which surfaces were touched, to later send cancel events
         const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
-        const auto TOUCHED = std::find(touchedSurfaces.begin(), touchedSurfaces.end(), surface);
-        if (TOUCHED == touchedSurfaces.end()) {
-            touchedSurfaces.push_back(surface);
-        }
 
         if (this->m_sGestureState.fingers.size() == 0) {
             this->touchedResources.clear();

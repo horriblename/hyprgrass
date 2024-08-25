@@ -48,7 +48,6 @@ class GestureManager : public IGestureManager {
     void handleCancelledGesture() override;
 
   private:
-    std::vector<CWeakPointer<CWLSurfaceResource>> touchedSurfaces;
     VecSet<CWeakPointer<CWLTouchResource>> touchedResources;
     CMonitor* m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
