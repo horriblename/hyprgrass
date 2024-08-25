@@ -272,7 +272,7 @@ void GestureManager::sendCancelEventsToWindows() {
 
     for (const auto& touch : this->touchedResources.all()) {
         const auto t = touch.lock();
-        if (t.impl_) { // FIXME: idk how to check weak pointer validity
+        if (t.get()) {
             t->sendCancel();
         }
     }
@@ -366,16 +366,23 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
     if (**SEND_CANCEL) {
         const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
 
-        wl_client* client = surface.get()->client();
-        if (client) {
-            SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
+        if (!surface.valid()) {
+            return true;
+        }
 
-            if (seat) {
-                auto touches = seat.get()->touches;
-                for (const auto& touch : touches) {
-                    this->touchedResources.remove(touch);
-                }
-            }
+        wl_client* client = surface.get()->client();
+        if (!client) {
+            return true;
+        }
+
+        SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
+        if (!seat.get()) {
+            return true;
+        }
+
+        auto touches = seat.get()->touches;
+        for (const auto& touch : touches) {
+            this->touchedResources.remove(touch);
         }
 
         return BLOCK;
