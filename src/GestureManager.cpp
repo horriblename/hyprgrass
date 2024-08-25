@@ -129,11 +129,9 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             // to send cancel events to surfaces early
             return this->hasGestureBind(gev.to_string());
 
-        default:
-            break;
+        case DragGestureType::LONG_PRESS:
+            return this->handleGestureBind(gev.to_string(), true);
     }
-
-    return this->handleGestureBind(gev.to_string(), true);
 }
 
 // bind is the name of the gesture event.
