@@ -200,11 +200,11 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
             }
         });
 
-    auto touch_up_or_down = std::make_unique<TouchUpOrDownAction>();
+    auto lift_all = std::make_unique<LiftAll>();
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> long_press_actions;
     long_press_actions.emplace_back(std::move(long_press_and_emit));
-    long_press_actions.emplace_back(std::move(touch_up_or_down));
+    long_press_actions.emplace_back(std::move(lift_all));
 
     auto ack = [this]() {
         const auto drag =
