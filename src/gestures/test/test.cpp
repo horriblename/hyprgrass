@@ -240,7 +240,9 @@ TEST_CASE("Long press and drag: full drag") {
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}}, {wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}}, {wf::touch::EVENT_TYPE_MOTION, 200, 0, {460, 300}},
         {wf::touch::EVENT_TYPE_MOTION, 300, 1, {510, 290}},     {wf::touch::EVENT_TYPE_MOTION, 511, 2, {560, 300}},
-        {wf::touch::EVENT_TYPE_MOTION, 530, 0, {470, 310}},     {wf::touch::EVENT_TYPE_TOUCH_UP, 550, 2, {560, 300}}};
+        {wf::touch::EVENT_TYPE_MOTION, 530, 0, {470, 310}},     {wf::touch::EVENT_TYPE_TOUCH_UP, 550, 2, {560, 300}},
+        {wf::touch::EVENT_TYPE_TOUCH_UP, 550, 0, {560, 300}},   {wf::touch::EVENT_TYPE_TOUCH_UP, 550, 1, {560, 300}},
+    };
 
     ProcessEvents(gm, {.type = ExpectResultType::DRAG_ENDED}, events);
 }
