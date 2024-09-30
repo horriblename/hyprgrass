@@ -1,6 +1,5 @@
 [hyprgrass]
 description = "Touch gestures"
-version = "0.7.0"
 author = "horriblename"
 
 [hyprgrass.build]

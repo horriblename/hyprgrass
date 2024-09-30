@@ -1,3 +1,11 @@
+configure_file(
+  input: 'version.h.in',
+  output: 'version.h',
+  configuration: {
+    'HYPRGRASS_VERSION': meson.project_version()
+  }
+)
+
 subdir('gestures')
 
 shared_module('hyprgrass',
