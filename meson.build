@@ -1,5 +1,5 @@
 project('hyprgrass', 'cpp', 'c',
-  version: '0.7.0',
+  version: run_command('cat', join_paths(meson.project_source_root(), 'VERSION'), check: true).stdout().strip(),
   default_options: ['buildtype=release'],
 )
 
