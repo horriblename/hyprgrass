@@ -10,11 +10,11 @@
   doctest,
   runTests ? false,
 }: let
-  pluginInfo = builtins.fromTOML (builtins.readFile ../hyprload.toml);
+  version = builtins.readFile ../VERSION;
 in
   gcc13Stdenv.mkDerivation {
     pname = "hyprgrass";
-    inherit (pluginInfo.hyprgrass) version;
+    inherit version;
     src = ./..;
 
     nativeBuildInputs =

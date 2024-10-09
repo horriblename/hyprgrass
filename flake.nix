@@ -1,7 +1,7 @@
 {
   description = "Hyprland plugin for touch gestures";
 
-  inputs.hyprland.url = "git+https://github.com/hyprwm/Hyprland?submodules=1&tag=v0.42.0";
+  inputs.hyprland.url = "github:hyprwm/Hyprland";
 
   outputs = {
     self,

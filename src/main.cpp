@@ -1,5 +1,6 @@
 #include "GestureManager.hpp"
 #include "globals.hpp"
+#include "version.hpp"
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -137,7 +138,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     g_pGestureManager = std::make_unique<GestureManager>();
 
-    return {"hyprgrass", "Touchscreen gestures", "horriblename", "0.7"};
+    return {"hyprgrass", "Touchscreen gestures", "horriblename", HYPRGRASS_VERSION};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
