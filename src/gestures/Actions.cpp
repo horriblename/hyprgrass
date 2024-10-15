@@ -142,6 +142,18 @@ wf::touch::action_status_t TouchUpOrDownAction::update_state(const wf::touch::ge
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 
+wf::touch::action_status_t LiftAll::update_state(const wf::touch::gesture_state_t& state,
+                                                 const wf::touch::gesture_event_t& event) {
+    if (event.time - this->start_time > this->get_duration()) {
+        return wf::touch::ACTION_STATUS_CANCELLED;
+    }
+
+    if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP && state.fingers.size() == 0) {
+        return wf::touch::ACTION_STATUS_COMPLETED;
+    }
+
+    return wf::touch::ACTION_STATUS_RUNNING;
+}
 wf::touch::action_status_t OnCompleteAction::update_state(const wf::touch::gesture_state_t& state,
                                                           const wf::touch::gesture_event_t& event) {
     auto status = this->action->update_state(state, event);
