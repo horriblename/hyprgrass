@@ -1,9 +1,9 @@
 #include "src/devices/ITouch.hpp"
-#include "src/helpers/memory/SharedPtr.hpp"
 #include "src/render/Texture.hpp"
 #include <cairo/cairo.h>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/render/Shaders.hpp>
+#include <hyprutils/memory/SharedPtr.hpp>
 #include <unordered_map>
 
 class Visualizer {
