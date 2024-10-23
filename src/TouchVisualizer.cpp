@@ -69,15 +69,19 @@ void Visualizer::onRender() {
 void Visualizer::onTouchDown(ITouch::SDownEvent ev) {
     this->finger_positions.emplace(ev.touchID, ev.pos);
     this->prev_finger_positions.emplace(std::pair(ev.touchID, ev.pos));
+    this->damageFinger(ev.touchID);
 }
 
 void Visualizer::onTouchUp(ITouch::SUpEvent ev) {
+    this->damageFinger(ev.touchID);
     this->finger_positions.erase(ev.touchID);
     this->prev_finger_positions.erase(ev.touchID);
 }
 
 void Visualizer::onTouchMotion(ITouch::SMotionEvent ev) {
+    this->damageFinger(ev.touchID);
     this->finger_positions[ev.touchID] = ev.pos;
+    this->damageFinger(ev.touchID);
 }
 
 void Visualizer::damageAll() {
