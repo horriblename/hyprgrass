@@ -291,7 +291,7 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
 
     this->m_pLastTouchedMonitor =
-        this->m_pLastTouchedMonitor ? this->m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor.get();
+        this->m_pLastTouchedMonitor ? this->m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor.lock();
 
     const auto& monitorPos  = m_pLastTouchedMonitor->vecPosition;
     const auto& monitorSize = m_pLastTouchedMonitor->vecSize;
