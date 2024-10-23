@@ -84,15 +84,6 @@ void Visualizer::onTouchMotion(ITouch::SMotionEvent ev) {
     this->damageFinger(ev.touchID);
 }
 
-void Visualizer::damageAll() {
-    CBox dm;
-    for (const auto& point : this->prev_finger_positions) {
-        dm = CBox{point.second.x - TOUCH_POINT_RADIUS, point.second.y - TOUCH_POINT_RADIUS,
-                  static_cast<double>(2 * TOUCH_POINT_RADIUS), static_cast<double>(2 * TOUCH_POINT_RADIUS)};
-        g_pHyprRenderer->damageBox(&dm);
-    }
-}
-
 void Visualizer::damageFinger(int32_t id) {
     for (const auto& point : this->prev_finger_positions) {
         if (point.first != id) {

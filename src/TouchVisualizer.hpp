@@ -11,7 +11,6 @@ class Visualizer {
     Visualizer();
     ~Visualizer();
     void onRender();
-    void damageAll();
     void damageFinger(int32_t id);
 
     void onTouchDown(ITouch::SDownEvent);
