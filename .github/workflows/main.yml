@@ -13,4 +13,8 @@ jobs:
         with:
           name: horriblename
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - run: nix build .#hyprgrassWithTests
+      - name: build and test hyprgrass
+        run: |
+          nix build .#hyprgrassWithTests \
+          --option extra-substituters https://hyprland.cachix.org \
+          --option extra-trusted-public-keys hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc=
