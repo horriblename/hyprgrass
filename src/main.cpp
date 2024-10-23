@@ -47,15 +47,11 @@ static void onPreConfigReload() {
 }
 
 void onRenderStage(eRenderStage stage) {
-    static auto const LONG_PRESS_DELAY =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
-            ->getDataStaticPtr();
-
-    if (stage != RENDER_LAST_MOMENT || !**LONG_PRESS_DELAY) {
-        return;
+    if (stage == RENDER_PRE) {
+        g_pVisualizer->onPreRender();
+    } else if (stage == RENDER_LAST_MOMENT) {
+        g_pVisualizer->onRender();
     }
-
-    g_pVisualizer->onRender();
 }
 
 void listInternalBinds(std::string) {
