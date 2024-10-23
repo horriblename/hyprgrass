@@ -6,9 +6,10 @@
 #include <cairo/cairo.h>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/SharedDefs.hpp>
+#include <optional>
 
 CBox boxAroundCenter(Vector2D center, double radius) {
-    return CBox(center.x, center.y, radius, radius);
+    return CBox(center.x - radius, center.y - radius, 2 * radius, 2 * radius);
 }
 
 Visualizer::Visualizer() {
@@ -23,6 +24,16 @@ Visualizer::Visualizer() {
     cairo_fill(cairo);
 
     cairo_destroy(cairo);
+
+    const unsigned char* data = cairo_image_surface_get_data(this->cairoSurface);
+
+    this->texture->allocate();
+    glBindTexture(GL_TEXTURE_2D, this->texture->m_iTexID);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2 * TOUCH_POINT_RADIUS, 2 * TOUCH_POINT_RADIUS, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, data);
 }
 
 Visualizer::~Visualizer() {
@@ -35,7 +46,6 @@ void Visualizer::onRender() {
         return;
     }
 
-    // FIXME: I am almost 100% certain this is wrong
     const auto monitor = g_pCompositor->m_pLastMonitor.get();
     const auto monSize = monitor->vecPixelSize;
 
@@ -51,16 +61,6 @@ void Visualizer::onRender() {
 
         // idk what this does
         g_pCompositor->scheduleFrameForMonitor(monitor);
-
-        const unsigned char* data = cairo_image_surface_get_data(this->cairoSurface);
-
-        this->texture->allocate();
-        glBindTexture(GL_TEXTURE_2D, this->texture->m_iTexID);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2 * TOUCH_POINT_RADIUS, 2 * TOUCH_POINT_RADIUS, 0, GL_RGBA,
-                     GL_UNSIGNED_BYTE, data);
 
         g_pHyprOpenGL->renderTexture(this->texture, &dmg, 1.f, 0, true);
     }
