@@ -14,7 +14,6 @@
 #undef private
 
 #include <list>
-#include <vector>
 #include <wayfire/touch/touch.hpp>
 #include <wayland-server-core.h>
 
@@ -49,7 +48,7 @@ class GestureManager : public IGestureManager {
 
   private:
     VecSet<CWeakPointer<CWLTouchResource>> touchedResources;
-    CMonitor* m_pLastTouchedMonitor;
+    PHLMONITOR m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
     wl_event_source* long_press_timer;
 
