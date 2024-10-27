@@ -13,8 +13,6 @@ TEST_CASE("encode -> decode yields original object") {
         std::string encoded = Hyprgrass::MouseDispatcherArgEncoding::encode(tc);
         auto decoded        = Hyprgrass::MouseDispatcherArgEncoding::decode(encoded);
 
-        if (decoded.has_value()) {
-            CHECK_EQ(tc, decoded.value());
-        }
+        CHECK_EQ(tc, decoded);
     }
 }

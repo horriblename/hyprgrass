@@ -86,18 +86,20 @@ void brightnessctlBindm(std::string args) {
     static auto lastTriggered    = std::chrono::steady_clock::now();
     static Vector2D lastPosition = {0, 0};
 
-    const auto arg = Hyprgrass::MouseDispatcherArgEncoding::decode(args);
-    if (!arg.has_value()) {
-        Debug::log(LogLevel::ERR, "could not decode args: {}, ErrInfo: {}", (int)arg.error(),
+    Hyprgrass::MouseDispatcherArg arg;
+    try {
+        arg = Hyprgrass::MouseDispatcherArgEncoding::decode(args);
+    } catch (Hyprgrass::ArgDecodeErr& e) {
+        Debug::log(LogLevel::ERR, "could not decode args: {}, ErrInfo: {}", static_cast<int>(e),
                    Hyprgrass::gArgDecodeErrInfo);
         return;
     }
 
-    if (arg->event == Hyprgrass::EventType::BEGIN) {
+    if (arg.event == Hyprgrass::EventType::BEGIN) {
         lastPosition = {0, 0};
     }
 
-    if (arg->event != Hyprgrass::EventType::UPDATE) {
+    if (arg.event != Hyprgrass::EventType::UPDATE) {
         return;
     }
 
@@ -107,9 +109,9 @@ void brightnessctlBindm(std::string args) {
         return;
     }
 
-    system(std::format("brightnessctl set {}", lastPosition.y > arg->y ? "+5%" : "5%-").c_str());
+    system(std::format("brightnessctl set {}", lastPosition.y > arg.y ? "+5%" : "5%-").c_str());
     lastTriggered = now;
-    lastPosition  = {arg->x, arg->y};
+    lastPosition  = {arg.x, arg.y};
 }
 
 std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchDownHook;

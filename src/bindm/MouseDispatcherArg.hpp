@@ -1,5 +1,4 @@
 #include <cstdint>
-#include <expected>
 #include <string>
 
 #define HYPRGRASS_CUSTOM_BINDM_LAYOUT_VERSION 0
@@ -32,7 +31,7 @@ struct MouseDispatcherArgEncoding {
     }
 
     static std::string encode(const MouseDispatcherArg&);
-    static std::expected<MouseDispatcherArg, ArgDecodeErr> decode(std::string s);
+    static MouseDispatcherArg decode(std::string s);
 };
 
 } // namespace Hyprgrass
