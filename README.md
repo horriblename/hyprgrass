@@ -104,7 +104,8 @@ wayland.windowManager.hyprland = {
 ### Configuration options:
 
 ```
-plugin:touch_gestures {
+plugin {
+ touch_gestures {
   # The default sensitivity is probably too low on tablet screens,
   # I recommend turning it up to 4.0
   sensitivity = 1.0
@@ -129,6 +130,7 @@ plugin:touch_gestures {
     # NOT recommended as it crashed a few times, once it's stabilized I'll make it the default
     send_cancel = 0
   }
+ }
 }
 ```
 
