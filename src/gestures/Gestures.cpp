@@ -38,6 +38,7 @@ bool IGestureManager::emitCompletedGesture(const CompletedGestureEvent& gev) {
 bool IGestureManager::emitDragGesture(const DragGestureEvent& gev) {
     bool handled = this->handleDragGesture(gev);
     if (handled) {
+        // TODO: I should set this->activeDragGesture here
         this->stopLongPressTimer();
     }
 
@@ -207,9 +208,8 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
     long_press_actions.emplace_back(std::move(lift_all));
 
     auto ack = [this]() {
-        const auto drag =
-            DragGestureEvent{DragGestureType::LONG_PRESS, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
-        if (this->emitDragGestureEnd(drag)) {
+        if (this->activeDragGesture.has_value()) {
+            this->emitDragGestureEnd(this->activeDragGesture.value());
             return;
         } else {
             const auto gesture = CompletedGestureEvent{CompletedGestureType::LONG_PRESS, 0,
