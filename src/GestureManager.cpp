@@ -208,7 +208,7 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
             return;
     }
 
-    handleGestureBind(gev.to_string(), false);
+    this->handleGestureBind(gev.to_string(), false);
 }
 
 bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {

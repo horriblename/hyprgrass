@@ -95,6 +95,12 @@ class TouchUpOrDownAction : public wf::touch::gesture_action_t {
                                             const wf::touch::gesture_event_t& event) override;
 };
 
+// Completes upon all touch points lifted.
+class LiftAll : public wf::touch::gesture_action_t {
+    wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
+                                            const wf::touch::gesture_event_t& event) override;
+};
+
 // This action is used to call a function right after another action is completed
 class OnCompleteAction : public wf::touch::gesture_action_t {
   private:
