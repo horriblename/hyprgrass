@@ -171,31 +171,33 @@ where (skip to [examples](#examples) if this is confusing):
 #### Examples
 
 ```
-plugin:touch_gestures {
-    # swipe left from right edge
-    hyprgrass-bind = , edge:r:l, workspace, +1
+plugin {
+    touch_gestures {
+        # swipe left from right edge
+        hyprgrass-bind = , edge:r:l, workspace, +1
 
-    # swipe up from bottom edge
-    hyprgrass-bind = , edge:d:u, exec, firefox
+        # swipe up from bottom edge
+        hyprgrass-bind = , edge:d:u, exec, firefox
 
-    # swipe down from left edge
-    hyprgrass-bind = , edge:l:d, exec, pactl set-sink-volume @DEFAULT_SINK@ -4%
+        # swipe down from left edge
+        hyprgrass-bind = , edge:l:d, exec, pactl set-sink-volume @DEFAULT_SINK@ -4%
 
-    # swipe down with 4 fingers
-    # NOTE: swipe events only trigger for finger count of >= 3
-    hyprgrass-bind = , swipe:4:d, killactive
+        # swipe down with 4 fingers
+        # NOTE: swipe events only trigger for finger count of >= 3
+        hyprgrass-bind = , swipe:4:d, killactive
 
-    # swipe diagonally left and down with 3 fingers
-    # l (or r) must come before d and u
-    hyprgrass-bind = , swipe:3:ld, exec, foot
+        # swipe diagonally left and down with 3 fingers
+        # l (or r) must come before d and u
+        hyprgrass-bind = , swipe:3:ld, exec, foot
 
-    # tap with 3 fingers
-    # NOTE: tap events only trigger for finger count of >= 3
-    hyprgrass-bind = , tap:3, exec, foot
+        # tap with 3 fingers
+        # NOTE: tap events only trigger for finger count of >= 3
+        hyprgrass-bind = , tap:3, exec, foot
 
-    # longpress can trigger mouse binds:
-    hyprgrass-bindm = , longpress:2, movewindow
-    hyprgrass-bindm = , longpress:3, resizewindow
+        # longpress can trigger mouse binds:
+        hyprgrass-bindm = , longpress:2, movewindow
+        hyprgrass-bindm = , longpress:3, resizewindow
+    }
 }
 ```
 
