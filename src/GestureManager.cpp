@@ -160,9 +160,11 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                     const CBox grab = {real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA,
                                        real.width + 2 * BORDER_GRAB_AREA, real.height + 2 * BORDER_GRAB_AREA};
 
-                    if ((grab.containsPoint(touchPos) &&
-                         (!real.containsPoint(touchPos) || w->isInCurvedCorner(touchPos.x, touchPos.y))) &&
-                        !w->hasPopupAt(touchPos)) {
+                    bool notInRealWindow = !real.containsPoint(touchPos) || w->isInCurvedCorner(touchPos.x, touchPos.y);
+                    bool onTiledGap      = !w->m_bIsFloating && !w->isFullscreen() && notInRealWindow;
+                    bool inGrabArea      = notInRealWindow && grab.containsPoint(touchPos);
+
+                    if ((onTiledGap || inGrabArea) && !w->hasPopupAt(touchPos)) {
                         IPointer::SButtonEvent e = {
                             .timeMs = 0, // HACK: they don't use this :p
                             .button = 0,
