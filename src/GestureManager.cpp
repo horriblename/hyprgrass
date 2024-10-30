@@ -8,6 +8,7 @@
 #define private public
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
@@ -25,6 +26,7 @@
 #include <ranges>
 
 // constexpr double SWIPE_THRESHOLD = 30.;
+constexpr int RESIZE_BORDER_GAP_INCREMENT = 10;
 
 std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(' ');
@@ -64,6 +66,11 @@ int handleLongPressTimer(void* data) {
     gesture_manager->onLongPressTimeout(gesture_manager->long_press_next_trigger_time);
 
     return 0;
+}
+
+std::string commaSeparatedCssGaps(CCssGapData data) {
+    return std::to_string(data.top) + "," + std::to_string(data.right) + "," + std::to_string(data.bottom) + "," +
+           std::to_string(data.left);
 }
 
 GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>()) {
@@ -109,8 +116,7 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
     static auto PBORDERGRABEXTEND =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "general:extend_border_grab_area")
             ->getDataStaticPtr();
-    static auto PGAPSIN =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->getDataStaticPtr();
+    static auto PGAPSINDATA = CConfigValue<Hyprlang::CUSTOMTYPE>("general:gaps_in");
 
     Debug::log(LOG, "[hyprgrass] Drag gesture begin: {}", gev.to_string());
 
@@ -164,12 +170,18 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                         };
                         g_pKeybindManager->resizeWithBorder(e);
 
+                        auto* PGAPSIN            = (CCssGapData*)(PGAPSINDATA.ptr())->getData();
                         this->resizeOnBorderInfo = {
                             .active      = true,
-                            .old_gaps_in = **PGAPSIN,
+                            .old_gaps_in = *PGAPSIN,
                         };
 
-                        g_pConfigManager->parseKeyword("general:gaps_in", std::to_string(**PGAPSIN + 10));
+                        CCssGapData newGapsIn = *PGAPSIN;
+                        newGapsIn.top += RESIZE_BORDER_GAP_INCREMENT;
+                        newGapsIn.right += RESIZE_BORDER_GAP_INCREMENT;
+                        newGapsIn.bottom += RESIZE_BORDER_GAP_INCREMENT;
+                        newGapsIn.left += RESIZE_BORDER_GAP_INCREMENT;
+                        g_pConfigManager->parseKeyword("general:gaps_in", commaSeparatedCssGaps(newGapsIn));
                         return true;
                     }
                 }
@@ -252,7 +264,8 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
         case DragGestureType::LONG_PRESS:
             if (this->resizeOnBorderInfo.active) {
                 g_pKeybindManager->changeMouseBindMode(eMouseBindMode::MBIND_INVALID);
-                g_pConfigManager->parseKeyword("general:gaps_in", std::to_string(this->resizeOnBorderInfo.old_gaps_in));
+                g_pConfigManager->parseKeyword("general:gaps_in",
+                                               commaSeparatedCssGaps(this->resizeOnBorderInfo.old_gaps_in));
                 this->resizeOnBorderInfo = {};
                 return;
             }
