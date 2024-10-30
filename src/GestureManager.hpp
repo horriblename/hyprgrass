@@ -51,6 +51,10 @@ class GestureManager : public IGestureManager {
     PHLMONITOR m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
     wl_event_source* long_press_timer;
+    struct {
+        bool active = false;
+        long old_gaps_in;
+    } resizeOnBorderInfo;
 
     bool handleGestureBind(std::string bind, bool pressed);
 

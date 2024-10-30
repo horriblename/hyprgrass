@@ -3,6 +3,7 @@
 #include "wayfire/touch/touch.hpp"
 #include <algorithm>
 #include <cstdint>
+#include <string>
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
@@ -108,6 +109,8 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
     static auto PBORDERGRABEXTEND =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "general:extend_border_grab_area")
             ->getDataStaticPtr();
+    static auto PGAPSIN =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->getDataStaticPtr();
 
     Debug::log(LOG, "[hyprgrass] Drag gesture begin: {}", gev.to_string());
 
@@ -160,15 +163,21 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                             .state  = WL_POINTER_BUTTON_STATE_PRESSED,
                         };
                         g_pKeybindManager->resizeWithBorder(e);
+
+                        this->resizeOnBorderInfo = {
+                            .active      = true,
+                            .old_gaps_in = **PGAPSIN,
+                        };
+
+                        g_pConfigManager->parseKeyword("general:gaps_in", std::to_string(**PGAPSIN + 10));
                         return true;
                     }
                 }
             }
             return this->handleGestureBind(gev.to_string(), true);
-
-        default:
-            break;
     }
+
+    return false;
 }
 
 // bind is the name of the gesture event.
@@ -235,15 +244,20 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
 
 void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
     Debug::log(LOG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
+
     switch (gev.type) {
         case DragGestureType::SWIPE:
             g_pInputManager->endWorkspaceSwipe();
             return;
         case DragGestureType::LONG_PRESS:
-            if (!this->handleGestureBind(gev.to_string(), false)) {
-                // if it wasn't triggered by a bindm it's a resize_on_border_long_press
+            if (this->resizeOnBorderInfo.active) {
                 g_pKeybindManager->changeMouseBindMode(eMouseBindMode::MBIND_INVALID);
-            };
+                g_pConfigManager->parseKeyword("general:gaps_in", std::to_string(this->resizeOnBorderInfo.old_gaps_in));
+                this->resizeOnBorderInfo = {};
+                return;
+            }
+
+            this->handleGestureBind(gev.to_string(), false);
             return;
         case DragGestureType::EDGE_SWIPE:
             g_pInputManager->endWorkspaceSwipe();
