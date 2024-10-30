@@ -99,6 +99,16 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
     static auto const WORKSPACE_SWIPE_EDGE =
         (Hyprlang::STRING const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_edge")
             ->getDataStaticPtr();
+    static auto const RESIZE_LONG_PRESS =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:resize_on_border_long_press")
+            ->getDataStaticPtr();
+
+    static auto PBORDERSIZE =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "general:border_size")->getDataStaticPtr();
+    static auto PBORDERGRABEXTEND =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "general:extend_border_grab_area")
+            ->getDataStaticPtr();
+
     Debug::log(LOG, "[hyprgrass] Drag gesture begin: {}", gev.to_string());
 
     auto const workspace_swipe_edge_str = std::string{*WORKSPACE_SWIPE_EDGE};
@@ -126,11 +136,39 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 
             return false;
 
+        case DragGestureType::LONG_PRESS:
+            if (**RESIZE_LONG_PRESS && gev.finger_count == 1) {
+                const auto BORDER_GRAB_AREA = **PBORDERSIZE + **PBORDERGRABEXTEND;
+
+                // kind of a hack: this is the window detected from previous touch events
+                const auto w = g_pInputManager->m_pFoundWindowToFocus.lock();
+                const Vector2D touchPos =
+                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current) *
+                    this->m_pLastTouchedMonitor->vecSize;
+                if (w && !w->isFullscreen()) {
+                    const CBox real = {w->m_vRealPosition.value().x, w->m_vRealPosition.value().y,
+                                       w->m_vRealSize.value().x, w->m_vRealSize.value().y};
+                    const CBox grab = {real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA,
+                                       real.width + 2 * BORDER_GRAB_AREA, real.height + 2 * BORDER_GRAB_AREA};
+
+                    if ((grab.containsPoint(touchPos) &&
+                         (!real.containsPoint(touchPos) || w->isInCurvedCorner(touchPos.x, touchPos.y))) &&
+                        !w->hasPopupAt(touchPos)) {
+                        IPointer::SButtonEvent e = {
+                            .timeMs = 0, // HACK: they don't use this :p
+                            .button = 0,
+                            .state  = WL_POINTER_BUTTON_STATE_PRESSED,
+                        };
+                        g_pKeybindManager->resizeWithBorder(e);
+                        return true;
+                    }
+                }
+            }
+            return this->handleGestureBind(gev.to_string(), true);
+
         default:
             break;
     }
-
-    return this->handleGestureBind(gev.to_string(), true);
 }
 
 // bind is the name of the gesture event.
@@ -202,13 +240,15 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
             g_pInputManager->endWorkspaceSwipe();
             return;
         case DragGestureType::LONG_PRESS:
-            break;
+            if (!this->handleGestureBind(gev.to_string(), false)) {
+                // if it wasn't triggered by a bindm it's a resize_on_border_long_press
+                g_pKeybindManager->changeMouseBindMode(eMouseBindMode::MBIND_INVALID);
+            };
+            return;
         case DragGestureType::EDGE_SWIPE:
             g_pInputManager->endWorkspaceSwipe();
             return;
     }
-
-    this->handleGestureBind(gev.to_string(), false);
 }
 
 bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
