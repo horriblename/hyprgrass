@@ -122,6 +122,11 @@ plugin {
   # in milliseconds
   long_press_delay = 400
 
+  # resize windows by long-pressing on window borders and gaps.
+  # If general:resize_on_border is enabled, general:extend_border_grab_area is used for floating
+  # windows
+  resize_on_border_long_press = true
+
   # in pixels, the distance from the edge that is considered an edge
   edge_margin = 10
 
