@@ -45,13 +45,6 @@ void Visualizer::onPreRender() {
     for (auto& finger : this->finger_positions) {
         const auto pos = finger.second.curr;
 
-        // idk how to properly damage stuff but if I just always damage two oldest frames I can't be wrong :)
-        if (finger.second.last_rendered2.has_value()) {
-            CBox dmg = boxAroundCenter(finger.second.last_rendered2.value(), TOUCH_POINT_RADIUS);
-            g_pHyprRenderer->damageBox(&dmg);
-        }
-        finger.second.last_rendered2 = finger.second.last_rendered;
-
         if (finger.second.last_rendered.has_value()) {
             CBox dmg = boxAroundCenter(finger.second.last_rendered.value(), TOUCH_POINT_RADIUS);
             g_pHyprRenderer->damageBox(&dmg);
@@ -75,13 +68,12 @@ void Visualizer::onRender() {
         CBox dmg = boxAroundCenter(finger.second.curr, TOUCH_POINT_RADIUS);
         g_pHyprRenderer->damageBox(&dmg);
 
-        // idk what this does
         g_pHyprOpenGL->renderTexture(this->texture, &dmg, 1.f, 0, true);
     }
 }
 
 void Visualizer::onTouchDown(ITouch::SDownEvent ev) {
-    auto mon = g_pCompositor->m_pLastMonitor.get();
+    auto mon = g_pCompositor->m_pLastMonitor.lock();
     this->finger_positions.emplace(ev.touchID, FingerPos{ev.pos * mon->vecPixelSize + mon->vecPosition, std::nullopt});
     g_pCompositor->scheduleFrameForMonitor(mon);
 }
@@ -89,11 +81,11 @@ void Visualizer::onTouchDown(ITouch::SDownEvent ev) {
 void Visualizer::onTouchUp(ITouch::SUpEvent ev) {
     this->damageFinger(ev.touchID);
     this->finger_positions.erase(ev.touchID);
-    g_pCompositor->scheduleFrameForMonitor(g_pCompositor->m_pLastMonitor.get());
+    g_pCompositor->scheduleFrameForMonitor(g_pCompositor->m_pLastMonitor.lock());
 }
 
 void Visualizer::onTouchMotion(ITouch::SMotionEvent ev) {
-    auto mon                           = g_pCompositor->m_pLastMonitor.get();
+    auto mon                           = g_pCompositor->m_pLastMonitor.lock();
     this->finger_positions[ev.touchID] = {ev.pos * mon->vecPixelSize + mon->vecPosition, std::nullopt};
     g_pCompositor->scheduleFrameForMonitor(mon);
 }
@@ -106,10 +98,6 @@ void Visualizer::damageFinger(int32_t id) {
 
     if (finger.last_rendered.has_value()) {
         dm = boxAroundCenter(finger.last_rendered.value(), TOUCH_POINT_RADIUS);
-        g_pHyprRenderer->damageBox(&dm);
-    }
-    if (finger.last_rendered2.has_value()) {
-        dm = boxAroundCenter(finger.last_rendered2.value(), TOUCH_POINT_RADIUS);
         g_pHyprRenderer->damageBox(&dm);
     }
 }

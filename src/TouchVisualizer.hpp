@@ -10,7 +10,6 @@
 struct FingerPos {
     Vector2D curr;
     std::optional<Vector2D> last_rendered;
-    std::optional<Vector2D> last_rendered2;
 };
 
 class Visualizer {
