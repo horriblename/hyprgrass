@@ -41,20 +41,7 @@ Visualizer::~Visualizer() {
         cairo_surface_destroy(this->cairoSurface);
 }
 
-void Visualizer::onPreRender() {
-    for (auto& finger : this->finger_positions) {
-        const auto pos = finger.second.curr;
-
-        if (finger.second.last_rendered.has_value()) {
-            CBox dmg = boxAroundCenter(finger.second.last_rendered.value(), TOUCH_POINT_RADIUS);
-            g_pHyprRenderer->damageBox(&dmg);
-        }
-        finger.second.last_rendered = std::optional(finger.second.curr);
-        CBox dmg                    = boxAroundCenter(pos, TOUCH_POINT_RADIUS);
-
-        g_pHyprRenderer->damageBox(&dmg);
-    }
-}
+void Visualizer::onPreRender() {}
 
 void Visualizer::onRender() {
     if (this->finger_positions.size() < 1) {
@@ -65,6 +52,11 @@ void Visualizer::onRender() {
     const auto monSize = monitor->vecPixelSize;
 
     for (auto& finger : this->finger_positions) {
+        if (finger.second.last_rendered.has_value()) {
+            CBox dmg = boxAroundCenter(finger.second.last_rendered.value(), TOUCH_POINT_RADIUS);
+            g_pHyprRenderer->damageBox(&dmg);
+        }
+
         CBox dmg = boxAroundCenter(finger.second.curr, TOUCH_POINT_RADIUS);
         g_pHyprRenderer->damageBox(&dmg);
 
