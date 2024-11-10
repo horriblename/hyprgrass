@@ -48,18 +48,18 @@ void Visualizer::onRender() {
         return;
     }
 
-    const auto monitor = g_pCompositor->m_pLastMonitor.get();
-    const auto monSize = monitor->vecPixelSize;
+    const auto monitor = g_pCompositor->m_pLastMonitor.lock();
+
+    // HACK: should not damage monitor, however, I don't understand jackshit
+    // about damage so here we are.
+    // If you know how to do damage properly I BEG OF YOU PLEASE ABSOLVE ME
+    // OF MY SINS
+    if (this->finger_positions.size()) {
+        g_pHyprRenderer->damageMonitor(monitor);
+    }
 
     for (auto& finger : this->finger_positions) {
-        if (finger.second.last_rendered.has_value()) {
-            CBox dmg = boxAroundCenter(finger.second.last_rendered.value(), TOUCH_POINT_RADIUS);
-            g_pHyprRenderer->damageBox(&dmg);
-        }
-
         CBox dmg = boxAroundCenter(finger.second.curr, TOUCH_POINT_RADIUS);
-        g_pHyprRenderer->damageBox(&dmg);
-
         g_pHyprOpenGL->renderTexture(this->texture, &dmg, 1.f, 0, true);
     }
 }
