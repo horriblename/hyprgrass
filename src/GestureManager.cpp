@@ -12,6 +12,7 @@
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/devices/ITouch.hpp>
+#include <hyprland/src/managers/HookSystemManager.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
@@ -124,11 +125,27 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
     auto const workspace_swipe_edge_str = std::string{*WORKSPACE_SWIPE_EDGE};
 
     switch (gev.type) {
-        case DragGestureType::SWIPE:
-            if (**WORKSPACE_SWIPE_FINGERS != gev.finger_count) {
-                return false;
+        case DragGestureType::SWIPE: {
+            if (**WORKSPACE_SWIPE_FINGERS == gev.finger_count) {
+                if (!g_pGestureManager->handleWorkspaceSwipe(gev.direction)) {
+                    static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:swipeStart");
+                    SCallbackInfo info;
+
+                    g_pHookSystem->emit(PEVENTVEC, info,
+                                        IPointer::SSwipeBeginEvent{.fingers = (uint32_t)gev.finger_count});
+
+                    if (!info.cancelled) {
+                        this->hookHandled        = true;
+                        this->previousSwipePoint = this->m_sGestureState.get_center().delta();
+                        return true;
+                    }
+                } else {
+                    this->hookHandled = false;
+                    return true;
+                }
             }
-            return this->handleWorkspaceSwipe(gev.direction);
+            return false;
+        }
 
         case DragGestureType::EDGE_SWIPE:
             if (workspace_swipe_edge_str == "l" && gev.edge_origin == GESTURE_DIRECTION_LEFT) {
@@ -244,8 +261,14 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
     }
 
     switch (this->getActiveDragGesture()->type) {
-        case DragGestureType::SWIPE:
-            this->updateWorkspaceSwipe();
+        case DragGestureType::SWIPE: {
+            if (this->hookHandled) {
+                this->updateHookSwipe();
+            } else {
+                this->updateWorkspaceSwipe();
+            }
+            return;
+        }
         case DragGestureType::LONG_PRESS: {
             const auto pos = this->m_sGestureState.get_center().current;
             g_pCompositor->warpCursorTo(Vector2D(pos.x, pos.y));
@@ -261,9 +284,15 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
     Debug::log(LOG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
 
     switch (gev.type) {
-        case DragGestureType::SWIPE:
-            g_pInputManager->endWorkspaceSwipe();
+        case DragGestureType::SWIPE: {
+            if (this->hookHandled) {
+                IPointer::SSwipeEndEvent ev = {};
+                EMIT_HOOK_EVENT("hyprgrass:swipeEnd", ev);
+            } else {
+                g_pInputManager->endWorkspaceSwipe();
+            }
             return;
+        }
         case DragGestureType::LONG_PRESS:
             if (this->resizeOnBorderInfo.active) {
                 g_pKeybindManager->changeMouseBindMode(eMouseBindMode::MBIND_INVALID);
@@ -320,6 +349,20 @@ void GestureManager::updateWorkspaceSwipe() {
 
     g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -swipe_delta.y : -swipe_delta.x);
     return;
+}
+
+void GestureManager::updateHookSwipe() {
+    auto gev = this->getActiveDragGesture().value();
+
+    const auto currentPoint  = this->m_sGestureState.get_center().delta();
+    const auto delta         = currentPoint - this->previousSwipePoint;
+    this->previousSwipePoint = currentPoint;
+
+    IPointer::SSwipeUpdateEvent ev = {
+        .fingers = (uint32_t)gev.finger_count,
+        .delta   = Vector2D(delta.x, delta.y),
+    };
+    EMIT_HOOK_EVENT("hyprgrass:swipeUpdate", ev);
 }
 
 void GestureManager::updateLongPressTimer(uint32_t current_time, uint32_t delay) {
