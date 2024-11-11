@@ -50,6 +50,8 @@ class GestureManager : public IGestureManager {
     PHLMONITOR m_pLastTouchedMonitor;
     SMonitorArea m_sMonitorArea;
     wl_event_source* long_press_timer;
+    bool hookHandled = false;
+    wf::touch::point_t previousSwipePoint;
     struct {
         bool active = false;
         CCssGapData old_gaps_in;
@@ -64,6 +66,7 @@ class GestureManager : public IGestureManager {
     Vector2D pixelPositionToPercentagePosition(wf::touch::point_t) const;
     bool handleWorkspaceSwipe(const GestureDirection direction);
     void updateWorkspaceSwipe();
+    void updateHookSwipe();
 
     bool handleDragGesture(const DragGestureEvent& gev) override;
     void dragGestureUpdate(const wf::touch::gesture_event_t&) override;
