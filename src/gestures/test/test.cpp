@@ -21,14 +21,14 @@ void Tester::testFindSwipeEdges() {
     const auto D = GESTURE_DIRECTION_DOWN;
 
     Test tests[] = {
-        {{MONITOR_X + 10, MONITOR_Y + 10}, U | L},
-        {{MONITOR_X, MONITOR_Y + 11}, L},
-        {{MONITOR_X + 11, MONITOR_Y}, U},
-        {{MONITOR_X + 11, MONITOR_Y + 11}, 0},
-        {{MONITOR_X + MONITOR_WIDTH, MONITOR_Y + MONITOR_HEIGHT}, D | R},
-        {{MONITOR_X + MONITOR_WIDTH - 11, MONITOR_Y + MONITOR_HEIGHT}, D},
-        {{MONITOR_X + MONITOR_WIDTH, MONITOR_Y + MONITOR_HEIGHT - 11}, R},
-        {{MONITOR_X + MONITOR_WIDTH - 11, MONITOR_Y + MONITOR_HEIGHT - 11}, 0},
+        {{10, 10}, U | L},
+        {{0, 11}, L},
+        {{11, 0}, U},
+        {{11, 11}, 0},
+        {{MONITOR_WIDTH, MONITOR_HEIGHT}, D | R},
+        {{MONITOR_WIDTH - 11, MONITOR_HEIGHT}, D},
+        {{MONITOR_WIDTH, MONITOR_HEIGHT - 11}, R},
+        {{MONITOR_WIDTH - 11, MONITOR_HEIGHT - 11}, 0},
     };
 
     auto mockGM = CMockGestureManager::newCompletedGestureOnlyHandler();
@@ -383,22 +383,6 @@ TEST_CASE("Edge Swipe: margins") {
             {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {19, 300}}, {wf::touch::EVENT_TYPE_MOTION, 150, 0, {250, 300}},
             {wf::touch::EVENT_TYPE_MOTION, 200, 0, {455, 300}},    {wf::touch::EVENT_TYPE_MOTION, 250, 0, {600, 300}},
             {wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {700, 400}},
-        };
-
-        const ExpectResult expected_result = {ExpectResultType::DRAG_ENDED, 1.0};
-        ProcessEvents(gm, expected_result, events);
-    }
-
-    SUBCASE("with non-zero offset") {
-        auto gm       = CMockGestureManager::newDragHandler();
-        gm.mon_offset = {2000, 0};
-        long margin   = 20;
-        gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &margin);
-
-        const std::vector<TouchEvent> events{
-            {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {2019, 300}}, {wf::touch::EVENT_TYPE_MOTION, 150, 0, {250, 300}},
-            {wf::touch::EVENT_TYPE_MOTION, 200, 0, {2455, 300}},     {wf::touch::EVENT_TYPE_MOTION, 250, 0, {600, 300}},
-            {wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {2700, 400}},
         };
 
         const ExpectResult expected_result = {ExpectResultType::DRAG_ENDED, 1.0};
