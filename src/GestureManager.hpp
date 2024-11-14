@@ -48,7 +48,7 @@ class GestureManager : public IGestureManager {
 
   private:
     VecSet<CWeakPointer<CWLTouchResource>> touchedResources;
-    PHLMONITOR m_pLastTouchedMonitor;
+    PHLMONITOR monitor;
     SMonitorArea m_sMonitorArea;
     wl_event_source* long_press_timer;
     struct {
