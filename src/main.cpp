@@ -24,21 +24,36 @@ inline std::unique_ptr<Visualizer> g_pVisualizer;
 void hkOnTouchDown(void* _, SCallbackInfo& cbinfo, std::any e) {
     auto ev = std::any_cast<ITouch::SDownEvent>(e);
 
-    g_pVisualizer->onTouchDown(ev);
+    static auto const VISUALIZE =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
+            ->getDataStaticPtr();
+
+    if (**VISUALIZE)
+        g_pVisualizer->onTouchDown(ev);
     cbinfo.cancelled = g_pGestureManager->onTouchDown(ev);
 }
 
 void hkOnTouchUp(void* _, SCallbackInfo& cbinfo, std::any e) {
     auto ev = std::any_cast<ITouch::SUpEvent>(e);
 
-    g_pVisualizer->onTouchUp(ev);
+    static auto const VISUALIZE =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
+            ->getDataStaticPtr();
+
+    if (**VISUALIZE)
+        g_pVisualizer->onTouchUp(ev);
     cbinfo.cancelled = g_pGestureManager->onTouchUp(ev);
 }
 
 void hkOnTouchMove(void* _, SCallbackInfo& cbinfo, std::any e) {
     auto ev = std::any_cast<ITouch::SMotionEvent>(e);
 
-    g_pVisualizer->onTouchMotion(ev);
+    static auto const VISUALIZE =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
+            ->getDataStaticPtr();
+
+    if (**VISUALIZE)
+        g_pVisualizer->onTouchMotion(ev);
     cbinfo.cancelled = g_pGestureManager->onTouchMove(ev);
 }
 
@@ -47,9 +62,11 @@ static void onPreConfigReload() {
 }
 
 void onRenderStage(eRenderStage stage) {
-    if (stage == RENDER_PRE) {
-        g_pVisualizer->onPreRender();
-    } else if (stage == RENDER_LAST_MOMENT) {
+    static auto const VISUALIZE =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
+            ->getDataStaticPtr();
+
+    if (stage == RENDER_LAST_MOMENT && **VISUALIZE) {
         g_pVisualizer->onRender();
     }
 }
@@ -126,7 +143,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:emulate_touchpad_swipe",
                                 Hyprlang::CConfigValue((Hyprlang::INT)0));
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch",
-                                Hyprlang::CConfigValue((Hyprlang::INT)1));
+                                Hyprlang::CConfigValue((Hyprlang::INT)0));
 #pragma GCC diagnostic pop
 
     HyprlandAPI::addConfigKeyword(PHANDLE, "hyprgrass-bind", onNewBind, Hyprlang::SHandlerOptions{});
