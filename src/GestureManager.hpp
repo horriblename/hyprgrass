@@ -42,7 +42,7 @@ class GestureManager : public IGestureManager {
     void touchBindDispatcher(std::string args);
 
   protected:
-    SMonitorArea getMonitorArea() const override;
+    wf::touch::point_t getMonitorSize() const override;
     bool handleCompletedGesture(const CompletedGestureEvent& gev) override;
     void handleCancelledGesture() override;
 

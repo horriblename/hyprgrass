@@ -71,7 +71,7 @@ class CMockGestureManager final : public IGestureManager {
     void stopLongPressTimer() override {}
 
   protected:
-    SMonitorArea getMonitorArea() const override {
+    SMonitorArea getMonitorSize() const override {
         return SMonitorArea{this->mon_offset.x, this->mon_offset.y, this->mon_size.w, this->mon_size.h};
     }
 
