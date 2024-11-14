@@ -2,9 +2,6 @@
 #include <cstdint>
 #include <string>
 
-// 1 dp = 1/180 inch
-// 1 dp = 0.1411 mm
-
 // Swipe params
 constexpr static double MIN_SWIPE_DISTANCE             = 4;
 constexpr static double MAX_SWIPE_DISTANCE             = 44;
