@@ -548,6 +548,7 @@ bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
 }
 
 wf::touch::point_t GestureManager::getMonitorSize() const {
+    // TODO: handle invalid physicalSize: e.g. projectors don't have a physical size
     Vector2D s = this->monitor->output->physicalSize;
     return wf::touch::point_t{s.x, s.y};
 }
