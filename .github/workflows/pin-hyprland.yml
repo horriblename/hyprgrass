@@ -1,10 +1,12 @@
 name: "Pin hyprland version to hyprgrass-main (or specific rev)"
 on:
+  pull_request:
   workflow_dispatch:
     inputs:
       hyprland_rev:
         description: 'Hyprland revision'
         required: true
+        default: 'v0.45.0'
         type: string
       hyprgrass_rev:
         description: 'Hyprgrass revision'
