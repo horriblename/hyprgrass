@@ -376,7 +376,7 @@ void GestureManager::updateWorkspaceSwipe() {
             ->getDataStaticPtr();
     const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
 
-    const auto monArea       = this->getMonitorArea();
+    const auto monArea       = this->getMonitorSize();
     const auto delta_percent = this->m_sGestureState.get_center().delta() / wf::touch::point_t(monArea.w, monArea.h);
 
     const auto swipe_delta = Vector2D(delta_percent.x * SWIPEDISTANCE, delta_percent.y * SWIPEDISTANCE);
@@ -427,6 +427,10 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     if (this->m_sGestureState.fingers.size() != 0 && mon != this->monitor) {
         // we don't support simultaneous multi-monitor gestures
         return false;
+    }
+
+    if (this->m_sGestureState.fingers.size() == 0) {
+        this->monitor = mon;
     }
 
     const auto& monitorPos  = mon->vecPosition;
@@ -545,8 +549,9 @@ bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
     return IGestureManager::onTouchMove(gesture_event);
 }
 
-SMonitorArea GestureManager::getMonitorArea() const {
-    return this->m_sMonitorArea;
+wf::touch::point_t GestureManager::getMonitorSize() const {
+    Vector2D s = this->monitor->output->physicalSize;
+    return wf::touch::point_t{s.x, s.y};
 }
 
 void GestureManager::onLongPressTimeout(uint32_t time_msec) {
@@ -567,12 +572,12 @@ void GestureManager::onLongPressTimeout(uint32_t time_msec) {
 }
 
 wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, double y) const {
-    auto area = this->getMonitorArea();
+    auto area = this->getMonitorSize();
     return wf::touch::point_t{x * area.w + area.x, y * area.h + area.y};
 }
 
 Vector2D GestureManager::pixelPositionToPercentagePosition(wf::touch::point_t point) const {
-    auto monitorArea = this->getMonitorArea();
+    auto monitorArea = this->getMonitorSize();
     return Vector2D((point.x - monitorArea.x) / monitorArea.w, (point.y - monitorArea.y) / monitorArea.h);
 }
 
