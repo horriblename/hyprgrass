@@ -49,9 +49,20 @@ jobs:
           --override-input 'github:hyprwm/hyprland/${{ inputs.hyprland_rev }}'
           --option extra-substituters https://hyprland.cachix.org \
           --option extra-trusted-public-keys hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc=
-      - name: update commit pin
+      - name: update commit pin and create pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if ! [ grep "$HYPRLAND_COMMIT" hyprpm.toml ]; do
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git checkout -b "pr-hyprpm-pin-$(date +'%Y%m%d%H%M%S')" main
             sed -i -e "/## DO NOT EDIT THIS LINE: auto-pin CI ##/i [\"$HYPRLAND_COMMIT\", \"$HYPRGRASS_COMMIT\"]" hyprpm.toml
+            git add hyprpm.toml
+            git commit -m 'ci: add hyprpm pin'
+            gh pr create --title "Automated PR: Add hyprpm pin" \
+                       --body "This PR was created by a GitHub Actions workflow." \
+                       --base main \
+                       --head feature-branch
           fi
 
