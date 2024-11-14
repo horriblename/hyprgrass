@@ -94,7 +94,7 @@ bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
 }
 
 GestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point, int edge_margin) {
-    auto mon = this->getMonitorArea();
+    auto mon = this->getMonitorSize();
 
     GestureDirection edge_directions = 0;
 
