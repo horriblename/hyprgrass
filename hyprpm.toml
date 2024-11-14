@@ -13,6 +13,7 @@ commit_pins = [
     ["0c7a7e2d569eeed9d6025f3eef4ea0690d90845d", "78eb74357b428498a8225b2d753b2fe9a463f89e"], # v0.44.0
     ["4520b30d498daca8079365bdb909a8dea38e8d55", "78eb74357b428498a8225b2d753b2fe9a463f89e"], # v0.44.1
     ["f044e4c9514ec89c4c1fc8a523ca90b8cb907fb7", "070ca398300bf5b9e1a636ca057882c0312c228d"], # CMonitor* -> PHLMONITOR
+    ## DO NOT EDIT THIS LINE: auto-pin CI ##
 ]
 
 [hyprgrass]
