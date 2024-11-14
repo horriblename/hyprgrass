@@ -1,0 +1,55 @@
+name: "Pin hyprland version to hyprgrass-main (or specific rev)"
+on:
+  workflow_dispatch:
+    inputs:
+      hyprland_rev:
+        description: 'Hyprland revision'
+        required: true
+        type: string
+      hyprgrass_rev:
+        description: 'Hyprgrass revision'
+        require: false
+        type: string
+        default: 'main'
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: cachix/install-nix-action@v22
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+        with:
+          repository: 'hyprwm/Hyprland'
+          ref: ${{ inputs.hyprland_rev }}
+          path: hyprland
+
+      - name: Get Hyprland commit SHA
+        run: |
+          pushd hyprland
+          HYPRLAND_COMMIT=$(git rev-parse HEAD)
+          echo "Commit SHA of hyprland revision '${{ inputs.hyprland_rev }}' is $HYPRLAND_COMMIT"
+          echo "HYPRLAND_COMMIT=$HYPRLAND_COMMIT" >> $GITHUB_ENV
+          popd
+
+      - uses: actions/checkout@v4
+        with: ${{ inputs.hyprgrass_rev }}
+
+      - name: Get Hyprland commit SHA
+        run: |
+          HYPRGRASS_COMMIT=$(git rev-parse HEAD)
+          echo "Commit SHA of hyprgrass revision '${{ inputs.hyprgrass_rev }}' is $HYPRGRASS_COMMIT"
+          echo "HYPRGRASS_COMMIT=$HYPRGRASS_COMMIT" >> $GITHUB_ENV
+
+      - name: build and test hyprgrass
+        run: |
+          nix build .#hyprgrassWithTests \
+          --override-input 'github:hyprwm/hyprland/${{ inputs.hyprland_rev }}'
+          --option extra-substituters https://hyprland.cachix.org \
+          --option extra-trusted-public-keys hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc=
+      - name: update commit pin
+        run: |
+          if ! [ grep "$HYPRLAND_COMMIT" hyprpm.toml ]; do
+            sed -i -e "/## DO NOT EDIT THIS LINE: auto-pin CI ##/i [\"$HYPRLAND_COMMIT\", \"$HYPRGRASS_COMMIT\"]" hyprpm.toml
+          fi
+
