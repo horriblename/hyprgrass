@@ -184,7 +184,7 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 const auto w = g_pInputManager->m_pFoundWindowToFocus.lock();
                 const Vector2D touchPos =
                     pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current) *
-                    this->m_pLastTouchedMonitor->vecSize;
+                    this->monitor->vecSize;
                 if (w && !w->isFullscreen()) {
                     const CBox real = {w->m_vRealPosition->value().x, w->m_vRealPosition->value().y,
                                        w->m_vRealSize->value().x, w->m_vRealSize->value().y};
@@ -421,14 +421,17 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     // if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
     //     return false;
 
-    this->m_pLastTouchedMonitor =
-        g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
+    auto mon = g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
 
-    this->m_pLastTouchedMonitor =
-        this->m_pLastTouchedMonitor ? this->m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor.lock();
+    mon = mon ? mon : g_pCompositor->m_pLastMonitor.lock();
 
-    const auto& monitorPos  = m_pLastTouchedMonitor->vecPosition;
-    const auto& monitorSize = m_pLastTouchedMonitor->vecSize;
+    if (this->m_sGestureState.fingers.size() != 0 && mon != this->monitor) {
+        // we don't support simultaneous multi-monitor gestures
+        return false;
+    }
+
+    const auto& monitorPos  = mon->vecPosition;
+    const auto& monitorSize = mon->vecSize;
     this->m_sMonitorArea    = {monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
 
     g_pCompositor->warpCursorTo({
