@@ -208,6 +208,26 @@ plugin {
 }
 ```
 
+# Other touch screen goodies
+
+Touch screen related tools I liked.
+
+On-screen keyboards:
+
+- [squeekboard](https://gitlab.gnome.org/World/Phosh/squeekboard): has auto show/hide but doesn't
+  work well with IME (fcitx/IBus etc.)
+- [wvkbd](https://github.com/jjsullivan5196/wvkbd): relatively simple keyboard but still has most
+  important features.
+- [fcitx-virtual-keyboard-adapter](https://github.com/horriblename/fcitx-virtualkeyboard-adapter):
+  NOT a keyboard but an fcitx addon that auto show/hides any on-screen keyboard.
+
+Miscellanaeious:
+
+- [iio-hyprland](https://github.com/JeanSchoeller/iio-hyprland/): auto screen rotation
+- [Hyprspace](https://github.com/KZDKM/Hyprspace): an overview plugin for hyprland
+- [nwg-drawer](https://github.com/nwg-piotr/nwg-drawer): app drawer. Surprisingly, there's not a
+  lot of those 
+
 # Acknowledgements
 
 Special thanks to wayfire for the awesome [wf-touch](https://github.com/WayfireWM/wf-touch) library!
