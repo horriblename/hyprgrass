@@ -10,6 +10,7 @@
 #include <hyprland/src/version.h>
 
 #include <hyprlang.hpp>
+#include <hyprutils/memory/SharedPtr.hpp>
 #include <string>
 
 const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
@@ -39,10 +40,10 @@ static void onPreConfigReload() {
 void listInternalBinds(std::string) {
     Debug::log(LogLevel::LOG, "[hyprgrass] Listing internal binds:");
     for (const auto& bind : g_pGestureManager->internalBinds) {
-        Debug::log(LogLevel::LOG, "[hyprgrass] | gesture: {}", bind.key);
-        Debug::log(LogLevel::LOG, "[hyprgrass] |     dispatcher: {}", bind.handler);
-        Debug::log(LogLevel::LOG, "[hyprgrass] |     arg: {}", bind.arg);
-        Debug::log(LogLevel::LOG, "[hyprgrass] |     mouse: {}", bind.mouse);
+        Debug::log(LogLevel::LOG, "[hyprgrass] | gesture: {}", bind->key);
+        Debug::log(LogLevel::LOG, "[hyprgrass] |     dispatcher: {}", bind->handler);
+        Debug::log(LogLevel::LOG, "[hyprgrass] |     arg: {}", bind->arg);
+        Debug::log(LogLevel::LOG, "[hyprgrass] |     mouse: {}", bind->mouse);
         Debug::log(LogLevel::LOG, "[hyprgrass] |");
     }
 }
@@ -67,12 +68,12 @@ Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
     const auto dispatcher     = mouse ? "mouse" : vars[2];
     const auto dispatcherArgs = mouse ? vars[2] : vars[3];
 
-    g_pGestureManager->internalBinds.emplace_back(SKeybind{
+    g_pGestureManager->internalBinds.emplace_back(makeShared<SKeybind>(SKeybind{
         .key     = key,
         .handler = dispatcher,
         .arg     = dispatcherArgs,
         .mouse   = mouse,
-    });
+    }));
 
     return result;
 }
