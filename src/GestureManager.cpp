@@ -200,7 +200,7 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
     bool found = false;
     Debug::log(LOG, "[hyprgrass] Looking for binds matching: {}", bind);
 
-    auto allBinds = std::ranges::views::join(std::array{g_pKeybindManager->m_lKeybinds, this->internalBinds});
+    auto allBinds = std::ranges::views::join(std::array{g_pKeybindManager->m_vKeybinds, this->internalBinds});
 
     for (const auto& k : allBinds) {
         if (k.key != bind)
