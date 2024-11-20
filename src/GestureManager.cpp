@@ -3,6 +3,7 @@
 #include "wayfire/touch/touch.hpp"
 #include <algorithm>
 #include <cstdint>
+#include <hyprutils/memory/SharedPtr.hpp>
 #include <string>
 
 #define private public
@@ -200,33 +201,33 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
     bool found = false;
     Debug::log(LOG, "[hyprgrass] Looking for binds matching: {}", bind);
 
-    auto allBinds = std::ranges::views::join(std::array{g_pKeybindManager->m_lKeybinds, this->internalBinds});
+    auto allBinds = std::ranges::views::join(std::array{g_pKeybindManager->m_vKeybinds, this->internalBinds});
 
     for (const auto& k : allBinds) {
-        if (k.key != bind)
+        if (k->key != bind)
             continue;
 
-        const auto DISPATCHER = g_pKeybindManager->m_mDispatchers.find(k.mouse ? "mouse" : k.handler);
+        const auto DISPATCHER = g_pKeybindManager->m_mDispatchers.find(k->mouse ? "mouse" : k->handler);
 
         // Should never happen, as we check in the ConfigManager, but oh well
         if (DISPATCHER == g_pKeybindManager->m_mDispatchers.end()) {
-            Debug::log(ERR, "Invalid handler in a keybind! (handler {} does not exist)", k.handler);
+            Debug::log(ERR, "Invalid handler in a keybind! (handler {} does not exist)", k->handler);
             continue;
         }
 
         // call the dispatcher
         Debug::log(LOG, "[hyprgrass] calling dispatcher ({})", bind);
 
-        if (k.handler == "pass")
+        if (k->handler == "pass")
             continue;
 
-        if (k.handler == "mouse") {
-            DISPATCHER->second((pressed ? "1" : "0") + k.arg);
+        if (k->handler == "mouse") {
+            DISPATCHER->second((pressed ? "1" : "0") + k->arg);
         } else {
-            DISPATCHER->second(k.arg);
+            DISPATCHER->second(k->arg);
         }
 
-        if (!k.nonConsuming) {
+        if (!k->nonConsuming) {
             found = true;
         }
     }
@@ -519,9 +520,9 @@ void GestureManager::touchBindDispatcher(std::string args) {
     const auto dispatcher     = trim(argsSplit[2]);
     const auto dispatcherArgs = trim(argsSplit[3]);
 
-    this->internalBinds.emplace_back(SKeybind{
+    this->internalBinds.emplace_back(makeShared<SKeybind>(SKeybind{
         .key     = key,
         .handler = dispatcher,
         .arg     = dispatcherArgs,
-    });
+    }));
 }

@@ -13,14 +13,13 @@
 #include <hyprland/src/protocols/core/Seat.hpp>
 #undef private
 
-#include <list>
 #include <wayfire/touch/touch.hpp>
 #include <wayland-server-core.h>
 
 class GestureManager : public IGestureManager {
   public:
     uint32_t long_press_next_trigger_time;
-    std::list<SKeybind> internalBinds;
+    std::vector<SP<SKeybind>> internalBinds;
 
     GestureManager();
     ~GestureManager();
