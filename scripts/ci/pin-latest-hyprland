@@ -1,0 +1,57 @@
+#!/bin/sh
+
+set -eu
+
+usage() {
+    echoerr "Usage:"
+    echoerr ""
+    echoerr "    pin-latest-hyprland [HYPRGRASS_REV]"
+    echoerr ""
+    echoerr "Pins the latest hyprland release to HYPRGRASS_REV (default HEAD) in hyprpm.toml."
+    echoerr "Does nothing if a pin on the hyprland release already exists."
+}
+
+HYPRGRASS_REV=${1:-HEAD}
+
+echoerr() {
+    echo $@ >&2
+}
+
+findHyprpmPin() {
+    local hlCommit="$1"
+    nix eval --raw --impure --expr '
+        with builtins; let 
+            hyprpm = fromTOML (readFile ./hyprpm.toml);
+            hlCommits = map head hyprpm.repository.commit_pins;
+        in
+            concatStringsSep "\n" hlCommits
+    ' | grep "$hlCommit" > /dev/null
+}
+
+getHyprlandCommitFromRev() {
+    git ls-remote https://github.com/hyprwm/Hyprland.git "$1" \
+        | cut -f 1
+}
+
+SCRIPT_DIR="$(dirname "$0")"
+
+hlTag="$("$SCRIPT_DIR/latest-hyprland-tag")"
+echoerr "found latest Hyprland release: $hlTag"
+
+hlCommit="$(getHyprlandCommitFromRev "$hlTag")"
+echoerr "-> commit: $hlCommit"
+
+if findHyprpmPin "$hlCommit"; then
+    echoerr "pin for tag $hlTag already found in hyprpm.toml"
+    exit 0
+fi
+
+echoerr "building and testing..."
+commitPin="$("$SCRIPT_DIR/test-pin.sh" "$hlTag" "$HYPRGRASS_REV")"
+
+echoerr "pin tests passed: $commitPin"
+echoerr 'updating hyprpm.toml'
+
+sed -i "/## DO NOT EDIT THIS LINE: for auto pin script ##/ i    $commitPin" \
+    hyprpm.toml
+
