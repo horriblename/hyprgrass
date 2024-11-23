@@ -28,4 +28,4 @@ git checkout "${hyprgrassRev}"
 nix build --no-link .#hyprgrassWithTests \
 	--override-input hyprland "github:hyprwm/Hyprland/${hyprlandRev}" \
 
-echo "[\"${hyprlandCommit}\", \"${hyprgrassCommit}\"],"
+echo "[\"${hyprlandCommit}\", \"${hyprgrassCommit}\"], # ${hyprlandRev}"
