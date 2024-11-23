@@ -23,9 +23,14 @@ hyprgrassRev=${2:-main}
 hyprlandCommit="$(git ls-remote https://github.com/hyprwm/Hyprland.git "${hyprlandRev}" | cut -f 1)"
 hyprgrassCommit="$(git rev-parse "${hyprgrassRev}")"
 
-git stash
+git stash push
+origCommit="$(git rev-parse HEAD)"
 git checkout "${hyprgrassRev}"
+
 nix build --no-link .#hyprgrassWithTests \
 	--override-input hyprland "github:hyprwm/Hyprland/${hyprlandRev}" \
+
+git checkout "$origCommit"
+git stash pop
 
 echo "[\"${hyprlandCommit}\", \"${hyprgrassCommit}\"], # ${hyprlandRev}"
