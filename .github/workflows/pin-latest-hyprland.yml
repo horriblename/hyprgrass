@@ -1,0 +1,34 @@
+name: "Update hyprpm pin on latest Hyprland release"
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0" # weekly on Sunday 00:00
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v30
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            extra-substituters = https://hyprland.cachix.org
+            extra-trusted-public-keys = hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc=
+      - name: Update pins
+        run: |
+          ./scripts/ci/pin-latest-hyprland main
+          if git diff --quiet hyprpm.toml; then # no changes
+            exit 0
+          fi
+
+          branchName="chore/pin-update$(%Y%m%d%H%M%S)"
+          git checkout -b "$branchName"
+
+          git add hyprpm.toml
+          git commit -m 'ci: automated update of hyprpm.toml'
+
+          gh pr create --base main \
+              --head "$branchName" \
+              --title 'Automated PR: Update hyprpm pin' \
+              --body 'This PR was created by a Github Actions workflow'
+
