@@ -2,9 +2,16 @@
 
 set -eu
 
-## Usage:
-## Pins the latest hyprland release to the current HEAD in hyprpm.toml.
-## Does nothing if the pin already exists.
+usage() {
+    echoerr "Usage:"
+    echoerr ""
+    echoerr "    pin-latest-hyprland [HYPRGRASS_REV]"
+    echoerr ""
+    echoerr "Pins the latest hyprland release to HYPRGRASS_REV (default HEAD) in hyprpm.toml."
+    echoerr "Does nothing if a pin on the hyprland release already exists."
+}
+
+HYPRGRASS_REV=${1:-HEAD}
 
 echoerr() {
     echo $@ >&2
@@ -40,7 +47,7 @@ if findHyprpmPin "$hlCommit"; then
 fi
 
 echoerr "building and testing..."
-commitPin="$("$SCRIPT_DIR/test-pin.sh" "$hlTag" HEAD)"
+commitPin="$("$SCRIPT_DIR/test-pin.sh" "$hlTag" "$HYPRGRASS_REV")"
 
 echoerr "pin tests passed: $commitPin"
 echoerr 'updating hyprpm.toml'
