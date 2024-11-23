@@ -16,6 +16,7 @@ jobs:
             extra-trusted-public-keys = hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc=
       - name: Update pins
         run: |
+          set -eu
           ./scripts/ci/pin-latest-hyprland main
           if git diff --quiet hyprpm.toml; then # no changes
             exit 0
