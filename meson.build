@@ -28,4 +28,5 @@ if not wftouch.found()
   wftouch = subproject('wf-touch').get_variable('wftouch')
 endif
 
+subdir('examples')
 subdir('src')
