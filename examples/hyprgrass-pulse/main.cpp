@@ -5,6 +5,7 @@
 #include "src/SharedDefs.hpp"
 
 #include <any>
+#include <cstdlib>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/debug/Log.hpp>
@@ -88,7 +89,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         const double MAX_RANGE = 0.7; // how much percent of the screen to swipe to get from volume 0 to 100
 
         // TODO: edge orientation
-        double delta      = g_pGlobalState->latest_pos.y - g_pGlobalState->last_triggered_pos.y;
+        double delta      = std::abs(g_pGlobalState->latest_pos.y - g_pGlobalState->last_triggered_pos.y);
         ChangeType change = delta > 0 ? ChangeType::Increase : ChangeType::Decrease;
 
         g_pAudioBackend->changeVolume(change, delta, MAX_RANGE);
