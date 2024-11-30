@@ -31,11 +31,10 @@
         '';
         name = "hyprgrass-shell";
         nativeBuildInputs = with pkgs; [gcc13 meson pkg-config ninja];
-        buildInputs = [hyprland.packages.${system}.hyprland];
-        inputsFrom = with pkgs; [
+        buildInputs = [hyprland.packages.${system}.hyprland pkgs.libpulseaudio];
+        inputsFrom = [
           hyprland.packages.${system}.hyprland
           self.packages.${system}.default
-          pipewire
         ];
       };
     });
