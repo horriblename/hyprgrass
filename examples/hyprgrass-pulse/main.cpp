@@ -86,13 +86,16 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         }
 
         // TODO: make configurable
-        const double MAX_RANGE = 0.7; // how much percent of the screen to swipe to get from volume 0 to 100
+        const double MAX_RANGE  = 0.7; // how much percent of the screen to swipe to get from volume 0 to 100
+        const int PA_MAX_VOLUME = 100;
 
         // TODO: edge orientation
         double delta      = std::abs(g_pGlobalState->latest_pos.y - g_pGlobalState->last_triggered_pos.y);
         ChangeType change = delta > 0 ? ChangeType::Increase : ChangeType::Decrease;
 
-        g_pAudioBackend->changeVolume(change, delta, MAX_RANGE);
+        int steps = PA_MAX_VOLUME * (delta / MAX_RANGE);
+
+        g_pAudioBackend->changeVolume(change, steps, PA_MAX_VOLUME);
 
         g_pGlobalState->last_triggered_pos = g_pGlobalState->latest_pos;
     });
