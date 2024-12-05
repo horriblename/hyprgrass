@@ -13,7 +13,7 @@
 #include <hyprutils/memory/SharedPtr.hpp>
 #include <string>
 
-const CColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
+const CHyprColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
 
 void hkOnTouchDown(void* _, SCallbackInfo& cbinfo, std::any e) {
     auto ev = std::any_cast<ITouch::SDownEvent>(e);
@@ -116,7 +116,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addDispatcher(PHANDLE, "touchBind", [&](std::string args) {
         HyprlandAPI::addNotification(
             PHANDLE, "[hyprgrass] touchBind dispatcher deprecated, use the hyprgrass-bind keyword instead",
-            CColor(0.8, 0.2, 0.2, 1.0), 5000);
+            CHyprColor(0.8, 0.2, 0.2, 1.0), 5000);
         g_pGestureManager->touchBindDispatcher(args);
     });
 
@@ -127,7 +127,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     if (hlVersion.hash != hlTargetVersion) {
         HyprlandAPI::addNotification(PHANDLE, "Mismatched Hyprland version! check logs for details",
-                                     CColor(0.8, 0.7, 0.26, 1.0), 5000);
+                                     CHyprColor(0.8, 0.7, 0.26, 1.0), 5000);
         Debug::log(ERR, "[hyprgrass] version mismatch!");
         Debug::log(ERR, "[hyprgrass] | hyprgrass was built against: {}", hlTargetVersion);
         Debug::log(ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion.hash);
