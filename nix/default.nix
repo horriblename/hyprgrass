@@ -1,6 +1,6 @@
 {
   lib,
-  gcc13Stdenv,
+  gcc14Stdenv,
   cmake,
   meson,
   ninja,
@@ -12,7 +12,7 @@
 }: let
   version = builtins.readFile ../VERSION;
 in
-  gcc13Stdenv.mkDerivation {
+  gcc14Stdenv.mkDerivation {
     pname = "hyprgrass";
     inherit version;
     src = ./..;
