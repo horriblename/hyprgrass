@@ -30,7 +30,7 @@
           sed -e 's/c++23/c++2b/g' ./build/compile_commands.json > ./compile_commands.json
         '';
         name = "hyprgrass-shell";
-        nativeBuildInputs = with pkgs; [gcc13 meson pkg-config ninja];
+        nativeBuildInputs = with pkgs; [gcc14 meson pkg-config ninja];
         buildInputs = [hyprland.packages.${system}.hyprland];
         inputsFrom = [
           hyprland.packages.${system}.hyprland

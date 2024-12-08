@@ -17,6 +17,7 @@ commit_pins = [
     ["500d2a3580388afc8b620b0a3624147faa34f98b", "cb929099477407116031010905ce439db771dd62"], # v0.45.1
     ["12f9a0d0b93f691d4d9923716557154d74777b0a", "cb929099477407116031010905ce439db771dd62"], # v0.45.2
     ["320144ae7288fe23686935ebb235d9fe0c900862", "0c2c3dc676cee437cece6cca67965bbaba0e45b5"], # CColor -> CHyprColor
+    ["8bbeee11734d3ba8e2cf15d19cb3c302f8bfdbf2", "b0c1287d571e829adf0b9fe17677c9e7c4277703"], # clang-tidy
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
