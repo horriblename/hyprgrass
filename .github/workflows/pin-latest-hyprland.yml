@@ -3,11 +3,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 0 * * 0" # weekly on Sunday 00:00
-  inputs:
-    hyprgrass_pin_target:
-      description: "Ref of the hyprgrass commit to pin"
-      required: false
-      default: "main"
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -24,9 +19,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -eu
-          git fetch --depth=1 --tags origin '${{inputs.hyprgrass_pin_target}}'
+          git fetch --depth=1 --tags origin main
 
-          ./scripts/ci/pin-latest-hyprland '${{inputs.hyprgrass_pin_target}}'
+          ./scripts/ci/pin-latest-hyprland main
           if git diff --quiet hyprpm.toml; then # no changes
             exit 0
           fi
