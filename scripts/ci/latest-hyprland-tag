@@ -4,6 +4,5 @@
 ## -----
 ## Prints the tag name of the latest Hyprland release
 
-# if anyone knows jq help me rewrite this
-gh release list --repo hyprwm/Hyprland --json tagName,isLatest | \
-    nix eval --impure --raw --expr 'with builtins; (head (filter (x: x.isLatest) (fromJSON (readFile /dev/stdin)))).tagName'
+gh release list --repo hyprwm/Hyprland --json tagName,isLatest \
+    -q 'map(select(.isLatest == true)) | .[0].tagName'
