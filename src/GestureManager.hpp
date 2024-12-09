@@ -7,6 +7,7 @@
 
 #define private public
 #include <hyprland/src/debug/Log.hpp>
+#include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/helpers/Monitor.hpp>
 #include <hyprland/src/includes.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>

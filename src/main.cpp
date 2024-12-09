@@ -38,13 +38,13 @@ static void onPreConfigReload() {
 }
 
 void listInternalBinds(std::string) {
-    Debug::log(LogLevel::LOG, "[hyprgrass] Listing internal binds:");
+    Debug::log(LOG, "[hyprgrass] Listing internal binds:");
     for (const auto& bind : g_pGestureManager->internalBinds) {
-        Debug::log(LogLevel::LOG, "[hyprgrass] | gesture: {}", bind->key);
-        Debug::log(LogLevel::LOG, "[hyprgrass] |     dispatcher: {}", bind->handler);
-        Debug::log(LogLevel::LOG, "[hyprgrass] |     arg: {}", bind->arg);
-        Debug::log(LogLevel::LOG, "[hyprgrass] |     mouse: {}", bind->mouse);
-        Debug::log(LogLevel::LOG, "[hyprgrass] |");
+        Debug::log(LOG, "[hyprgrass] | gesture: {}", bind->key);
+        Debug::log(LOG, "[hyprgrass] |     dispatcher: {}", bind->handler);
+        Debug::log(LOG, "[hyprgrass] |     arg: {}", bind->arg);
+        Debug::log(LOG, "[hyprgrass] |     mouse: {}", bind->mouse);
+        Debug::log(LOG, "[hyprgrass] |");
     }
 }
 
