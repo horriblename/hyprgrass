@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -eu
+set -eux
 
 echoerr () {
 	echo $@ >&2
@@ -23,7 +23,7 @@ hyprgrassRev=${2:-main}
 hyprlandCommit="$(git ls-remote https://github.com/hyprwm/Hyprland.git "${hyprlandRev}" | cut -f 1)"
 hyprgrassCommit="$(git rev-parse "${hyprgrassRev}")"
 
-nix build --no-link "git+file://$(pwd)?rev=${hyprgrassRev}#hyprgrassWithTests" \
+nix build --no-link "git+file://$(pwd)?rev=${hyprgrassCommit}&shallow=1#hyprgrassWithTests" \
 	--override-input hyprland "github:hyprwm/Hyprland/${hyprlandRev}" \
 
 echo "[\"${hyprlandCommit}\", \"${hyprgrassCommit}\"], # ${hyprlandRev}"
