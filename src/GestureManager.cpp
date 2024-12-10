@@ -124,11 +124,13 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
     auto const workspace_swipe_edge_str = std::string{*WORKSPACE_SWIPE_EDGE};
 
     switch (gev.type) {
-        case DragGestureType::SWIPE:
+        case DragGestureType::SWIPE: {
             if (**WORKSPACE_SWIPE_FINGERS != gev.finger_count) {
                 return false;
             }
-            return this->handleWorkspaceSwipe(gev.direction);
+            bool handled = this->handleWorkspaceSwipe(gev.direction);
+            return handled;
+        }
 
         case DragGestureType::EDGE_SWIPE:
             if (workspace_swipe_edge_str == "l" && gev.edge_origin == GESTURE_DIRECTION_LEFT) {
@@ -245,7 +247,10 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
 
     switch (this->getActiveDragGesture()->type) {
         case DragGestureType::SWIPE:
-            this->updateWorkspaceSwipe();
+            if (this->workspaceSwipeActive)
+                this->updateWorkspaceSwipe();
+            else {};
+
         case DragGestureType::LONG_PRESS: {
             const auto pos = this->m_sGestureState.get_center().current;
             g_pCompositor->warpCursorTo(Vector2D(pos.x, pos.y));
@@ -262,7 +267,10 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
 
     switch (gev.type) {
         case DragGestureType::SWIPE:
-            g_pInputManager->endWorkspaceSwipe();
+            if (this->workspaceSwipeActive) {
+                g_pInputManager->endWorkspaceSwipe();
+                this->workspaceSwipeActive = false;
+            }
             return;
         case DragGestureType::LONG_PRESS:
             if (this->resizeOnBorderInfo.active) {
@@ -294,6 +302,7 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     const auto anti_directions      = VERTANIMS ? horizontal : vertical;
 
     if (direction & workspace_directions && !(direction & anti_directions)) {
+        this->workspaceSwipeActive = true;
         g_pInputManager->beginWorkspaceSwipe();
         return true;
     }
