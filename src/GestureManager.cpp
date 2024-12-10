@@ -397,13 +397,14 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
 
     g_pInputManager->refocus();
 
+    if (this->m_sGestureState.fingers.size() == 0) {
+        this->touchedResources.clear();
+        this->hookHandled = false;
+    }
+
     if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
         // remember which surfaces were touched, to later send cancel events
         const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
-
-        if (this->m_sGestureState.fingers.size() == 0) {
-            this->touchedResources.clear();
-        }
 
         wl_client* client = surface.get()->client();
         if (client) {
