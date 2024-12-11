@@ -111,6 +111,9 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
     static auto const RESIZE_LONG_PRESS =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:resize_on_border_long_press")
             ->getDataStaticPtr();
+    static auto const EMULATE_TOUCHPAD =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:emulate_touchpad_swipe")
+            ->getDataStaticPtr();
 
     static auto PBORDERSIZE =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "general:border_size")->getDataStaticPtr();
@@ -132,6 +135,10 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             if (this->handleWorkspaceSwipe(gev.direction))
                 return true;
 
+            if (!**EMULATE_TOUCHPAD)
+                return false;
+
+            this->workspaceSwipeActive       = false; // reset just in case
             this->emulatedSwipePoint         = this->m_sGestureState.get_center().current;
             IPointer::SSwipeBeginEvent swipe = {.fingers = static_cast<uint32_t>(m_sGestureState.fingers.size())};
             g_pInputManager->onSwipeBegin(swipe);
@@ -246,6 +253,9 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
 void GestureManager::handleCancelledGesture() {}
 
 void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
+    static auto const EMULATE_TOUCHPAD =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:emulate_touchpad_swipe")
+            ->getDataStaticPtr();
 
     if (!this->getActiveDragGesture().has_value()) {
         return;
@@ -255,7 +265,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
         case DragGestureType::SWIPE:
             if (this->workspaceSwipeActive) {
                 this->updateWorkspaceSwipe();
-            } else {
+            } else if (**EMULATE_TOUCHPAD) {
                 const auto currentPoint           = this->m_sGestureState.get_center().current;
                 const auto delta                  = currentPoint - this->emulatedSwipePoint;
                 IPointer::SSwipeUpdateEvent swipe = {
@@ -277,14 +287,17 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
 }
 
 void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
-    Debug::log(LOG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
+    static auto const EMULATE_TOUCHPAD =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:emulate_touchpad_swipe")
+            ->getDataStaticPtr();
 
+    Debug::log(LOG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
     switch (gev.type) {
         case DragGestureType::SWIPE:
             if (this->workspaceSwipeActive) {
                 g_pInputManager->endWorkspaceSwipe();
                 this->workspaceSwipeActive = false;
-            } else {
+            } else if (**EMULATE_TOUCHPAD) {
                 g_pInputManager->onSwipeEnd(IPointer::SSwipeEndEvent{.cancelled = false});
             }
             return;
