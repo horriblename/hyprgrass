@@ -128,8 +128,14 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             if (**WORKSPACE_SWIPE_FINGERS != gev.finger_count) {
                 return false;
             }
-            bool handled = this->handleWorkspaceSwipe(gev.direction);
-            return handled;
+
+            if (this->handleWorkspaceSwipe(gev.direction))
+                return true;
+
+            this->emulatedSwipePoint         = this->m_sGestureState.get_center().current;
+            IPointer::SSwipeBeginEvent swipe = {.fingers = static_cast<uint32_t>(m_sGestureState.fingers.size())};
+            g_pInputManager->onSwipeBegin(swipe);
+            return true;
         }
 
         case DragGestureType::EDGE_SWIPE:
@@ -247,9 +253,17 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
 
     switch (this->getActiveDragGesture()->type) {
         case DragGestureType::SWIPE:
-            if (this->workspaceSwipeActive)
+            if (this->workspaceSwipeActive) {
                 this->updateWorkspaceSwipe();
-            else {};
+            } else {
+                const auto currentPoint           = this->m_sGestureState.get_center().current;
+                const auto delta                  = currentPoint - this->emulatedSwipePoint;
+                IPointer::SSwipeUpdateEvent swipe = {
+                    .fingers = static_cast<uint32_t>(this->getActiveDragGesture()->finger_count),
+                    .delta   = Vector2D(delta.x, delta.y)};
+                g_pInputManager->onSwipeUpdate(swipe);
+                this->emulatedSwipePoint = currentPoint;
+            };
 
         case DragGestureType::LONG_PRESS: {
             const auto pos = this->m_sGestureState.get_center().current;
@@ -270,6 +284,8 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
             if (this->workspaceSwipeActive) {
                 g_pInputManager->endWorkspaceSwipe();
                 this->workspaceSwipeActive = false;
+            } else {
+                g_pInputManager->onSwipeEnd(IPointer::SSwipeEndEvent{.cancelled = false});
             }
             return;
         case DragGestureType::LONG_PRESS:
