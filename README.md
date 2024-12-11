@@ -132,6 +132,12 @@ plugin {
   # in pixels, the distance from the edge that is considered an edge
   edge_margin = 10
 
+  # emulates touchpad swipes when swiping in a direction that does not trigger workspace swipe.
+  # ONLY triggers when finger count is equal to workspace_swipe_fingers
+  #
+  # might be removed in the future in favor of event hooks
+  emulate_touchpad_swipe = false
+
   experimental {
     # send proper cancel events to windows instead of hacky touch_up events,
     # NOT recommended as it crashed a few times, once it's stabilized I'll make it the default
