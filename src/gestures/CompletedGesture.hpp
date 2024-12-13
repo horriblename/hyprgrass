@@ -8,7 +8,7 @@ enum class CompletedGestureType {
     EDGE_SWIPE,
     TAP,
     LONG_PRESS,
-    // PINCH,
+    PINCH,
 };
 
 struct CompletedGestureEvent {
@@ -19,6 +19,7 @@ struct CompletedGestureEvent {
     // TODO turn this whole struct into a sum type?
     // edge swipe specific
     GestureDirection edge_origin;
+    PinchDirection pinch_direction;
 
     std::string to_string() const;
 };

@@ -1,5 +1,8 @@
 #include "Gestures.hpp"
 #include "Actions.hpp"
+#include "CompletedGesture.hpp"
+#include "DragGesture.hpp"
+#include "Shared.hpp"
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
@@ -314,5 +317,51 @@ void IGestureManager::addEdgeSwipeGesture(
     auto cancel = [this]() { this->handleCancelledGesture(); };
 
     auto gesture = std::make_unique<wf::touch::gesture_t>(std::move(edge_swipe_actions), []() {}, cancel);
+    this->addTouchGesture(std::move(gesture));
+}
+
+void IGestureManager::addPinchGesture(const float* threshold, const int64_t* timeout) {
+    auto pinch_begin = std::make_unique<PinchAction>(threshold);
+    /*auto pinch_begin_ptr = pinch_begin.get();*/
+
+    auto pinch_wrapper = std::make_unique<OnCompleteAction>(std::move(pinch_begin), [this](uint32_t time) {
+        PinchDirection dir = this->m_sGestureState.get_pinch_scale() < 1.0 ? PinchDirection::IN : PinchDirection::OUT;
+
+        auto gesture = DragGestureEvent{
+            .time            = time,
+            .type            = DragGestureType::PINCH,
+            .direction       = 0,
+            .finger_count    = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
+            .edge_origin     = 0,
+            .pinch_direction = dir,
+        };
+        if (this->emitDragGesture(gesture)) {
+            this->cancelTouchEventsOnAllWindows();
+        }
+    });
+    auto release       = std::make_unique<LiftoffAction>();
+
+    std::vector<std::unique_ptr<wf::touch::gesture_action_t>> pinch_actions;
+    pinch_actions.emplace_back(std::move(pinch_wrapper));
+    pinch_actions.emplace_back(std::move(release));
+
+    auto ack = [this]() {
+        if (!this->activeDragGesture.has_value()) {
+            return;
+        }
+
+        auto active = this->activeDragGesture.value();
+        if (this->emitDragGestureEnd(active)) {
+            return;
+        }
+
+        auto event =
+            CompletedGestureEvent{CompletedGestureType::PINCH, 0, active.finger_count, 0, active.pinch_direction};
+
+        this->emitCompletedGesture(event);
+    };
+    auto cancel = [this]() { this->handleCancelledGesture(); };
+
+    auto gesture = std::make_unique<wf::touch::gesture_t>(std::move(pinch_actions), ack, cancel);
     this->addTouchGesture(std::move(gesture));
 }

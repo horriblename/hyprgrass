@@ -42,6 +42,7 @@ class IGestureManager {
     void addMultiFingerTap(const float* sensitivity, const int64_t* timeout);
     void addLongPress(const float* sensitivity, const int64_t* delay);
     void addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout, const long* edge_margin);
+    void addPinchGesture(const float* threshold, const int64_t* timeout);
 
     std::optional<DragGestureEvent> getActiveDragGesture() const {
         return activeDragGesture;
