@@ -187,3 +187,7 @@ wf::touch::action_status_t PinchAction::update_state(const wf::touch::gesture_st
 
     return wf::touch::ACTION_STATUS_RUNNING;
 }
+
+bool PinchAction::exceeds_tolerance(const wf::touch::gesture_state_t& state) {
+    return glm::length(state.get_center().delta()) > this->move_tolerance;
+};
