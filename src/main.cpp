@@ -124,8 +124,6 @@ APICALL EXPORT std::string PLUGIN_API_VERSION() {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers",
                                 Hyprlang::CConfigValue((Hyprlang::INT)3));
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_edge",
@@ -144,13 +142,11 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
                                 Hyprlang::CConfigValue((Hyprlang::INT)0));
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch",
                                 Hyprlang::CConfigValue((Hyprlang::INT)0));
-#pragma GCC diagnostic pop
 
     HyprlandAPI::addConfigKeyword(PHANDLE, "hyprgrass-bind", onNewBind, Hyprlang::SHandlerOptions{});
     HyprlandAPI::addConfigKeyword(PHANDLE, "hyprgrass-bindm", onNewBind, Hyprlang::SHandlerOptions{});
     static auto P0 = HyprlandAPI::registerCallbackDynamic(
-        PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) {
-        onPreConfigReload(); });
+        PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) { onPreConfigReload(); });
 
     HyprlandAPI::addDispatcher(PHANDLE, "touchBind", [&](std::string args) {
         HyprlandAPI::addNotification(
