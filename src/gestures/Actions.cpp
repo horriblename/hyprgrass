@@ -1,5 +1,7 @@
 #include "Actions.hpp"
+#include <algorithm>
 #include <glm/glm.hpp>
+#include <wayfire/touch/touch.hpp>
 
 wf::touch::action_status_t
 CMultiAction::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
@@ -163,4 +165,25 @@ OnCompleteAction::update_state(const wf::touch::gesture_state_t& state, const wf
     }
 
     return status;
+}
+
+wf::touch::action_status_t PinchAction::update_state(const wf::touch::gesture_state_t& state,
+                                                     const wf::touch::gesture_event_t& event) {
+    if (event.type != wf::touch::EVENT_TYPE_MOTION) {
+        return wf::touch::ACTION_STATUS_CANCELLED;
+    }
+
+    if (this->exceeds_tolerance(state)) {
+        return wf::touch::ACTION_STATUS_CANCELLED;
+    }
+
+    const double current_scale = state.get_pinch_scale();
+    const float lo             = std::clamp(1.0 - *this->threshold, 0.0, 1.0);
+    float hi                   = 1.0 + *this->threshold;
+    hi                         = hi < 1.0 ? 1.0 : hi;
+    if (((current_scale < 1.0 && current_scale <= lo)) || (current_scale > 1.0 && current_scale >= hi)) {
+        return wf::touch::ACTION_STATUS_COMPLETED;
+    }
+
+    return wf::touch::ACTION_STATUS_RUNNING;
 }
