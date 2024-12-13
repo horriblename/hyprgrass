@@ -20,3 +20,11 @@ std::string stringifyDirection(GestureDirection direction) {
 
     return bind;
 }
+
+std::string stringifyPinchDirection(PinchDirection direction) {
+    if (direction == PinchDirection::IN) {
+        return "i";
+    } else {
+        return "o";
+    }
+}
