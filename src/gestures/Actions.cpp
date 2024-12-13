@@ -170,7 +170,7 @@ OnCompleteAction::update_state(const wf::touch::gesture_state_t& state, const wf
 wf::touch::action_status_t PinchAction::update_state(const wf::touch::gesture_state_t& state,
                                                      const wf::touch::gesture_event_t& event) {
     if (event.type != wf::touch::EVENT_TYPE_MOTION) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
+        return wf::touch::ACTION_STATUS_RUNNING;
     }
 
     if (this->exceeds_tolerance(state)) {
