@@ -477,3 +477,42 @@ TEST_CASE("Edge swipe: block touch events") {
 
     CHECK(gm.eventForwardingInhibited());
 }
+
+TEST_CASE("Pinch in: drag begin") {
+    std::cout << "  ==== stdout:" << std::endl;
+    auto gm = CMockGestureManager::newDragHandler();
+    gm.addPinchGesture(&TEST_PINCH_THRESHOLD, &LONG_PRESS_DELAY);
+    const std::vector<TouchEvent> events{
+        // origin center is (200, 180)
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {100, 200}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {200, 140}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {300, 200}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {110, 200}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 90}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {290, 200}},
+        // all fingers need to move 20% closer to the origin center
+        // delta = (origin_center - origin_f1) * 0.2
+        // = ((200, 180) - (100, 200)) * 0.2
+        // = (20, -4)
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {120, 195}}, // add one to delta just for safety
+        // delta_2 = ((200, 180) - (200, 140)) * 0.2 = (0, 8)
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 148}},
+        // delta_3 = ((200, 180) - (300, 200)) * 0.2 = (-20, -4)
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {280, 196}},
+        ExpectResult{ExpectResultType::DRAG_TRIGGERED},
+
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 0, {140, 190}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 1, {180, 160}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 2, {250, 190}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {140, 190}},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::DRAG_ENDED}, events);
+
+    CHECK(gm.eventForwardingInhibited());
+}
+
+TEST_CASE("Pinch: block touch events") {}
+TEST_CASE("Pinch out: drag") {}
+
+TEST_CASE("Pinch cancel: too much movement") {}
+TEST_CASE("Pinch cancel: timeout") {}
