@@ -132,7 +132,15 @@ void IGestureManager::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gest
     this->m_vGestures.emplace_back(std::move(gesture));
 }
 
-void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int64_t* timeout) {
+void IGestureManager::addMultiFingerGesture(
+    const float* sensitivity, const int64_t* timeout, const float* pinch_threshold
+) {
+    auto multi_down_and_send_cancel =
+        std::make_unique<OnCompleteAction>(std::make_unique<MultiFingerDownAction>(), [this](uint32_t) {
+            this->cancelTouchEventsOnAllWindows();
+        });
+    multi_down_and_send_cancel->set_duration(GESTURE_BASE_DURATION);
+
     auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, timeout);
 
     auto swipe_ptr = swipe.get();
@@ -165,6 +173,13 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
         if (this->emitDragGestureEnd(drag)) {
             return;
         } else {
+            double pinch_scale = this->m_sGestureState.get_pinch_scale();
+            double lo          = std::clamp(1.0 - *pinch_threshold, 0.1, 1.0);
+            double hi          = 1.0 + *pinch_threshold;
+            hi                 = hi < 1.0 ? 1.0 : hi;
+            if (pinch_scale < lo || pinch_scale > hi)
+                return;
+
             const auto gesture = CompletedGestureEvent{
                 CompletedGestureType::SWIPE, swipe_ptr->target_direction,
                 static_cast<int>(this->m_sGestureState.fingers.size())
@@ -349,9 +364,10 @@ void IGestureManager::addPinchGesture(const float* threshold, const int64_t* tim
         if (!this->activeDragGesture.has_value()) {
             auto pinch_direction =
                 this->m_sGestureState.get_pinch_scale() < 1.0 ? PinchDirection::IN : PinchDirection::OUT;
-            auto event =
-                CompletedGestureEvent{CompletedGestureType::PINCH, 0,
-                                      static_cast<int>(this->m_sGestureState.fingers.size()), 0, pinch_direction};
+            auto event = CompletedGestureEvent{
+                CompletedGestureType::PINCH, 0, static_cast<int>(this->m_sGestureState.fingers.size()), 0,
+                pinch_direction
+            };
 
             if (this->emitCompletedGesture(event)) {
                 this->cancelTouchEventsOnAllWindows();
