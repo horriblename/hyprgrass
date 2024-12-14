@@ -538,3 +538,29 @@ TEST_CASE("Pinch out: full drag") {
 
     CHECK(gm.eventForwardingInhibited());
 }
+
+TEST_CASE("Pinch out: completed gesture") {
+    std::cout << "  ==== stdout:" << std::endl;
+    auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
+    gm.addPinchGesture(&TEST_PINCH_THRESHOLD, &LONG_PRESS_DELAY);
+    const std::vector<TouchEvent> events{
+        // origin center is (200, 180)
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {100, 200}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {200, 140}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {300, 200}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {110, 200}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 90}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {290, 200}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {60, 210}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 120}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {340, 210}},
+
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 0, {60, 190}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 1, {200, 120}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 2, {350, 190}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {60, 190}},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
+
+    CHECK(gm.eventForwardingInhibited());
+}
