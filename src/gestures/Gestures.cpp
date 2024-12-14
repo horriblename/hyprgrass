@@ -320,9 +320,9 @@ void IGestureManager::addEdgeSwipeGesture(
     this->addTouchGesture(std::move(gesture));
 }
 
+// TODO: timeouts (also in other gestures)
 void IGestureManager::addPinchGesture(const float* threshold, const int64_t* timeout) {
     auto pinch_begin = std::make_unique<PinchAction>(threshold);
-    /*auto pinch_begin_ptr = pinch_begin.get();*/
 
     auto pinch_wrapper = std::make_unique<OnCompleteAction>(std::move(pinch_begin), [this](uint32_t time) {
         PinchDirection dir = this->m_sGestureState.get_pinch_scale() < 1.0 ? PinchDirection::IN : PinchDirection::OUT;
@@ -347,6 +347,15 @@ void IGestureManager::addPinchGesture(const float* threshold, const int64_t* tim
 
     auto ack = [this]() {
         if (!this->activeDragGesture.has_value()) {
+            auto pinch_direction =
+                this->m_sGestureState.get_pinch_scale() < 1.0 ? PinchDirection::IN : PinchDirection::OUT;
+            auto event =
+                CompletedGestureEvent{CompletedGestureType::PINCH, 0,
+                                      static_cast<int>(this->m_sGestureState.fingers.size()), 0, pinch_direction};
+
+            if (this->emitCompletedGesture(event)) {
+                this->cancelTouchEventsOnAllWindows();
+            }
             return;
         }
 
@@ -354,11 +363,6 @@ void IGestureManager::addPinchGesture(const float* threshold, const int64_t* tim
         if (this->emitDragGestureEnd(active)) {
             return;
         }
-
-        auto event =
-            CompletedGestureEvent{CompletedGestureType::PINCH, 0, active.finger_count, 0, active.pinch_direction};
-
-        this->emitCompletedGesture(event);
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
 
