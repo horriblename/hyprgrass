@@ -180,6 +180,9 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
     static auto const PSENSITIVITY =
         (Hyprlang::FLOAT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")
             ->getDataStaticPtr();
+    static auto const PINCH_THRESHOLD =
+        (Hyprlang::FLOAT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:pinch_threshold")
+            ->getDataStaticPtr();
     static auto const LONG_PRESS_DELAY =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay")
             ->getDataStaticPtr();
@@ -191,6 +194,7 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
     this->addLongPress(*PSENSITIVITY, *LONG_PRESS_DELAY);
     this->addMultiFingerGesture(*PSENSITIVITY, *LONG_PRESS_DELAY);
     this->addMultiFingerTap(*PSENSITIVITY, *LONG_PRESS_DELAY);
+    this->addPinchGesture(*PINCH_THRESHOLD, *LONG_PRESS_DELAY);
 
     this->long_press_timer = wl_event_loop_add_timer(g_pCompositor->m_wlEventLoop, handleLongPressTimer, this);
 }
@@ -355,6 +359,10 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 return true;
 
             return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
+
+        case DragGestureType::PINCH:
+            // TODO: idk do we need this?
+            break;
     }
 
     return false;
@@ -468,6 +476,9 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             }
 
             this->updateWorkspaceSwipe();
+        case DragGestureType::PINCH:
+            // currently pinch drag is unused
+            break;
     }
 }
 
@@ -518,6 +529,9 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
             } else if (this->workspaceSwipeActive) {
                 g_pUnifiedWorkspaceSwipe->end();
             }
+            break;
+        case DragGestureType::PINCH:
+            // currently pinch drag is unused
             break;
     }
 }
