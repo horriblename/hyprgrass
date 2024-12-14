@@ -131,7 +131,7 @@ TEST_CASE(
 ) {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &TEST_PINCH_THRESHOLD);
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 120, 1, {500, 300}},
@@ -145,7 +145,7 @@ TEST_CASE(
 TEST_CASE("Swipe Drag: Start drag upon moving more than the threshold") {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &TEST_PINCH_THRESHOLD);
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
@@ -159,7 +159,7 @@ TEST_CASE("Swipe Drag: Cancel 3 finger swipe due to moving too much before "
           "adding new finger, but not enough to trigger 3 finger swipe first") {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &TEST_PINCH_THRESHOLD);
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
@@ -175,7 +175,7 @@ TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
           "finger") {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &TEST_PINCH_THRESHOLD);
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},

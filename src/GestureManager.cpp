@@ -192,7 +192,7 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
 
     this->addEdgeSwipeGesture(*PSENSITIVITY, *LONG_PRESS_DELAY, *EDGE_MARGIN);
     this->addLongPress(*PSENSITIVITY, *LONG_PRESS_DELAY);
-    this->addMultiFingerGesture(*PSENSITIVITY, *LONG_PRESS_DELAY);
+    this->addMultiFingerGesture(*PSENSITIVITY, *LONG_PRESS_DELAY, *PINCH_THRESHOLD);
     this->addMultiFingerTap(*PSENSITIVITY, *LONG_PRESS_DELAY);
     this->addPinchGesture(*PINCH_THRESHOLD, *LONG_PRESS_DELAY);
 
