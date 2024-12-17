@@ -55,3 +55,4 @@ echoerr 'updating hyprpm.toml'
 sed -i "/## DO NOT EDIT THIS LINE: for auto pin script ##/ i    $commitPin" \
     hyprpm.toml
 
+echoerr 'done updating hyprpm.toml'

@@ -26,14 +26,19 @@ jobs:
             exit 0
           fi
 
+          echo 'creating branch for PR' >&2
+
           branchName="chore/pin-update$(%Y%m%d%H%M%S)"
           git checkout -b "$branchName"
 
           git add hyprpm.toml
           git commit -m 'ci: automated update of hyprpm.toml'
 
+          echo 'creating PR' >&2
           gh pr create --base main \
               --head "$branchName" \
               --title 'Automated PR: Update hyprpm pin' \
               --body 'This PR was created by a Github Actions workflow'
+
+          echo 'PR created.' >&2
 
