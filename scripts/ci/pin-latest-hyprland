@@ -52,7 +52,7 @@ commitPin="$("$SCRIPT_DIR/test-pin.sh" "$hlTag" "$HYPRGRASS_REV")"
 echoerr "pin tests passed: $commitPin"
 echoerr 'updating hyprpm.toml'
 
-sed -i "/## DO NOT EDIT THIS LINE: for auto pin script ##/ i    $commitPin" \
+sed -i "/## DO NOT EDIT THIS LINE: for auto pin script ##/ i\    $commitPin" \
     hyprpm.toml
 
 echoerr 'done updating hyprpm.toml'
