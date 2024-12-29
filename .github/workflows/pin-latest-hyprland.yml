@@ -19,6 +19,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -eu
+          set -m   # workaround: I get "fg: no job control" even though I don't use any job control
           git fetch --depth=1 --tags origin main
 
           ./scripts/ci/pin-latest-hyprland main
