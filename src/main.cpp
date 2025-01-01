@@ -2,6 +2,7 @@
 #include "TouchVisualizer.hpp"
 #include "globals.hpp"
 #include "src/SharedDefs.hpp"
+#include "src/managers/HookSystemManager.hpp"
 #include "version.hpp"
 
 #include <any>
@@ -82,6 +83,25 @@ void listInternalBinds(std::string) {
     }
 }
 
+void listHooks(std::string event) {
+    Debug::log(LOG, "[hyprgrass] Listing hooks:");
+
+    if (event != "") {
+        const auto* vec = g_pHookSystem->getVecForEvent(event);
+        Debug::log(LOG, "[hyprgrass] listeners of {}: {}", event, vec->size());
+        return;
+    }
+
+    const auto* vec = g_pHookSystem->getVecForEvent("hyprgrass:edgeBegin");
+    Debug::log(LOG, "[hyprgrass] | edgeBegin listeners: {}", vec->size());
+
+    vec = g_pHookSystem->getVecForEvent("hyprgrass:edgeUpdate");
+    Debug::log(LOG, "[hyprgrass] | edgeUpdate listeners: {}", vec->size());
+
+    vec = g_pHookSystem->getVecForEvent("hyprgrass:edgeEnd");
+    Debug::log(LOG, "[hyprgrass] | edgeEnd listeners: {}", vec->size());
+}
+
 Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
     std::string v = V;
     auto vars     = CVarList(v, 4);
@@ -156,6 +176,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     });
 
     HyprlandAPI::addDispatcher(PHANDLE, "hyprgrass:debug:binds", listInternalBinds);
+    HyprlandAPI::addDispatcher(PHANDLE, "hyprgrass:debug:hooks", listHooks);
 
     const auto hlTargetVersion = GIT_COMMIT_HASH;
     const auto hlVersion       = HyprlandAPI::getHyprlandVersion(PHANDLE);
