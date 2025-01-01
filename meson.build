@@ -28,4 +28,13 @@ if not wftouch.found()
   wftouch = subproject('wf-touch').get_variable('wftouch')
 endif
 
+hyprland_deps = [
+  dependency('pixman-1'),
+  dependency('libinput'),
+  dependency('wayland-server'),
+  dependency('xkbcommon'),
+  dependency('libdrm'),
+]
+
+subdir('examples')
 subdir('src')

@@ -17,11 +17,7 @@ shared_module('hyprgrass',
   link_with: [gestures],
   dependencies: [
     wftouch,
-    dependency('pixman-1'),
-    dependency('libinput'),
-    dependency('wayland-server'),
-    dependency('xkbcommon'),
-    dependency('libdrm'),
+    hyprland_deps,
     hyprland_headers
   ],
   install: true)
