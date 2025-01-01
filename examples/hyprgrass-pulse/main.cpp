@@ -162,7 +162,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     HyprlandAPI::reloadConfig();
 
-    return {"hyprgrass-pipewire", "Touchscreen gestures", "horriblename", HYPRGRASS_VERSION};
+    return {"hyprgrass-pulse", "Hyprgrass pulseaudio extension", "horriblename", HYPRGRASS_VERSION};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
