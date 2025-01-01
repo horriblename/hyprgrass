@@ -34,7 +34,7 @@
         '';
         name = "hyprgrass-shell";
         nativeBuildInputs = with pkgs; [gcc14 meson pkg-config ninja];
-        buildInputs = [hyprland.packages.${system}.hyprland];
+        buildInputs = [hyprland.packages.${system}.hyprland pkgs.libpulseaudio];
         inputsFrom = [
           hyprland.packages.${system}.hyprland
           self.packages.${system}.default
