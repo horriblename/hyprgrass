@@ -56,6 +56,7 @@ class GestureManager : public IGestureManager {
         CCssGapData old_gaps_in;
     } resizeOnBorderInfo;
     bool workspaceSwipeActive = false;
+    bool hookHandled          = false;
     wf::touch::point_t emulatedSwipePoint;
 
     bool handleGestureBind(std::string bind, bool pressed);

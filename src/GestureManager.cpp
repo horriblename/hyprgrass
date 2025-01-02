@@ -145,7 +145,20 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             return true;
         }
 
-        case DragGestureType::EDGE_SWIPE:
+        case DragGestureType::EDGE_SWIPE: {
+            static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:edgeBegin");
+            SCallbackInfo info;
+
+            g_pHookSystem->emit(
+                PEVENTVEC, info,
+                std::pair<std::string, Vector2D>(
+                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current)));
+
+            if (info.cancelled) {
+                this->hookHandled = true;
+                return true;
+            }
+
             if (workspace_swipe_edge_str == "l" && gev.edge_origin == GESTURE_DIRECTION_LEFT) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
@@ -160,6 +173,7 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             }
 
             return false;
+        }
 
         case DragGestureType::LONG_PRESS:
             if (**RESIZE_LONG_PRESS && gev.finger_count == 1) {
@@ -282,6 +296,13 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             return;
         }
         case DragGestureType::EDGE_SWIPE:
+            if (this->hookHandled) {
+                EMIT_HOOK_EVENT("hyprgrass:edgeUpdate",
+                                pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
+
+                return;
+            }
+
             this->updateWorkspaceSwipe();
     }
 }
@@ -313,8 +334,12 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
             this->handleGestureBind(gev.to_string(), false);
             return;
         case DragGestureType::EDGE_SWIPE:
-            g_pInputManager->endWorkspaceSwipe();
-            return;
+            if (this->hookHandled) {
+                EMIT_HOOK_EVENT("hyprgrass:edgeEnd", 0);
+                this->hookHandled = false;
+            } else {
+                g_pInputManager->endWorkspaceSwipe();
+            }
     }
 }
 
@@ -412,13 +437,14 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
 
     g_pInputManager->refocus();
 
+    if (this->m_sGestureState.fingers.size() == 0) {
+        this->touchedResources.clear();
+        this->hookHandled = false;
+    }
+
     if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
         // remember which surfaces were touched, to later send cancel events
         const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
-
-        if (this->m_sGestureState.fingers.size() == 0) {
-            this->touchedResources.clear();
-        }
 
         wl_client* client = surface.get()->client();
         if (client) {

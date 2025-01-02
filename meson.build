@@ -22,10 +22,19 @@ if not hyprland_headers.found()
   add_global_arguments('-I' + hyprland_src, language: 'cpp')
 endif
 
-wftouch = dependency('wftouch', required: false)
+wftouch = dependency('wftouch', required: get_option('hyprgrass'))
 
-if not wftouch.found()
+if not wftouch.found() and get_option('hyprgrass')
   wftouch = subproject('wf-touch').get_variable('wftouch')
 endif
 
+hyprland_deps = [
+  dependency('pixman-1'),
+  dependency('libinput'),
+  dependency('wayland-server'),
+  dependency('xkbcommon'),
+  dependency('libdrm'),
+]
+
+subdir('examples')
 subdir('src')

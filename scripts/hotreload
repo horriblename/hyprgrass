@@ -4,7 +4,7 @@ set -e
 
 TMP=/tmp/hyprgrass-testing
 helpText="
-	usage: $0 FILE
+	usage: hotreload [--unload] FILE
 
 Hot reload a hyprland plugin
 
@@ -13,12 +13,22 @@ If a new plugin with the same file name is loaded, the old one is first unloaded
 
 	example: $(basename $0) ./build/libhyprgrass.so
 
-	Subsequent calls will automatically unload the plugin as needed"
+	Subsequent calls will automatically unload the plugin as needed
+
+Flags:
+
+	--unload       Unload only
+"
 
 error () {
 	echo "$helpText"
 	exit 1
 }
+
+if [ "$1" = '--unload' ]; then
+	unloadFlag=1
+	shift
+fi
 
 if [ -z "$1" ]; then
 	error
@@ -41,6 +51,10 @@ for soPath in $TMP/*/$baseFileName; do
 		rm -r $(dirname "$soPath")
 	fi
 done
+
+if [ "${unloadFlag}" = 1 ]; then
+	exit 0
+fi
 
 mkdir -p "$pluginTempDir"
 

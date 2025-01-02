@@ -8,3 +8,14 @@ steps = [
     "meson setup build",
     "ninja -C build",
 ]
+
+[hyprgrass-pulse]
+description = "Hyprgras extension to control audio volume in pulse-audio"
+author = "horriblename"
+
+[hyprgrass-pulse]
+output = "build/examples/hyprgrass-pulse/libhyprgrass-pulse.so"
+steps = [
+    "meson setup build -Dhyprgrass=false -Dhyprgrass-pulse=true",
+    "ninja -C build",
+]
