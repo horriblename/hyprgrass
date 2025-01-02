@@ -26,6 +26,9 @@ glm
 # build dependencies
 meson
 ninja
+
+# extra dependencies for hyprgrass-pulse
+libpulseaudio
 ```
 
 ### Install via hyprpm
@@ -35,6 +38,9 @@ First, install all [dependencies](#dependencies). Then, run these commands:
 ```bash
 hyprpm add https://github.com/horriblename/hyprgrass
 hyprpm enable hyprgrass
+
+# optional integration with pulse-audio, see examples/hyprgrass-pulse/README.md
+hyprpm enable hyprgrass-pulse
 ```
 
 You can add `exec-once = hyprpm reload -n` to your hyprland config to have plugins loaded at
@@ -72,6 +78,9 @@ meson setup build
 ninja -C build
 ```
 
+On the `meson setup` step you can pass these options:
+- `-Dhyprgrass-pulse=true` to enable building hyprgrass-pulse
+
 ### Install via nix
 
 Flakes are highly recommended (because I don't know how to do anything without them)
@@ -97,6 +106,9 @@ and in your home-manager module:
 wayland.windowManager.hyprland = {
    plugins = [
       inputs.hyprgrass.packages.${pkgs.system}.default
+
+      # optional integration with pulse-audio, see examples/hyprgrass-pulse/README.md
+      inputs.hyprgrass.packages.${pkgs.system}.hyprgrass-pulse
    ];
 };
 ```
@@ -162,6 +174,10 @@ gestures {
 
 You can also bind gesture events to dispatchers, using hyprgrass-bind keyword.
 The syntax is like normal keybinds.
+
+### Hyprgrass-pulse
+
+see <./examples/hyprgrass-pulse/README.md>
 
 #### Syntax
 
