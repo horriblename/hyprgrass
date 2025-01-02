@@ -177,7 +177,7 @@ The syntax is like normal keybinds.
 
 ### Hyprgrass-pulse
 
-see <./examples/hyprgrass-pulse/README.md>
+see [./examples/hyprgrass-pulse/README.md](./examples/hyprgrass-pulse/README.md)
 
 #### Syntax
 
