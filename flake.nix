@@ -14,16 +14,20 @@
     inherit inputs;
 
     packages = withPkgsFor (system: pkgs: let
+      tag = pkgs.lib.replaceStrings ["\n" "v"] ["" ""] (builtins.readFile ./VERSION);
+      commit = self.shortRev or "dirty";
+
       hyprgrassPackage = pkgs.callPackage ./nix/default.nix {
         inherit (hyprland.packages.${system}) hyprland;
         inherit (self.packages.${system}) wf-touch;
+        inherit tag commit;
       };
     in {
       inherit inputs;
       default = hyprgrassPackage;
       hyprgrass = hyprgrassPackage;
       hyprgrassWithTests = hyprgrassPackage.override {runTests = true;};
-      hyprgrass-pulse = pkgs.callPackage ./nix/hyprgrass-pulse.nix {};
+      hyprgrass-pulse = pkgs.callPackage ./nix/hyprgrass-pulse.nix {inherit tag commit;};
       wf-touch = pkgs.callPackage ./nix/wf-touch.nix {};
     });
 
