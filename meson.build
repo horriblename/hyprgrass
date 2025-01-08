@@ -22,10 +22,10 @@ if not hyprland_headers.found()
   add_global_arguments('-I' + hyprland_src, language: 'cpp')
 endif
 
-wftouch = dependency('wftouch', required: get_option('hyprgrass'))
-
-if not wftouch.found() and get_option('hyprgrass')
-  wftouch = subproject('wf-touch').get_variable('wftouch')
+wftouch = subproject('wf-touch', required: get_option('hyprgrass'))
+message(wftouch.found())
+if wftouch.found() and get_option('hyprgrass')
+  wftouch = wftouch.get_variable('wftouch')
 endif
 
 hyprland_deps = [
