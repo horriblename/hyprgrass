@@ -185,8 +185,8 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                     pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current) *
                     this->m_pLastTouchedMonitor->vecSize;
                 if (w && !w->isFullscreen()) {
-                    const CBox real = {w->m_vRealPosition.value().x, w->m_vRealPosition.value().y,
-                                       w->m_vRealSize.value().x, w->m_vRealSize.value().y};
+                    const CBox real = {w->m_vRealPosition->value().x, w->m_vRealPosition->value().y,
+                                       w->m_vRealSize->value().x, w->m_vRealSize->value().y};
                     const CBox grab = {real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA,
                                        real.width + 2 * BORDER_GRAB_AREA, real.height + 2 * BORDER_GRAB_AREA};
 
@@ -345,9 +345,9 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
 
 bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     const bool VERTANIMS =
-        g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset.getConfig()->pValues->internalStyle ==
+        g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset.getConfig()->pValues->internalStyle.starts_with(
+        g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset->getConfig()->pValues->internalStyle.starts_with(
             "slidevert");
 
     const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
@@ -366,9 +366,9 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
 
 void GestureManager::updateWorkspaceSwipe() {
     const bool VERTANIMS =
-        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()->pValues->internalStyle ==
+        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset.getConfig()
+        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset->getConfig()
             ->pValues->internalStyle.starts_with("slidefadevert");
 
     static auto const PSWIPEDIST =
