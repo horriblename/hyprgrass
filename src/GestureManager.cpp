@@ -12,6 +12,7 @@
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/devices/ITouch.hpp>
+#include <hyprland/src/managers/HookSystemManager.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>

@@ -6,6 +6,7 @@
 #include <memory>
 
 #define private public
+#include <hyprland/src/config/ConfigDataValues.hpp>
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/helpers/Monitor.hpp>
