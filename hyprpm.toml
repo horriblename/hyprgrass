@@ -21,6 +21,7 @@ commit_pins = [
     ["254fc2bc6000075f660b4b8ed818a6af544d1d64", "9df724651ea92fc0c90ec55e0ef66048c9f76b57"], # v0.46.1
     ["0bd541f2fd902dbfa04c3ea2ccf679395e316887", "b2a1da139bbb4e12d67c9c1569a32ce54f5ebc6b"], # v0.46.2
     ["983bc067dac2e737bc724721c79d87cd81f27501", "33dc3b3041f3de9a7487839c92a56743e9591f7e"], # animation changes
+    ["078e13f463d56a4e773aa104bca5567b9e9c8658", "9c5a541e2d8be5e3eff3761d9695615b489023af"], # include fixups
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
