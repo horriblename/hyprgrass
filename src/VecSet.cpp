@@ -20,7 +20,7 @@ template <class T> bool VecSet<T>::insert(const T x) {
 }
 
 template <class T> bool VecSet<T>::remove(const T x) {
-    for (int i = 0; i < this->set.size(); i++) {
+    for (size_t i = 0; i < this->set.size(); i++) {
         if (this->set[i] == x) {
             if (i != this->set.size() - 1) {
                 this->set[i] = this->set.back();
