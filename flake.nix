@@ -8,7 +8,12 @@
     hyprland,
   } @ inputs: let
     inherit (hyprland.inputs) nixpkgs;
-    withPkgsFor = fn: nixpkgs.lib.genAttrs (builtins.attrNames hyprland.packages) (system: fn system nixpkgs.legacyPackages.${system});
+    withPkgsFor = fn:
+      nixpkgs.lib.genAttrs (builtins.attrNames hyprland.packages) (system:
+        fn system (import nixpkgs {
+          inherit system;
+          overlays = [hyprland.overlays.hyprland-packages];
+        }));
   in {
     # for debugging
     inherit inputs;
