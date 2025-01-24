@@ -32,13 +32,13 @@
     });
 
     devShells = withPkgsFor (system: pkgs: {
-      default = pkgs.mkShell {
+      default = pkgs.mkShell.override {stdenv = pkgs.gcc14Stdenv;} {
         shellHook = ''
           meson setup build -Dhyprgrass-pulse=true --reconfigure
           sed -e 's/c++23/c++2b/g' ./build/compile_commands.json > ./compile_commands.json
         '';
         name = "hyprgrass-shell";
-        nativeBuildInputs = with pkgs; [gcc14 meson pkg-config ninja];
+        nativeBuildInputs = with pkgs; [meson pkg-config ninja];
         buildInputs = [hyprland.packages.${system}.hyprland pkgs.libpulseaudio];
         inputsFrom = [
           hyprland.packages.${system}.hyprland
