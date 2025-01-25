@@ -1,25 +1,23 @@
 {
   lib,
-  gcc14Stdenv,
   meson,
   ninja,
   pkg-config,
   hyprland,
+  hyprlandPlugins,
   libpulseaudio,
   tag,
   commit,
   ...
 }:
-gcc14Stdenv.mkDerivation {
-  pname = "hyprgrass-pulse";
+hyprlandPlugins.mkHyprlandPlugin hyprland {
+  pluginName = "hyprgrass-pulse";
   version = "${tag}+${commit}";
   src = ./..;
 
-  nativeBuildInputs =
-    hyprland.nativeBuildInputs
-    ++ [ninja meson pkg-config];
+  nativeBuildInputs = [ninja meson pkg-config];
 
-  buildInputs = [hyprland libpulseaudio] ++ hyprland.buildInputs;
+  buildInputs = [libpulseaudio];
 
   mesonFlags = [
     "-Dhyprgrass=false"

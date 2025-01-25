@@ -1,11 +1,10 @@
 {
   lib,
-  gcc14Stdenv,
   cmake,
   meson,
   ninja,
-  pkg-config,
   hyprland,
+  hyprlandPlugins,
   wf-touch,
   doctest,
   tag,
@@ -13,17 +12,14 @@
   runTests ? false,
   ...
 }:
-gcc14Stdenv.mkDerivation {
-  pname = "hyprgrass";
+hyprlandPlugins.mkHyprlandPlugin hyprland {
+  pluginName = "hyprgrass";
   version = "${tag}+${commit}";
   src = ./..;
 
-  nativeBuildInputs =
-    hyprland.nativeBuildInputs
-    ++ [cmake ninja meson pkg-config]
-    ++ lib.optional runTests doctest;
+  nativeBuildInputs = [cmake ninja meson] ++ lib.optional runTests doctest;
 
-  buildInputs = [hyprland wf-touch doctest] ++ hyprland.buildInputs;
+  buildInputs = [wf-touch doctest];
 
   doCheck = true;
 

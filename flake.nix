@@ -8,7 +8,12 @@
     hyprland,
   } @ inputs: let
     inherit (hyprland.inputs) nixpkgs;
-    withPkgsFor = fn: nixpkgs.lib.genAttrs (builtins.attrNames hyprland.packages) (system: fn system nixpkgs.legacyPackages.${system});
+    withPkgsFor = fn:
+      nixpkgs.lib.genAttrs (builtins.attrNames hyprland.packages) (system:
+        fn system (import nixpkgs {
+          inherit system;
+          overlays = [hyprland.overlays.hyprland-packages];
+        }));
   in {
     # for debugging
     inherit inputs;
@@ -31,17 +36,19 @@
       wf-touch = pkgs.callPackage ./nix/wf-touch.nix {};
     });
 
-    devShells = withPkgsFor (system: pkgs: {
-      default = pkgs.mkShell {
+    devShells = withPkgsFor (system: pkgs: let
+      hyprlandPkgs = hyprland.packages.${system};
+    in {
+      default = pkgs.mkShell.override {inherit (hyprlandPkgs.hyprland) stdenv;} {
         shellHook = ''
           meson setup build -Dhyprgrass-pulse=true --reconfigure
           sed -e 's/c++23/c++2b/g' ./build/compile_commands.json > ./compile_commands.json
         '';
         name = "hyprgrass-shell";
-        nativeBuildInputs = with pkgs; [gcc14 meson pkg-config ninja];
-        buildInputs = [hyprland.packages.${system}.hyprland pkgs.libpulseaudio];
+        nativeBuildInputs = with pkgs; [meson pkg-config ninja];
+        buildInputs = [hyprlandPkgs.hyprland pkgs.libpulseaudio];
         inputsFrom = [
-          hyprland.packages.${system}.hyprland
+          hyprlandPkgs.hyprland
           self.packages.${system}.default
         ];
       };
