@@ -60,7 +60,7 @@ void Visualizer::onRender() {
 
     for (auto& finger : this->finger_positions) {
         CBox dmg = boxAroundCenter(finger.second.curr, TOUCH_POINT_RADIUS);
-        g_pHyprOpenGL->renderTexture(this->texture, &dmg, 1.f, 0, true);
+        g_pHyprOpenGL->renderTexture(this->texture, dmg, 1.f, 0, true);
     }
 }
 
@@ -86,10 +86,10 @@ void Visualizer::damageFinger(int32_t id) {
     auto finger = this->finger_positions.at(id);
 
     CBox dm = boxAroundCenter(finger.curr, TOUCH_POINT_RADIUS);
-    g_pHyprRenderer->damageBox(&dm);
+    g_pHyprRenderer->damageBox(dm);
 
     if (finger.last_rendered.has_value()) {
         dm = boxAroundCenter(finger.last_rendered.value(), TOUCH_POINT_RADIUS);
-        g_pHyprRenderer->damageBox(&dm);
+        g_pHyprRenderer->damageBox(dm);
     }
 }
