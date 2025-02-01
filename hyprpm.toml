@@ -23,6 +23,8 @@ commit_pins = [
     ["983bc067dac2e737bc724721c79d87cd81f27501", "33dc3b3041f3de9a7487839c92a56743e9591f7e"], # animation changes
     ["078e13f463d56a4e773aa104bca5567b9e9c8658", "9c5a541e2d8be5e3eff3761d9695615b489023af"], # include fixups
     ["e9510115039e7ae9fcf2778e8455e7beed3424ea", "c3fe4a20691cdede553df9b27bc3acebebee8b1c"], # CBox changes
+    ["04ac46c54357278fc68f0a95d26347ea0db99496", "f383a5cd8fbc9acc1aafbf0fccb161822833b4d6"], # v0.47.0
+    ["75dff7205f6d2bd437abfb4196f700abee92581a", "f383a5cd8fbc9acc1aafbf0fccb161822833b4d6"], # v0.47.1
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
