@@ -72,7 +72,7 @@ void onRenderStage(eRenderStage stage) {
     }
 }
 
-void listInternalBinds(std::string) {
+SDispatchResult listInternalBinds(std::string) {
     Debug::log(LOG, "[hyprgrass] Listing internal binds:");
     for (const auto& bind : g_pGestureManager->internalBinds) {
         Debug::log(LOG, "[hyprgrass] | gesture: {}", bind->key);
@@ -81,15 +81,16 @@ void listInternalBinds(std::string) {
         Debug::log(LOG, "[hyprgrass] |     mouse: {}", bind->mouse);
         Debug::log(LOG, "[hyprgrass] |");
     }
+    return SDispatchResult{.success = true};
 }
 
-void listHooks(std::string event) {
+SDispatchResult listHooks(std::string event) {
     Debug::log(LOG, "[hyprgrass] Listing hooks:");
 
     if (event != "") {
         const auto* vec = g_pHookSystem->getVecForEvent(event);
         Debug::log(LOG, "[hyprgrass] listeners of {}: {}", event, vec->size());
-        return;
+        return SDispatchResult{.success = true};
     }
 
     const auto* vec = g_pHookSystem->getVecForEvent("hyprgrass:edgeBegin");
@@ -100,6 +101,7 @@ void listHooks(std::string event) {
 
     vec = g_pHookSystem->getVecForEvent("hyprgrass:edgeEnd");
     Debug::log(LOG, "[hyprgrass] | edgeEnd listeners: {}", vec->size());
+    return SDispatchResult{.success = true};
 }
 
 Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
@@ -168,15 +170,18 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     static auto P0 = HyprlandAPI::registerCallbackDynamic(
         PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) { onPreConfigReload(); });
 
-    HyprlandAPI::addDispatcher(PHANDLE, "touchBind", [&](std::string args) {
+    HyprlandAPI::addDispatcherV2(PHANDLE, "touchBind", [&](std::string args) {
         HyprlandAPI::addNotification(
             PHANDLE, "[hyprgrass] touchBind dispatcher deprecated, use the hyprgrass-bind keyword instead",
             CHyprColor(0.8, 0.2, 0.2, 1.0), 5000);
         g_pGestureManager->touchBindDispatcher(args);
+        return SDispatchResult{
+            .success = true,
+        };
     });
 
-    HyprlandAPI::addDispatcher(PHANDLE, "hyprgrass:debug:binds", listInternalBinds);
-    HyprlandAPI::addDispatcher(PHANDLE, "hyprgrass:debug:hooks", listHooks);
+    HyprlandAPI::addDispatcherV2(PHANDLE, "hyprgrass:debug:binds", listInternalBinds);
+    HyprlandAPI::addDispatcherV2(PHANDLE, "hyprgrass:debug:hooks", listHooks);
 
     const auto hlTargetVersion = GIT_COMMIT_HASH;
     const auto hlVersion       = HyprlandAPI::getHyprlandVersion(PHANDLE);
