@@ -150,10 +150,9 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:edgeBegin");
             SCallbackInfo info;
 
-            g_pHookSystem->emit(
-                PEVENTVEC, info,
-                std::pair<std::string, Vector2D>(
-                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current)));
+            g_pHookSystem->emit(PEVENTVEC, info,
+                                std::pair<std::string, Vector2D>(
+                                    gev.to_string(), mmToScreenFraction(this->m_sGestureState.get_center().current)));
 
             if (info.cancelled) {
                 this->hookHandled = true;
@@ -297,8 +296,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
         }
         case DragGestureType::EDGE_SWIPE:
             if (this->hookHandled) {
-                EMIT_HOOK_EVENT("hyprgrass:edgeUpdate",
-                                pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
+                EMIT_HOOK_EVENT("hyprgrass:edgeUpdate", mmToScreenFraction(this->m_sGestureState.get_center().current))
 
                 return;
             }
@@ -347,8 +345,8 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     const bool VERTANIMS =
         g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset->getConfig()->pValues->internalStyle.starts_with(
-            "slidevert");
+        g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset->getConfig()
+            ->pValues->internalStyle.starts_with("slidevert");
 
     const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
     const auto vertical             = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
