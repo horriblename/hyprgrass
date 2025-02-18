@@ -189,11 +189,10 @@ where (skip to [examples](#examples) if this is confusing):
 
 - `gesture_name` is one of:
   1. `swipe:<finger_count>:<direction>`
-     - `finger_count` must be >= 3
+     - `finger_count`
      - `direction` is one of `l`, `r`, `u`, `d`, or `ld`, `rd`, `lu`, `ru` for diagonal directions.  
        (l, r, u, d stand for left, right, up, down)
   2. `tap:<finger_count>`
-     - `finger_count` must be >= 3
   3. `edge:<from_edge>:<direction>`
      - `<from_edge>` is from which edge to start from (l/r/u/d)
      - `<direction>` is in which direction to swipe (l/r/u/d/lu/ld/ru/rd)
@@ -214,7 +213,6 @@ plugin {
         hyprgrass-bind = , edge:l:d, exec, pactl set-sink-volume @DEFAULT_SINK@ -4%
 
         # swipe down with 4 fingers
-        # NOTE: swipe events only trigger for finger count of >= 3
         hyprgrass-bind = , swipe:4:d, killactive
 
         # swipe diagonally left and down with 3 fingers
@@ -222,7 +220,6 @@ plugin {
         hyprgrass-bind = , swipe:3:ld, exec, foot
 
         # tap with 3 fingers
-        # NOTE: tap events only trigger for finger count of >= 3
         hyprgrass-bind = , tap:3, exec, foot
 
         # longpress can trigger mouse binds:

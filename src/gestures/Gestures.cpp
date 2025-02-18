@@ -11,12 +11,16 @@ void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
         this->inhibitTouchEvents = false;
         this->activeDragGesture  = std::nullopt;
     }
+    bool should_reset      = m_sGestureState.fingers.size() == 1 && ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN;
+    this->gestureTriggered = false;
     for (const auto& gesture : m_vGestures) {
-        if (m_sGestureState.fingers.size() == 1 && ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
+        if (should_reset) {
             gesture->reset(ev.time);
         }
 
-        gesture->update_state(ev);
+        if (!this->gestureTriggered) {
+            gesture->update_state(ev);
+        }
     }
 }
 
@@ -29,6 +33,9 @@ void IGestureManager::cancelTouchEventsOnAllWindows() {
 bool IGestureManager::emitCompletedGesture(const CompletedGestureEvent& gev) {
     bool handled = this->handleCompletedGesture(gev);
     if (handled) {
+        // FIXME: I'm trying to prevent swipe:1:r from triggering when edge:l:r triggers
+        // this only prevents it when there is a valid edge swipe, is that fine?
+        this->gestureTriggered = true;
         this->stopLongPressTimer();
     }
 
@@ -38,6 +45,7 @@ bool IGestureManager::emitCompletedGesture(const CompletedGestureEvent& gev) {
 bool IGestureManager::emitDragGesture(const DragGestureEvent& gev) {
     bool handled = this->handleDragGesture(gev);
     if (handled) {
+        this->gestureTriggered  = true;
         this->activeDragGesture = std::optional(gev);
         this->stopLongPressTimer();
     }
@@ -122,10 +130,6 @@ void IGestureManager::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gest
 }
 
 void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int64_t* timeout) {
-    auto multi_down_and_send_cancel = std::make_unique<OnCompleteAction>(
-        std::make_unique<MultiFingerDownAction>(), [this]() { this->cancelTouchEventsOnAllWindows(); });
-    multi_down_and_send_cancel->set_duration(GESTURE_BASE_DURATION);
-
     auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, timeout);
 
     auto swipe_ptr = swipe.get();
@@ -143,10 +147,8 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
     });
 
     auto swipe_liftoff = std::make_unique<LiftoffAction>();
-    // swipe_liftoff->set_duration(GESTURE_BASE_DURATION / 2);
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
-    swipe_actions.emplace_back(std::move(multi_down_and_send_cancel));
     swipe_actions.emplace_back(std::move(swipe_and_emit));
     swipe_actions.emplace_back(std::move(swipe_liftoff));
 
