@@ -11,12 +11,16 @@ void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
         this->inhibitTouchEvents = false;
         this->activeDragGesture  = std::nullopt;
     }
+    bool should_reset      = m_sGestureState.fingers.size() == 1 && ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN;
+    this->gestureTriggered = false;
     for (const auto& gesture : m_vGestures) {
-        if (m_sGestureState.fingers.size() == 1 && ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
+        if (should_reset) {
             gesture->reset(ev.time);
         }
 
-        gesture->update_state(ev);
+        if (!this->gestureTriggered) {
+            gesture->update_state(ev);
+        }
     }
 }
 
@@ -29,6 +33,9 @@ void IGestureManager::cancelTouchEventsOnAllWindows() {
 bool IGestureManager::emitCompletedGesture(const CompletedGestureEvent& gev) {
     bool handled = this->handleCompletedGesture(gev);
     if (handled) {
+        // FIXME: I'm trying to prevent swipe:1:r from triggering when edge:l:r triggers
+        // this only prevents it when there is a valid edge swipe, is that fine?
+        this->gestureTriggered = true;
         this->stopLongPressTimer();
     }
 
@@ -38,6 +45,7 @@ bool IGestureManager::emitCompletedGesture(const CompletedGestureEvent& gev) {
 bool IGestureManager::emitDragGesture(const DragGestureEvent& gev) {
     bool handled = this->handleDragGesture(gev);
     if (handled) {
+        this->gestureTriggered  = true;
         this->activeDragGesture = std::optional(gev);
         this->stopLongPressTimer();
     }
