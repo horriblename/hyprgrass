@@ -63,6 +63,15 @@ std::vector<std::string> splitString(const std::string& s, char delimiter, int n
     return substrings;
 }
 
+bool emitHookEvent(std::string name, std::any param) {
+    static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent(name);
+    SCallbackInfo info;
+
+    g_pHookSystem->emit(PEVENTVEC, info, param);
+
+    return info.cancelled;
+}
+
 int handleLongPressTimer(void* data) {
     const auto gesture_manager = (GestureManager*)data;
     gesture_manager->onLongPressTimeout(gesture_manager->long_press_next_trigger_time);
@@ -147,15 +156,12 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
         }
 
         case DragGestureType::EDGE_SWIPE: {
-            static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:edgeBegin");
-            SCallbackInfo info;
-
-            g_pHookSystem->emit(
-                PEVENTVEC, info,
+            bool handled = emitHookEvent(
+                "hyprgrass:edgeBegin",
                 std::pair<std::string, Vector2D>(
-                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current)));
+                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)));
 
-            if (info.cancelled) {
+            if (handled) {
                 this->hookHandled = true;
                 return true;
             }
