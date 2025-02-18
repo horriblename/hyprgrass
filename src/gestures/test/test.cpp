@@ -314,15 +314,15 @@ TEST_CASE("Edge Swipe: Complete upon: \n"
 }
 
 // haven't gotten around to checking what's wrong
-TEST_CASE("Edge Swipe: Timeout during swiping phase" * doctest::may_fail(true)) {
+TEST_CASE("Edge Swipe: Timeout during swiping phase") {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
 
     const std::vector<TouchEvent> events{
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
-        {wf::touch::EVENT_TYPE_MOTION, 150, 0, {300, 300}},
-        {wf::touch::EVENT_TYPE_MOTION, 520, 0, {600, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 150, 0, {154, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 551, 0, {600, 300}},
     };
     ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
 }
