@@ -293,7 +293,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
         case DragGestureType::LONG_PRESS: {
             const auto pos = this->m_sGestureState.get_center().current;
             g_pCompositor->warpCursorTo(Vector2D(pos.x, pos.y));
-            g_pInputManager->mouseMoveUnified(ev.time);
+            g_pInputManager->simulateMouseMovement();
             return;
         }
         case DragGestureType::EDGE_SWIPE:
