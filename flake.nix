@@ -41,7 +41,7 @@
     in {
       default = pkgs.mkShell.override {inherit (hyprlandPkgs.hyprland) stdenv;} {
         shellHook = ''
-          meson setup build -Dhyprgrass-pulse=true --reconfigure
+          meson setup build -Dbuildtype=debug -Dhyprgrass-pulse=true --reconfigure
           sed -e 's/c++23/c++2b/g' ./build/compile_commands.json > ./compile_commands.json
         '';
         name = "hyprgrass-shell";
