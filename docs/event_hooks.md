@@ -34,18 +34,23 @@ Examples in the `examples/` directory may be helpful.
 
 ## Event list
 
-Here are the supported events:
+Table below are the supported events.
 
-> [!NOTE] `EventName` is a `std::string` that is used in hyprgrass-bind, as
-> described in the README.
->
-> Examples:
+> [!NOTE] `event_name` arguments are as used in hyprgrass-bind, as described in
+> the README. Examples:
 >
 > - `edge:l:u` - Swipe upwards on the left edge
 > - `swipe:4:d` - Swipe down with 4 fingers
 
-| name                 | argument(s)                      | Note                                                                  |
-| -------------------- | -------------------------------- | --------------------------------------------------------------------- |
-| hyprgrass:edgeBegin  | `std::pair<EventName, Vector2D>` | set `SCallbackInfo.cancelled = true` after you handle this hook event |
-| hyprgrass:edgeUpdate | `Vector2D`                       |                                                                       |
-| hyprgrass:edgeEnd    | -                                |                                                                       |
+> [!NOTE] `position` arguments are the "percentage" position of the fingers in
+> the touch device, e.g.
+>
+> - The top left corner is (0.0, 0.0)
+> - The bottom right corner is (1.0, 1.0)
+> - The center of the screen is (0.5, 0.5)
+
+| name                 | argument types                     | arguments              | Note                                                                  |
+| -------------------- | ---------------------------------- | ---------------------- | --------------------------------------------------------------------- |
+| hyprgrass:edgeBegin  | `std::pair<std::string, Vector2D>` | {event_name, position} | set `SCallbackInfo.cancelled = true` after you handle this hook event |
+| hyprgrass:edgeUpdate | `Vector2D`                         | position               |                                                                       |
+| hyprgrass:edgeEnd    | -                                  | -                      |                                                                       |
