@@ -81,6 +81,7 @@ class IGestureManager {
   private:
     std::unique_ptr<Logger> logger;
     bool inhibitTouchEvents;
+    bool gestureTriggered; // A drag/completed gesture is triggered
     std::optional<DragGestureEvent> activeDragGesture;
 
     // this function is called when needed to send "cancel touch" events to
