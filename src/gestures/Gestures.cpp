@@ -122,10 +122,6 @@ void IGestureManager::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gest
 }
 
 void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int64_t* timeout) {
-    auto multi_down_and_send_cancel = std::make_unique<OnCompleteAction>(
-        std::make_unique<MultiFingerDownAction>(), [this]() { this->cancelTouchEventsOnAllWindows(); });
-    multi_down_and_send_cancel->set_duration(GESTURE_BASE_DURATION);
-
     auto swipe = std::make_unique<CMultiAction>(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, timeout);
 
     auto swipe_ptr = swipe.get();
@@ -143,10 +139,8 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
     });
 
     auto swipe_liftoff = std::make_unique<LiftoffAction>();
-    // swipe_liftoff->set_duration(GESTURE_BASE_DURATION / 2);
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
-    swipe_actions.emplace_back(std::move(multi_down_and_send_cancel));
     swipe_actions.emplace_back(std::move(swipe_and_emit));
     swipe_actions.emplace_back(std::move(swipe_liftoff));
 
