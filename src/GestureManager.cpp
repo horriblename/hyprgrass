@@ -63,6 +63,12 @@ std::vector<std::string> splitString(const std::string& s, char delimiter, int n
     return substrings;
 }
 
+bool emitHookEvent(std::vector<SCallbackFNPtr>* hooks, std::any param) {
+    SCallbackInfo info;
+    g_pHookSystem->emit(hooks, info, param);
+    return info.cancelled;
+}
+
 int handleLongPressTimer(void* data) {
     const auto gesture_manager = (GestureManager*)data;
     gesture_manager->onLongPressTimeout(gesture_manager->long_press_next_trigger_time);
@@ -148,14 +154,13 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 
         case DragGestureType::EDGE_SWIPE: {
             static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:edgeBegin");
-            SCallbackInfo info;
 
-            g_pHookSystem->emit(
-                PEVENTVEC, info,
+            bool handled = emitHookEvent(
+                PEVENTVEC,
                 std::pair<std::string, Vector2D>(
-                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current)));
+                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)));
 
-            if (info.cancelled) {
+            if (handled) {
                 this->hookHandled = true;
                 return true;
             }
@@ -348,8 +353,8 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     const bool VERTANIMS =
         g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset->getConfig()->pValues->internalStyle.starts_with(
-            "slidevert");
+        g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset->getConfig()
+            ->pValues->internalStyle.starts_with("slidevert");
 
     const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
     const auto vertical             = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
