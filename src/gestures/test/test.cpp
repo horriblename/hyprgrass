@@ -112,7 +112,10 @@ using TouchEvent = wf::touch::gesture_event_t;
 using wf::touch::point_t;
 
 TEST_CASE("Multifinger: block touch events to client surfaces when more than a "
-          "certain number of fingers touch down.") {
+          "certain number of fingers touch down." *
+          // multi-finger used to cancel touch events on 3 finger touch down
+          // currently removed but may bring it back
+          doctest::should_fail()) {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
