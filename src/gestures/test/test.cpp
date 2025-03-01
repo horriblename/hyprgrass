@@ -112,7 +112,10 @@ using TouchEvent = wf::touch::gesture_event_t;
 using wf::touch::point_t;
 
 TEST_CASE("Multifinger: block touch events to client surfaces when more than a "
-          "certain number of fingers touch down.") {
+          "certain number of fingers touch down." *
+          // multi-finger used to cancel touch events on 3 finger touch down
+          // currently removed but may bring it back
+          doctest::should_fail()) {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
@@ -311,15 +314,15 @@ TEST_CASE("Edge Swipe: Complete upon: \n"
 }
 
 // haven't gotten around to checking what's wrong
-TEST_CASE("Edge Swipe: Timeout during swiping phase" * doctest::may_fail(true)) {
+TEST_CASE("Edge Swipe: Timeout during swiping phase") {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
 
     const std::vector<TouchEvent> events{
         {wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
-        {wf::touch::EVENT_TYPE_MOTION, 150, 0, {300, 300}},
-        {wf::touch::EVENT_TYPE_MOTION, 520, 0, {600, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 150, 0, {154, 300}},
+        {wf::touch::EVENT_TYPE_MOTION, 551, 0, {600, 300}},
     };
     ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
 }
