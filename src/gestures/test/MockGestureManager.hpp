@@ -5,8 +5,6 @@
 #include <memory>
 #include <vector>
 
-constexpr double MONITOR_X      = 0;
-constexpr double MONITOR_Y      = 0;
 constexpr double MONITOR_WIDTH  = 1920;
 constexpr double MONITOR_HEIGHT = 1080;
 
@@ -27,10 +25,6 @@ class CMockGestureManager final : public IGestureManager {
     bool triggered = false;
     bool cancelled = false;
     bool dragEnded = false;
-
-    struct {
-        double x, y;
-    } mon_offset = {MONITOR_X, MONITOR_Y};
 
     struct {
         double w, h;
@@ -71,9 +65,9 @@ class CMockGestureManager final : public IGestureManager {
     void stopLongPressTimer() override {}
 
   protected:
-    SMonitorArea getMonitorArea() const override {
-        return SMonitorArea{this->mon_offset.x, this->mon_offset.y, this->mon_size.w, this->mon_size.h};
-    }
+    wf::touch::point_t getMonitorSize() const override {
+        return wf::touch::point_t{this->mon_size.w, this->mon_size.h};
+    };
 
   private:
     void sendCancelEventsToWindows() override;
