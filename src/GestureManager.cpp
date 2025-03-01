@@ -290,7 +290,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
         case DragGestureType::SWIPE:
             if (this->hookHandled) {
                 EMIT_HOOK_EVENT("hyprgrass:swipeUpdate",
-                                pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
+                                this->mmToScreenFraction(this->m_sGestureState.get_center().current))
             } else if (this->workspaceSwipeActive) {
                 this->updateWorkspaceSwipe();
             } else if (**EMULATE_TOUCHPAD) {
@@ -439,14 +439,11 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
-    this->m_pLastTouchedMonitor =
-        g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
+    this->monitor = g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
+    this->monitor = this->monitor ? this->monitor : g_pCompositor->m_pLastMonitor.lock();
 
-    this->m_pLastTouchedMonitor =
-        this->m_pLastTouchedMonitor ? this->m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor.lock();
-
-    const auto& monitorPos  = m_pLastTouchedMonitor->vecPosition;
-    const auto& monitorSize = m_pLastTouchedMonitor->vecSize;
+    const auto& monitorPos  = this->monitor->vecPosition;
+    const auto& monitorSize = this->monitor->vecSize;
     this->m_sMonitorArea    = {monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
 
     g_pCompositor->warpCursorTo({
