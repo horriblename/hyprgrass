@@ -3,19 +3,19 @@
 #include <string>
 
 // Swipe params
-constexpr static double MIN_SWIPE_DISTANCE             = 30;
-constexpr static double MAX_SWIPE_DISTANCE             = 450;
-constexpr static double SWIPE_INCORRECT_DRAG_TOLERANCE = 150;
+constexpr static double MIN_SWIPE_DISTANCE             = 4;
+constexpr static double MAX_SWIPE_DISTANCE             = 44;
+constexpr static double SWIPE_INCORRECT_DRAG_TOLERANCE = 4;
 
 // Pinch params
-constexpr static double PINCH_INCORRECT_DRAG_TOLERANCE = 200;
+constexpr static double PINCH_INCORRECT_DRAG_TOLERANCE = 28;
 constexpr static double PINCH_THRESHOLD                = 1.5;
 
 // Hold params
-constexpr static double HOLD_INCORRECT_DRAG_TOLERANCE = 100;
+constexpr static double HOLD_INCORRECT_DRAG_TOLERANCE = 14;
 
 // General
-constexpr static double GESTURE_INITIAL_TOLERANCE = 40;
+constexpr static double GESTURE_INITIAL_TOLERANCE = 6;
 constexpr static uint32_t GESTURE_BASE_DURATION   = 400;
 
 constexpr static uint32_t SEND_CANCEL_EVENT_FINGER_COUNT = 3;
