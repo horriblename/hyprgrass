@@ -127,10 +127,9 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
         case DragGestureType::SWIPE: {
             static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:swipeBegin");
 
-            bool handled = emitHookEvent(
-                PEVENTVEC, std::tuple<std::string, std::uint64_t, Vector2D>{
-                               stringifyDirection(gev.direction), gev.finger_count,
-                               pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)});
+            bool handled = emitHookEvent(PEVENTVEC, std::tuple<std::string, std::uint64_t, Vector2D>{
+                                                        stringifyDirection(gev.direction), gev.finger_count,
+                                                        mmToScreenFraction(this->m_sGestureState.get_center().origin)});
 
             if (handled) {
                 this->hookHandled = true;
@@ -158,9 +157,8 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:edgeBegin");
 
             bool handled = emitHookEvent(
-                PEVENTVEC,
-                std::pair<std::string, Vector2D>(
-                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)));
+                PEVENTVEC, std::pair<std::string, Vector2D>(
+                               gev.to_string(), mmToScreenFraction(this->m_sGestureState.get_center().origin)));
 
             if (handled) {
                 this->hookHandled = true;
@@ -190,8 +188,7 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 // kind of a hack: this is the window detected from previous touch events
                 const auto w = g_pInputManager->m_pFoundWindowToFocus.lock();
                 const Vector2D touchPos =
-                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current) *
-                    this->m_pLastTouchedMonitor->vecSize;
+                    this->mmToScreenFraction(this->m_sGestureState.get_center().current) * this->monitor->vecSize;
                 if (w && !w->isFullscreen()) {
                     const CBox real = {w->m_vRealPosition->value().x, w->m_vRealPosition->value().y,
                                        w->m_vRealSize->value().x, w->m_vRealSize->value().y};
@@ -305,14 +302,13 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
 
         case DragGestureType::LONG_PRESS: {
             const auto pos = this->m_sGestureState.get_center().current;
-            g_pCompositor->warpCursorTo(Vector2D(pos.x, pos.y));
+            g_pCompositor->warpCursorTo(mmToScreenFraction(pos) * this->monitor->vecSize);
             g_pInputManager->simulateMouseMovement();
             return;
         }
         case DragGestureType::EDGE_SWIPE:
             if (this->hookHandled) {
-                EMIT_HOOK_EVENT("hyprgrass:edgeUpdate",
-                                pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
+                EMIT_HOOK_EVENT("hyprgrass:edgeUpdate", mmToScreenFraction(this->m_sGestureState.get_center().current))
 
                 return;
             }
@@ -398,8 +394,7 @@ void GestureManager::updateWorkspaceSwipe() {
             ->getDataStaticPtr();
     const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
 
-    const auto monArea       = this->getMonitorArea();
-    const auto delta_percent = this->m_sGestureState.get_center().delta() / wf::touch::point_t(monArea.w, monArea.h);
+    const auto delta_percent = this->m_sGestureState.get_center().delta() / this->getMonitorSize();
 
     const auto swipe_delta = Vector2D(delta_percent.x * SWIPEDISTANCE, delta_percent.y * SWIPEDISTANCE);
 
@@ -478,7 +473,7 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
     // represent "how many percent of screen" whereas
     // @wf::touch::gesture_event_t uses PIXELS as unit
-    auto pos = wlrTouchEventPositionAsPixels(ev.pos.x, ev.pos.y);
+    auto pos = wlrTouchEventPositionToMm(ev.pos.x, ev.pos.y);
 
     const wf::touch::gesture_event_t gesture_event = {
         .type   = wf::touch::EVENT_TYPE_TOUCH_DOWN,
@@ -540,7 +535,7 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
 }
 
 bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
-    auto pos = wlrTouchEventPositionAsPixels(ev.pos.x, ev.pos.y);
+    auto pos = wlrTouchEventPositionToMm(ev.pos.x, ev.pos.y);
 
     const wf::touch::gesture_event_t gesture_event = {
         .type   = wf::touch::EVENT_TYPE_MOTION,
@@ -552,8 +547,10 @@ bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
     return IGestureManager::onTouchMove(gesture_event);
 }
 
-SMonitorArea GestureManager::getMonitorArea() const {
-    return this->m_sMonitorArea;
+wf::touch::point_t GestureManager::getMonitorSize() const {
+    // TODO: handle invalid physicalSize: e.g. projectors don't have a physical size
+    Vector2D s = this->monitor->output->physicalSize;
+    return wf::touch::point_t{s.x, s.y};
 }
 
 void GestureManager::onLongPressTimeout(uint32_t time_msec) {
@@ -573,14 +570,14 @@ void GestureManager::onLongPressTimeout(uint32_t time_msec) {
     IGestureManager::onTouchMove(touch_event);
 }
 
-wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, double y) const {
-    auto area = this->getMonitorArea();
-    return wf::touch::point_t{x * area.w + area.x, y * area.h + area.y};
+wf::touch::point_t GestureManager::wlrTouchEventPositionToMm(double x, double y) const {
+    auto monSize = this->getMonitorSize();
+    return wf::touch::point_t{x * monSize.x, y * monSize.y};
 }
 
-Vector2D GestureManager::pixelPositionToPercentagePosition(wf::touch::point_t point) const {
-    auto monitorArea = this->getMonitorArea();
-    return Vector2D((point.x - monitorArea.x) / monitorArea.w, (point.y - monitorArea.y) / monitorArea.h);
+Vector2D GestureManager::mmToScreenFraction(wf::touch::point_t point) const {
+    auto monSize = this->getMonitorSize();
+    return Vector2D(point.x / monSize.x, point.y / monSize.y);
 }
 
 void GestureManager::touchBindDispatcher(std::string args) {

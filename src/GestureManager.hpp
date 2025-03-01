@@ -33,13 +33,13 @@ class GestureManager : public IGestureManager {
     void touchBindDispatcher(std::string args);
 
   protected:
-    SMonitorArea getMonitorArea() const override;
+    wf::touch::point_t getMonitorSize() const override;
     bool handleCompletedGesture(const CompletedGestureEvent& gev) override;
     void handleCancelledGesture() override;
 
   private:
     VecSet<CWeakPointer<CWLTouchResource>> touchedResources;
-    PHLMONITOR m_pLastTouchedMonitor;
+    PHLMONITOR monitor;
     SMonitorArea m_sMonitorArea;
     wl_event_source* long_press_timer;
     struct {
@@ -54,9 +54,9 @@ class GestureManager : public IGestureManager {
 
     // converts wlr touch event positions (number between 0.0 to 1.0) to pixel position,
     // takes into consideration monitor size and offset
-    wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
+    wf::touch::point_t wlrTouchEventPositionToMm(double x, double y) const;
     // reverse of wlrTouchEventPositionAsPixels
-    Vector2D pixelPositionToPercentagePosition(wf::touch::point_t) const;
+    Vector2D mmToScreenFraction(wf::touch::point_t) const;
     bool handleWorkspaceSwipe(const GestureDirection direction);
     void updateWorkspaceSwipe();
 
