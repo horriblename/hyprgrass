@@ -1,8 +1,11 @@
 #include "GestureManager.hpp"
+#include "gestures/Shared.hpp"
 #include "globals.hpp"
 #include "wayfire/touch/touch.hpp"
 #include <algorithm>
 #include <cstdint>
+#include <glm/detail/qualifier.hpp>
+#include <hyprutils/math/Vector2D.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
 #include <string>
 
@@ -61,6 +64,12 @@ std::vector<std::string> splitString(const std::string& s, char delimiter, int n
     }
 
     return substrings;
+}
+
+bool emitHookEvent(std::vector<SCallbackFNPtr>* hooks, std::any param) {
+    SCallbackInfo info;
+    g_pHookSystem->emit(hooks, info, param);
+    return info.cancelled;
 }
 
 int handleLongPressTimer(void* data) {
@@ -129,6 +138,18 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 
     switch (gev.type) {
         case DragGestureType::SWIPE: {
+            static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:swipeBegin");
+
+            bool handled = emitHookEvent(
+                PEVENTVEC, std::tuple<std::string, std::uint64_t, Vector2D>{
+                               stringifyDirection(gev.direction), gev.finger_count,
+                               pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)});
+
+            if (handled) {
+                this->hookHandled = true;
+                return true;
+            }
+
             if (**WORKSPACE_SWIPE_FINGERS != gev.finger_count) {
                 return false;
             }
@@ -148,14 +169,13 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 
         case DragGestureType::EDGE_SWIPE: {
             static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:edgeBegin");
-            SCallbackInfo info;
 
-            g_pHookSystem->emit(
-                PEVENTVEC, info,
+            bool handled = emitHookEvent(
+                PEVENTVEC,
                 std::pair<std::string, Vector2D>(
-                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current)));
+                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)));
 
-            if (info.cancelled) {
+            if (handled) {
                 this->hookHandled = true;
                 return true;
             }
@@ -278,7 +298,10 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
 
     switch (this->getActiveDragGesture()->type) {
         case DragGestureType::SWIPE:
-            if (this->workspaceSwipeActive) {
+            if (this->hookHandled) {
+                EMIT_HOOK_EVENT("hyprgrass:swipeUpdate",
+                                pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
+            } else if (this->workspaceSwipeActive) {
                 this->updateWorkspaceSwipe();
             } else if (**EMULATE_TOUCHPAD) {
                 const auto currentPoint           = this->m_sGestureState.get_center().current;
@@ -316,7 +339,10 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
     Debug::log(LOG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
     switch (gev.type) {
         case DragGestureType::SWIPE:
-            if (this->workspaceSwipeActive) {
+            if (this->hookHandled) {
+                EMIT_HOOK_EVENT("hyprgrass:swipeEnd", 0)
+                this->hookHandled = false;
+            } else if (this->workspaceSwipeActive) {
                 g_pInputManager->endWorkspaceSwipe();
                 this->workspaceSwipeActive = false;
             } else if (**EMULATE_TOUCHPAD) {
