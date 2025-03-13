@@ -3,7 +3,7 @@
 Gestures for your touch screen
 
 > [!WARNING]
-> Even though hyprgrass is mostly stable now, there used to be some bugs that render your touch device unusable until you unload the plugin/close Hyprland (https://github.com/horriblename/hyprgrass/issues/27), keep a keyboard in hand the first time you try this. This plugin is still in alpha, expect breakable changes!
+> Even though hyprgrass is mostly stable now, there used to be some bugs that render your touch device unusable until you unload the plugin/close Hyprland (https://github.com/horriblename/hyprgrass/issues/27), keep a keyboard in hand the first time you try this. This plugin is still in alpha, expect breaking changes!
 
 Please open an issue if you find any bugs. Feel free to make a feature request if you have a suggestion.
 
@@ -18,7 +18,7 @@ Please open an issue if you find any bugs. Feel free to make a feature request i
 
 ### Dependencies
 
-Asides from Hyprland (duh), this plugin has the following dependencies:
+Besides Hyprland (duh), this plugin has the following dependencies:
 
 ```
 glm
