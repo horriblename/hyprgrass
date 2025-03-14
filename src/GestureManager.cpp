@@ -1,6 +1,7 @@
 #include "GestureManager.hpp"
 #include "gestures/Shared.hpp"
 #include "globals.hpp"
+#include "src/managers/SessionLockManager.hpp"
 #include "wayfire/touch/touch.hpp"
 #include <algorithm>
 #include <cstdint>
@@ -444,8 +445,9 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
-    // if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
-    //     return false;
+    if (g_pSessionLockManager->isSessionLocked()) {
+        return false;
+    }
 
     this->m_pLastTouchedMonitor =
         g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
@@ -506,8 +508,9 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
-    // if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
-    //     return false;
+    if (g_pSessionLockManager->isSessionLocked()) {
+        return false;
+    }
 
     wf::touch::point_t lift_off_pos;
     try {
@@ -554,8 +557,9 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
 }
 
 bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
-    // if (g_pCompositor->m_sSeat.exclusiveClient) // lock screen, I think
-    //     return false;
+    if (g_pSessionLockManager->isSessionLocked()) {
+        return false;
+    }
 
     auto pos = wlrTouchEventPositionAsPixels(ev.pos.x, ev.pos.y);
 
