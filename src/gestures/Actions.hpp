@@ -1,7 +1,6 @@
 #include "Shared.hpp"
 #include <functional>
 #include <memory>
-#include <optional>
 #include <wayfire/touch/touch.hpp>
 
 using UpdateExternalTimerCallback = std::function<void(uint32_t current_timer, uint32_t delay)>;

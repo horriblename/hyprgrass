@@ -1,22 +1,12 @@
 #pragma once
 #include "./gestures/Gestures.hpp"
-#include "HyprLogger.hpp"
 #include "VecSet.hpp"
-#include "gestures/Shared.hpp"
-#include <memory>
 
 #define private public
 #include <hyprland/src/config/ConfigDataValues.hpp>
-#include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/devices/ITouch.hpp>
-#include <hyprland/src/helpers/Monitor.hpp>
-#include <hyprland/src/includes.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
-#include <hyprland/src/protocols/core/Seat.hpp>
 #undef private
-
-#include <wayfire/touch/touch.hpp>
-#include <wayland-server-core.h>
 
 class GestureManager : public IGestureManager {
   public:
