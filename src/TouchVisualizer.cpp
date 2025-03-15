@@ -1,12 +1,6 @@
 #include "TouchVisualizer.hpp"
-#include "src/devices/ITouch.hpp"
-#include "src/macros.hpp"
-#include "src/render/OpenGL.hpp"
-#include "src/render/Renderer.hpp"
-#include <cairo/cairo.h>
+#include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/Compositor.hpp>
-#include <hyprland/src/SharedDefs.hpp>
-#include <optional>
 
 CBox boxAroundCenter(Vector2D center, double radius) {
     return CBox(center.x - radius, center.y - radius, 2 * radius, 2 * radius);

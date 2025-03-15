@@ -1,6 +1,4 @@
 #include <vector>
-
-#include <hyprland/src/helpers/memory/Memory.hpp>
 #include <hyprland/src/protocols/core/Seat.hpp>
 
 // Probably not compatible with move semantics, I really don't know

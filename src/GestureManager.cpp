@@ -1,34 +1,16 @@
 #include "GestureManager.hpp"
-#include "gestures/Shared.hpp"
+#include "HyprLogger.hpp"
 #include "globals.hpp"
-#include "src/managers/SessionLockManager.hpp"
-#include "wayfire/touch/touch.hpp"
-#include <algorithm>
-#include <cstdint>
-#include <glm/detail/qualifier.hpp>
-#include <hyprutils/math/Vector2D.hpp>
-#include <hyprutils/memory/SharedPtr.hpp>
-#include <string>
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
-#include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
-#include <hyprland/src/debug/Log.hpp>
-#include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/managers/HookSystemManager.hpp>
-#include <hyprland/src/managers/KeybindManager.hpp>
-#include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/protocols/core/Compositor.hpp>
-#include <hyprland/src/protocols/core/Seat.hpp>
 #undef private
 
-#include <algorithm>
-#include <hyprlang.hpp>
-#include <memory>
-#include <optional>
 #include <ranges>
 
 // constexpr double SWIPE_THRESHOLD = 30.;
