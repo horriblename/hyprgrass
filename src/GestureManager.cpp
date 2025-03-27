@@ -119,6 +119,10 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 
     auto const workspace_swipe_edge_str = std::string{*WORKSPACE_SWIPE_EDGE};
 
+    if (g_pSessionLockManager->isSessionLocked()) {
+        return this->handleGestureBind(gev.to_string(), true);
+    }
+
     switch (gev.type) {
         case DragGestureType::SWIPE: {
             static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:swipeBegin");
@@ -254,6 +258,9 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
         if (k->handler == "pass")
             continue;
 
+        if (k->locked != g_pSessionLockManager->isSessionLocked())
+            continue;
+
         if (k->handler == "mouse") {
             DISPATCHER->second((pressed ? "1" : "0") + k->arg);
         } else {
@@ -318,6 +325,11 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
     static auto const EMULATE_TOUCHPAD =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:emulate_touchpad_swipe")
             ->getDataStaticPtr();
+
+    if (g_pSessionLockManager->isSessionLocked()) {
+        this->handleGestureBind(gev.to_string(), false);
+        return;
+    }
 
     Debug::log(LOG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
     switch (gev.type) {
@@ -427,10 +439,6 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
-    if (g_pSessionLockManager->isSessionLocked()) {
-        return false;
-    }
-
     this->m_pLastTouchedMonitor =
         g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
 
@@ -490,10 +498,6 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
-    if (g_pSessionLockManager->isSessionLocked()) {
-        return false;
-    }
-
     wf::touch::point_t lift_off_pos;
     try {
         lift_off_pos = this->m_sGestureState.fingers.at(ev.touchID).current;
@@ -539,10 +543,6 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
 }
 
 bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
-    if (g_pSessionLockManager->isSessionLocked()) {
-        return false;
-    }
-
     auto pos = wlrTouchEventPositionAsPixels(ev.pos.x, ev.pos.y);
 
     const wf::touch::gesture_event_t gesture_event = {
