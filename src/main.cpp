@@ -18,7 +18,9 @@
 #include <memory>
 #include <string>
 
-const CHyprColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
+const CHyprColor s_pluginColor    = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
+const CHyprColor error_color      = {204. / 255.0, 2. / 255.0, 2. / 255.0, 1.0};
+const std::string KEYWORD_HG_BIND = "hyprgrass-bind";
 
 inline std::unique_ptr<Visualizer> g_pVisualizer;
 
@@ -79,6 +81,7 @@ SDispatchResult listInternalBinds(std::string) {
         Debug::log(LOG, "[hyprgrass] |     dispatcher: {}", bind->handler);
         Debug::log(LOG, "[hyprgrass] |     arg: {}", bind->arg);
         Debug::log(LOG, "[hyprgrass] |     mouse: {}", bind->mouse);
+        Debug::log(LOG, "[hyprgrass] |     locked: {}", bind->locked);
         Debug::log(LOG, "[hyprgrass] |");
     }
     return SDispatchResult{.success = true};
@@ -108,6 +111,10 @@ Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
     std::string v = V;
     auto vars     = CVarList(v, 4);
     Hyprlang::CParseResult result;
+    struct {
+        bool mouse;
+        bool locked;
+    } flags = {};
 
     if (vars.size() < 3) {
         result.setError("must have at least 3 fields: <empty>, <gesture_event>, <dispatcher>, [args]");
@@ -119,16 +126,31 @@ Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
         return result;
     }
 
-    const auto mouse          = std::string("hyprgrass-bindm") == K;
+    const int prefix_size = std::size(KEYWORD_HG_BIND);
+    for (char c : std::string(K).substr(prefix_size)) {
+        switch (c) {
+            case 'm':
+                flags.mouse = true;
+                break;
+            case 'l':
+                flags.locked = true;
+                break;
+            default:
+                HyprlandAPI::addNotification(PHANDLE, std::string("ignoring invalid hyprgrass-bind flag: ") + c,
+                                             error_color, 5000);
+        }
+    }
+
     const auto key            = vars[1];
-    const auto dispatcher     = mouse ? "mouse" : vars[2];
-    const auto dispatcherArgs = mouse ? vars[2] : vars[3];
+    const auto dispatcher     = flags.mouse ? "mouse" : vars[2];
+    const auto dispatcherArgs = flags.mouse ? vars[2] : vars[3];
 
     g_pGestureManager->internalBinds.emplace_back(makeShared<SKeybind>(SKeybind{
         .key     = key,
         .handler = dispatcher,
         .arg     = dispatcherArgs,
-        .mouse   = mouse,
+        .locked  = flags.locked,
+        .mouse   = flags.mouse,
     }));
 
     return result;
@@ -165,8 +187,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch",
                                 Hyprlang::CConfigValue((Hyprlang::INT)0));
 
-    HyprlandAPI::addConfigKeyword(PHANDLE, "hyprgrass-bind", onNewBind, Hyprlang::SHandlerOptions{});
-    HyprlandAPI::addConfigKeyword(PHANDLE, "hyprgrass-bindm", onNewBind, Hyprlang::SHandlerOptions{});
+    HyprlandAPI::addConfigKeyword(PHANDLE, KEYWORD_HG_BIND, onNewBind, Hyprlang::SHandlerOptions{.allowFlags = true});
     static auto P0 = HyprlandAPI::registerCallbackDynamic(
         PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) { onPreConfigReload(); });
 
