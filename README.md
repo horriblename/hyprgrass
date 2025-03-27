@@ -113,6 +113,31 @@ wayland.windowManager.hyprland = {
 };
 ```
 
+#### Overlay
+
+(untested, let me know if it works)
+
+There is an overlay provided, which should work well if you're using hyprland from nixpkgs.
+
+Add the hyprgrass overlay to your pkgs:
+
+```nix
+pkgs = import inputs.nixpkgs {
+    system = "...";
+    overlays = [inputs.hyprgrass.overlays.default];
+};
+```
+
+Hyprgrass is now available under `pkgs.hyprlandPlugins`
+
+```nix
+wayland.windowManager.hyprland = {
+    plugins = [
+        pkgs.hyprlandPlugins.hyprgrass
+    ];
+};
+```
+
 ## Configuration
 
 ### Configuration options:
