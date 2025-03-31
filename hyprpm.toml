@@ -26,6 +26,8 @@ commit_pins = [
     ["04ac46c54357278fc68f0a95d26347ea0db99496", "f383a5cd8fbc9acc1aafbf0fccb161822833b4d6"], # v0.47.0
     ["75dff7205f6d2bd437abfb4196f700abee92581a", "f383a5cd8fbc9acc1aafbf0fccb161822833b4d6"], # v0.47.1
     ["882f7ad7d2bbfc7440d0ccaef93b1cdd78e8e3ff", "499fd954a95aa2a1fee6cc31c098f6daa5ead3af"], # v0.47.2
+    ["5ee35f914f921e5696030698e74fb5566a804768", "f7b6c555a064cbf04e185e83dc2db2a843da0fda"], # v0.48.0
+    ["29e2e59fdbab8ed2cc23a20e3c6043d5decb5cdc", "f7b6c555a064cbf04e185e83dc2db2a843da0fda"], # v0.48.1
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
