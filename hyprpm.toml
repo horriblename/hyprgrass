@@ -28,6 +28,7 @@ commit_pins = [
     ["882f7ad7d2bbfc7440d0ccaef93b1cdd78e8e3ff", "499fd954a95aa2a1fee6cc31c098f6daa5ead3af"], # v0.47.2
     ["5ee35f914f921e5696030698e74fb5566a804768", "f7b6c555a064cbf04e185e83dc2db2a843da0fda"], # v0.48.0
     ["29e2e59fdbab8ed2cc23a20e3c6043d5decb5cdc", "f7b6c555a064cbf04e185e83dc2db2a843da0fda"], # v0.48.1
+    ["ddae3036ca6a1729ffe7854a59184116d2622809", "5d2eb7ef9b5ef8d1d3154d51c2c3429aac78ec05"], # missing CConfig include
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
