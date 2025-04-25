@@ -368,9 +368,9 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
 
 bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     const bool VERTANIMS =
-        g_pCompositor->m_lastMonitor->activeWorkspace->m_vRenderOffset->getConfig()->pValues->internalStyle ==
+        g_pCompositor->m_lastMonitor->activeWorkspace->m_renderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pCompositor->m_lastMonitor->activeWorkspace->m_vRenderOffset->getConfig()
+        g_pCompositor->m_lastMonitor->activeWorkspace->m_renderOffset->getConfig()
             ->pValues->internalStyle.starts_with("slidevert");
 
     const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
@@ -389,9 +389,9 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
 
 void GestureManager::updateWorkspaceSwipe() {
     const bool VERTANIMS =
-        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset->getConfig()->pValues->internalStyle ==
+        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_renderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset->getConfig()
+        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_renderOffset->getConfig()
             ->pValues->internalStyle.starts_with("slidefadevert");
 
     static auto const PSWIPEDIST =
