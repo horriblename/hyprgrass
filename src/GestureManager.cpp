@@ -64,8 +64,8 @@ int handleLongPressTimer(void* data) {
 }
 
 std::string commaSeparatedCssGaps(CCssGapData data) {
-    return std::to_string(data.top) + "," + std::to_string(data.right) + "," + std::to_string(data.bottom) + "," +
-           std::to_string(data.left);
+    return std::to_string(data.m_top) + "," + std::to_string(data.m_right) + "," + std::to_string(data.m_bottom) + "," +
+           std::to_string(data.m_left);
 }
 
 GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>()) {
@@ -84,7 +84,7 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
     this->addMultiFingerGesture(*PSENSITIVITY, *LONG_PRESS_DELAY);
     this->addMultiFingerTap(*PSENSITIVITY, *LONG_PRESS_DELAY);
 
-    this->long_press_timer = wl_event_loop_add_timer(g_pCompositor->m_sWLEventLoop, handleLongPressTimer, this);
+    this->long_press_timer = wl_event_loop_add_timer(g_pCompositor->m_wlEventLoop, handleLongPressTimer, this);
 }
 
 GestureManager::~GestureManager() {
@@ -218,10 +218,10 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                         };
 
                         CCssGapData newGapsIn = *PGAPSIN;
-                        newGapsIn.top += RESIZE_BORDER_GAP_INCREMENT;
-                        newGapsIn.right += RESIZE_BORDER_GAP_INCREMENT;
-                        newGapsIn.bottom += RESIZE_BORDER_GAP_INCREMENT;
-                        newGapsIn.left += RESIZE_BORDER_GAP_INCREMENT;
+                        newGapsIn.m_top += RESIZE_BORDER_GAP_INCREMENT;
+                        newGapsIn.m_right += RESIZE_BORDER_GAP_INCREMENT;
+                        newGapsIn.m_bottom += RESIZE_BORDER_GAP_INCREMENT;
+                        newGapsIn.m_left += RESIZE_BORDER_GAP_INCREMENT;
                         g_pConfigManager->parseKeyword("general:gaps_in", commaSeparatedCssGaps(newGapsIn));
                         return true;
                     }
@@ -368,9 +368,9 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
 
 bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     const bool VERTANIMS =
-        g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset->getConfig()->pValues->internalStyle ==
+        g_pCompositor->m_lastMonitor->activeWorkspace->m_renderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pCompositor->m_pLastMonitor->activeWorkspace->m_vRenderOffset->getConfig()
+        g_pCompositor->m_lastMonitor->activeWorkspace->m_renderOffset->getConfig()
             ->pValues->internalStyle.starts_with("slidevert");
 
     const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
@@ -389,9 +389,9 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
 
 void GestureManager::updateWorkspaceSwipe() {
     const bool VERTANIMS =
-        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset->getConfig()->pValues->internalStyle ==
+        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_renderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_vRenderOffset->getConfig()
+        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_renderOffset->getConfig()
             ->pValues->internalStyle.starts_with("slidefadevert");
 
     static auto const PSWIPEDIST =
@@ -444,7 +444,7 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
 
     this->m_pLastTouchedMonitor =
-        this->m_pLastTouchedMonitor ? this->m_pLastTouchedMonitor : g_pCompositor->m_pLastMonitor.lock();
+        this->m_pLastTouchedMonitor ? this->m_pLastTouchedMonitor : g_pCompositor->m_lastMonitor.lock();
 
     const auto& monitorPos  = m_pLastTouchedMonitor->vecPosition;
     const auto& monitorSize = m_pLastTouchedMonitor->vecSize;

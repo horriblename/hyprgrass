@@ -150,7 +150,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     g_pGlobalState  = std::make_unique<GlobalState>();
     g_pAudioBackend = AudioBackend::getInstance();
-    g_pDebouncer    = std::make_unique<Debouncer>(g_pCompositor->m_sWLEventLoop, 16, onDebounceTrigger);
+    g_pDebouncer    = std::make_unique<Debouncer>(g_pCompositor->m_wlEventLoop, 16, onDebounceTrigger);
 
     static auto P1 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "hyprgrass:edgeBegin", onEdgeBegin);
     static auto P2 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "hyprgrass:edgeUpdate", onEdgeUpdate);

@@ -42,7 +42,7 @@ void Visualizer::onRender() {
         return;
     }
 
-    const auto monitor = g_pCompositor->m_pLastMonitor.lock();
+    const auto monitor = g_pCompositor->m_lastMonitor.lock();
 
     // HACK: should not damage monitor, however, I don't understand jackshit
     // about damage so here we are.
@@ -59,7 +59,7 @@ void Visualizer::onRender() {
 }
 
 void Visualizer::onTouchDown(ITouch::SDownEvent ev) {
-    auto mon = g_pCompositor->m_pLastMonitor.lock();
+    auto mon = g_pCompositor->m_lastMonitor.lock();
     this->finger_positions.emplace(ev.touchID, FingerPos{ev.pos * mon->vecPixelSize + mon->vecPosition, std::nullopt});
     g_pCompositor->scheduleFrameForMonitor(mon);
 }
@@ -67,11 +67,11 @@ void Visualizer::onTouchDown(ITouch::SDownEvent ev) {
 void Visualizer::onTouchUp(ITouch::SUpEvent ev) {
     this->damageFinger(ev.touchID);
     this->finger_positions.erase(ev.touchID);
-    g_pCompositor->scheduleFrameForMonitor(g_pCompositor->m_pLastMonitor.lock());
+    g_pCompositor->scheduleFrameForMonitor(g_pCompositor->m_lastMonitor.lock());
 }
 
 void Visualizer::onTouchMotion(ITouch::SMotionEvent ev) {
-    auto mon                           = g_pCompositor->m_pLastMonitor.lock();
+    auto mon                           = g_pCompositor->m_lastMonitor.lock();
     this->finger_positions[ev.touchID] = {ev.pos * mon->vecPixelSize + mon->vecPosition, std::nullopt};
     g_pCompositor->scheduleFrameForMonitor(mon);
 }
