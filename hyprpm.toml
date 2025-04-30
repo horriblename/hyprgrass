@@ -31,6 +31,7 @@ commit_pins = [
     ["ddae3036ca6a1729ffe7854a59184116d2622809", "5d2eb7ef9b5ef8d1d3154d51c2c3429aac78ec05"], # missing CConfig include
     ["241a4935a244f403fa7108259075b04c81ed258f", "1b5ffdeb06eb4314535dc4d6e960bbc560013ca8"], # class members refactor
     ["02d7badd15601e52547e2f3e1c594ceede0a0455", "948d4a8a05a40b4f8ead959972821659a90f0a35"], # class members refactor
+    ["2ee5118d7a4a59d3ccfaed305bfc05c79cea7637", "18cf673df9807a97ec64a9bb18830f7b8e76e923"], # class members refactor
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
