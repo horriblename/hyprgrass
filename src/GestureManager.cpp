@@ -192,15 +192,15 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 const auto w = g_pInputManager->m_pFoundWindowToFocus.lock();
                 const Vector2D touchPos =
                     pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current) *
-                    this->m_pLastTouchedMonitor->vecSize;
+                    this->m_lastTouchedMonitor->vecSize;
                 if (w && !w->isFullscreen()) {
-                    const CBox real = {w->m_vRealPosition->value().x, w->m_vRealPosition->value().y,
-                                       w->m_vRealSize->value().x, w->m_vRealSize->value().y};
+                    const CBox real = {w->m_realPosition->value().x, w->m_realPosition->value().y,
+                                       w->m_realSize->value().x, w->m_realSize->value().y};
                     const CBox grab = {real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA,
                                        real.width + 2 * BORDER_GRAB_AREA, real.height + 2 * BORDER_GRAB_AREA};
 
                     bool notInRealWindow = !real.containsPoint(touchPos) || w->isInCurvedCorner(touchPos.x, touchPos.y);
-                    bool onTiledGap      = !w->m_bIsFloating && !w->isFullscreen() && notInRealWindow;
+                    bool onTiledGap      = !w->m_isFloating && !w->isFullscreen() && notInRealWindow;
                     bool inGrabArea      = notInRealWindow && grab.containsPoint(touchPos);
 
                     if ((onTiledGap || inGrabArea) && !w->hasPopupAt(touchPos)) {
@@ -440,15 +440,15 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
-    this->m_pLastTouchedMonitor =
-        g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
+    this->m_lastTouchedMonitor =
+        g_pCompositor->getMonitorFromName(!ev.device->m_boundOutput.empty() ? ev.device->m_boundOutput : "");
 
-    this->m_pLastTouchedMonitor =
-        this->m_pLastTouchedMonitor ? this->m_pLastTouchedMonitor : g_pCompositor->m_lastMonitor.lock();
+    this->m_lastTouchedMonitor =
+        this->m_lastTouchedMonitor ? this->m_lastTouchedMonitor : g_pCompositor->m_lastMonitor.lock();
 
-    const auto& monitorPos  = m_pLastTouchedMonitor->vecPosition;
-    const auto& monitorSize = m_pLastTouchedMonitor->vecSize;
-    this->m_sMonitorArea    = {monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
+    const auto& monitorPos  = this->m_lastTouchedMonitor->vecPosition;
+    const auto& monitorSize = this->m_lastTouchedMonitor->vecSize;
+    this->m_monitorArea    = {monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
 
     g_pCompositor->warpCursorTo({
         monitorPos.x + ev.pos.x * monitorSize.x,
@@ -557,7 +557,7 @@ bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
 }
 
 SMonitorArea GestureManager::getMonitorArea() const {
-    return this->m_sMonitorArea;
+    return this->m_monitorArea;
 }
 
 void GestureManager::onLongPressTimeout(uint32_t time_msec) {
