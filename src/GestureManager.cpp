@@ -192,7 +192,7 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 const auto w = g_pInputManager->m_pFoundWindowToFocus.lock();
                 const Vector2D touchPos =
                     pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current) *
-                    this->m_lastTouchedMonitor->vecSize;
+                    this->m_lastTouchedMonitor->m_size;
                 if (w && !w->isFullscreen()) {
                     const CBox real = {w->m_realPosition->value().x, w->m_realPosition->value().y,
                                        w->m_realSize->value().x, w->m_realSize->value().y};
@@ -368,9 +368,9 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
 
 bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     const bool VERTANIMS =
-        g_pCompositor->m_lastMonitor->activeWorkspace->m_renderOffset->getConfig()->pValues->internalStyle ==
+        g_pCompositor->m_lastMonitor->m_activeWorkspace->m_renderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pCompositor->m_lastMonitor->activeWorkspace->m_renderOffset->getConfig()
+        g_pCompositor->m_lastMonitor->m_activeWorkspace->m_renderOffset->getConfig()
             ->pValues->internalStyle.starts_with("slidevert");
 
     const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
@@ -446,8 +446,8 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     this->m_lastTouchedMonitor =
         this->m_lastTouchedMonitor ? this->m_lastTouchedMonitor : g_pCompositor->m_lastMonitor.lock();
 
-    const auto& monitorPos  = this->m_lastTouchedMonitor->vecPosition;
-    const auto& monitorSize = this->m_lastTouchedMonitor->vecSize;
+    const auto& monitorPos  = this->m_lastTouchedMonitor->m_position;
+    const auto& monitorSize = this->m_lastTouchedMonitor->m_size;
     this->m_monitorArea    = {monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
 
     g_pCompositor->warpCursorTo({
