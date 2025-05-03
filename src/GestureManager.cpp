@@ -189,7 +189,7 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 const auto BORDER_GRAB_AREA = **PBORDERSIZE + **PBORDERGRABEXTEND;
 
                 // kind of a hack: this is the window detected from previous touch events
-                const auto w = g_pInputManager->m_pFoundWindowToFocus.lock();
+                const auto w = g_pInputManager->m_foundWindowToFocus.lock();
                 const Vector2D touchPos =
                     pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current) *
                     this->m_lastTouchedMonitor->m_size;
@@ -239,16 +239,16 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
     bool found = false;
     Debug::log(LOG, "[hyprgrass] Looking for binds matching: {}", bind);
 
-    auto allBinds = std::ranges::views::join(std::array{g_pKeybindManager->m_vKeybinds, this->internalBinds});
+    auto allBinds = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
 
     for (const auto& k : allBinds) {
         if (k->key != bind)
             continue;
 
-        const auto DISPATCHER = g_pKeybindManager->m_mDispatchers.find(k->mouse ? "mouse" : k->handler);
+        const auto DISPATCHER = g_pKeybindManager->m_dispatchers.find(k->mouse ? "mouse" : k->handler);
 
         // Should never happen, as we check in the ConfigManager, but oh well
-        if (DISPATCHER == g_pKeybindManager->m_mDispatchers.end()) {
+        if (DISPATCHER == g_pKeybindManager->m_dispatchers.end()) {
             Debug::log(ERR, "Invalid handler in a keybind! (handler {} does not exist)", k->handler);
             continue;
         }
@@ -389,9 +389,9 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
 
 void GestureManager::updateWorkspaceSwipe() {
     const bool VERTANIMS =
-        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_renderOffset->getConfig()->pValues->internalStyle ==
+        g_pInputManager->m_activeSwipe.pWorkspaceBegin->m_renderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_renderOffset->getConfig()
+        g_pInputManager->m_activeSwipe.pWorkspaceBegin->m_renderOffset->getConfig()
             ->pValues->internalStyle.starts_with("slidefadevert");
 
     static auto const PSWIPEDIST =
@@ -462,16 +462,16 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         this->hookHandled = false;
     }
 
-    if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
+    if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_touchData.touchFocusSurface) {
         // remember which surfaces were touched, to later send cancel events
-        const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
+        const auto surface = g_pInputManager->m_touchData.touchFocusSurface;
 
         wl_client* client = surface.get()->client();
         if (client) {
             SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
 
             if (seat) {
-                auto touches = seat.get()->touches;
+                auto touches = seat.get()->m_touches;
                 for (const auto& touch : touches) {
                     this->touchedResources.insert(touch);
                 }
@@ -515,7 +515,7 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
 
     const auto BLOCK = IGestureManager::onTouchUp(gesture_event);
     if (**SEND_CANCEL) {
-        const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
+        const auto surface = g_pInputManager->m_touchData.touchFocusSurface;
 
         if (!surface.valid()) {
             return true;
@@ -531,7 +531,7 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
             return true;
         }
 
-        auto touches = seat.get()->touches;
+        auto touches = seat.get()->m_touches;
         for (const auto& touch : touches) {
             this->touchedResources.remove(touch);
         }
