@@ -22,7 +22,7 @@ Visualizer::Visualizer() {
     const unsigned char* data = cairo_image_surface_get_data(this->cairoSurface);
 
     this->texture->allocate();
-    glBindTexture(GL_TEXTURE_2D, this->texture->m_iTexID);
+    glBindTexture(GL_TEXTURE_2D, this->texture->m_texID);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
