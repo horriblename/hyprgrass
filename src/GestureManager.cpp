@@ -189,18 +189,18 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 const auto BORDER_GRAB_AREA = **PBORDERSIZE + **PBORDERGRABEXTEND;
 
                 // kind of a hack: this is the window detected from previous touch events
-                const auto w = g_pInputManager->m_pFoundWindowToFocus.lock();
+                const auto w = g_pInputManager->m_foundWindowToFocus.lock();
                 const Vector2D touchPos =
                     pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current) *
-                    this->m_pLastTouchedMonitor->vecSize;
+                    this->m_lastTouchedMonitor->m_size;
                 if (w && !w->isFullscreen()) {
-                    const CBox real = {w->m_vRealPosition->value().x, w->m_vRealPosition->value().y,
-                                       w->m_vRealSize->value().x, w->m_vRealSize->value().y};
+                    const CBox real = {w->m_realPosition->value().x, w->m_realPosition->value().y,
+                                       w->m_realSize->value().x, w->m_realSize->value().y};
                     const CBox grab = {real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA,
                                        real.width + 2 * BORDER_GRAB_AREA, real.height + 2 * BORDER_GRAB_AREA};
 
                     bool notInRealWindow = !real.containsPoint(touchPos) || w->isInCurvedCorner(touchPos.x, touchPos.y);
-                    bool onTiledGap      = !w->m_bIsFloating && !w->isFullscreen() && notInRealWindow;
+                    bool onTiledGap      = !w->m_isFloating && !w->isFullscreen() && notInRealWindow;
                     bool inGrabArea      = notInRealWindow && grab.containsPoint(touchPos);
 
                     if ((onTiledGap || inGrabArea) && !w->hasPopupAt(touchPos)) {
@@ -239,16 +239,16 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
     bool found = false;
     Debug::log(LOG, "[hyprgrass] Looking for binds matching: {}", bind);
 
-    auto allBinds = std::ranges::views::join(std::array{g_pKeybindManager->m_vKeybinds, this->internalBinds});
+    auto allBinds = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
 
     for (const auto& k : allBinds) {
         if (k->key != bind)
             continue;
 
-        const auto DISPATCHER = g_pKeybindManager->m_mDispatchers.find(k->mouse ? "mouse" : k->handler);
+        const auto DISPATCHER = g_pKeybindManager->m_dispatchers.find(k->mouse ? "mouse" : k->handler);
 
         // Should never happen, as we check in the ConfigManager, but oh well
-        if (DISPATCHER == g_pKeybindManager->m_mDispatchers.end()) {
+        if (DISPATCHER == g_pKeybindManager->m_dispatchers.end()) {
             Debug::log(ERR, "Invalid handler in a keybind! (handler {} does not exist)", k->handler);
             continue;
         }
@@ -368,9 +368,9 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
 
 bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     const bool VERTANIMS =
-        g_pCompositor->m_lastMonitor->activeWorkspace->m_renderOffset->getConfig()->pValues->internalStyle ==
+        g_pCompositor->m_lastMonitor->m_activeWorkspace->m_renderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pCompositor->m_lastMonitor->activeWorkspace->m_renderOffset->getConfig()
+        g_pCompositor->m_lastMonitor->m_activeWorkspace->m_renderOffset->getConfig()
             ->pValues->internalStyle.starts_with("slidevert");
 
     const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
@@ -389,9 +389,9 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
 
 void GestureManager::updateWorkspaceSwipe() {
     const bool VERTANIMS =
-        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_renderOffset->getConfig()->pValues->internalStyle ==
+        g_pInputManager->m_activeSwipe.pWorkspaceBegin->m_renderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pInputManager->m_sActiveSwipe.pWorkspaceBegin->m_renderOffset->getConfig()
+        g_pInputManager->m_activeSwipe.pWorkspaceBegin->m_renderOffset->getConfig()
             ->pValues->internalStyle.starts_with("slidefadevert");
 
     static auto const PSWIPEDIST =
@@ -440,15 +440,15 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
-    this->m_pLastTouchedMonitor =
-        g_pCompositor->getMonitorFromName(!ev.device->boundOutput.empty() ? ev.device->boundOutput : "");
+    this->m_lastTouchedMonitor =
+        g_pCompositor->getMonitorFromName(!ev.device->m_boundOutput.empty() ? ev.device->m_boundOutput : "");
 
-    this->m_pLastTouchedMonitor =
-        this->m_pLastTouchedMonitor ? this->m_pLastTouchedMonitor : g_pCompositor->m_lastMonitor.lock();
+    this->m_lastTouchedMonitor =
+        this->m_lastTouchedMonitor ? this->m_lastTouchedMonitor : g_pCompositor->m_lastMonitor.lock();
 
-    const auto& monitorPos  = m_pLastTouchedMonitor->vecPosition;
-    const auto& monitorSize = m_pLastTouchedMonitor->vecSize;
-    this->m_sMonitorArea    = {monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
+    const auto& monitorPos  = this->m_lastTouchedMonitor->m_position;
+    const auto& monitorSize = this->m_lastTouchedMonitor->m_size;
+    this->m_monitorArea    = {monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
 
     g_pCompositor->warpCursorTo({
         monitorPos.x + ev.pos.x * monitorSize.x,
@@ -462,16 +462,16 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         this->hookHandled = false;
     }
 
-    if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_sTouchData.touchFocusSurface) {
+    if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_touchData.touchFocusSurface) {
         // remember which surfaces were touched, to later send cancel events
-        const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
+        const auto surface = g_pInputManager->m_touchData.touchFocusSurface;
 
         wl_client* client = surface.get()->client();
         if (client) {
             SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
 
             if (seat) {
-                auto touches = seat.get()->touches;
+                auto touches = seat.get()->m_touches;
                 for (const auto& touch : touches) {
                     this->touchedResources.insert(touch);
                 }
@@ -515,7 +515,7 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
 
     const auto BLOCK = IGestureManager::onTouchUp(gesture_event);
     if (**SEND_CANCEL) {
-        const auto surface = g_pInputManager->m_sTouchData.touchFocusSurface;
+        const auto surface = g_pInputManager->m_touchData.touchFocusSurface;
 
         if (!surface.valid()) {
             return true;
@@ -531,7 +531,7 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
             return true;
         }
 
-        auto touches = seat.get()->touches;
+        auto touches = seat.get()->m_touches;
         for (const auto& touch : touches) {
             this->touchedResources.remove(touch);
         }
@@ -557,7 +557,7 @@ bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
 }
 
 SMonitorArea GestureManager::getMonitorArea() const {
-    return this->m_sMonitorArea;
+    return this->m_monitorArea;
 }
 
 void GestureManager::onLongPressTimeout(uint32_t time_msec) {

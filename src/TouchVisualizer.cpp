@@ -22,7 +22,7 @@ Visualizer::Visualizer() {
     const unsigned char* data = cairo_image_surface_get_data(this->cairoSurface);
 
     this->texture->allocate();
-    glBindTexture(GL_TEXTURE_2D, this->texture->m_iTexID);
+    glBindTexture(GL_TEXTURE_2D, this->texture->m_texID);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
@@ -60,7 +60,7 @@ void Visualizer::onRender() {
 
 void Visualizer::onTouchDown(ITouch::SDownEvent ev) {
     auto mon = g_pCompositor->m_lastMonitor.lock();
-    this->finger_positions.emplace(ev.touchID, FingerPos{ev.pos * mon->vecPixelSize + mon->vecPosition, std::nullopt});
+    this->finger_positions.emplace(ev.touchID, FingerPos{ev.pos * mon->m_pixelSize + mon->m_position, std::nullopt});
     g_pCompositor->scheduleFrameForMonitor(mon);
 }
 
@@ -72,7 +72,7 @@ void Visualizer::onTouchUp(ITouch::SUpEvent ev) {
 
 void Visualizer::onTouchMotion(ITouch::SMotionEvent ev) {
     auto mon                           = g_pCompositor->m_lastMonitor.lock();
-    this->finger_positions[ev.touchID] = {ev.pos * mon->vecPixelSize + mon->vecPosition, std::nullopt};
+    this->finger_positions[ev.touchID] = {ev.pos * mon->m_pixelSize + mon->m_position, std::nullopt};
     g_pCompositor->scheduleFrameForMonitor(mon);
 }
 
