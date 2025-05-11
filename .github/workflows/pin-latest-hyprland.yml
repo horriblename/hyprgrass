@@ -22,24 +22,12 @@ jobs:
           set -m   # workaround: I get "fg: no job control" even though I don't use any job control
           git fetch --depth=1 --tags origin main
 
-          ./scripts/ci/pin-latest-hyprland main
-          if git diff --quiet hyprpm.toml; then # no changes
-            exit 0
-          fi
+          ./scripts/ci/pin-latest-hyprland origin/main
 
-          echo 'creating branch for PR' >&2
-
-          branchName="chore/pin-update$(%Y%m%d%H%M%S)"
-          git checkout -b "$branchName"
-
-          git add hyprpm.toml
-          git commit -m 'ci: automated update of hyprpm.toml'
-
-          echo 'creating PR' >&2
-          gh pr create --base main \
-              --head "$branchName" \
-              --title 'Automated PR: Update hyprpm pin' \
-              --body 'This PR was created by a Github Actions workflow'
-
-          echo 'PR created.' >&2
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: ci: automated update of hyprpm.toml
+          title: 'Automated PR: Update hyprpm pin'
+          body: 'This PR was created by a Github Actions workflow'
 
