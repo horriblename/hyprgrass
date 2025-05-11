@@ -29,7 +29,7 @@ jobs:
 
           echo 'creating branch for PR' >&2
 
-          branchName="chore/pin-update$(%Y%m%d%H%M%S)"
+          branchName="chore/pin-update$(date +%Y%m%d%H%M%S)"
           git checkout -b "$branchName"
 
           git add hyprpm.toml
