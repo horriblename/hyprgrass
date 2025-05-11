@@ -175,10 +175,6 @@ gestures {
 You can also bind gesture events to dispatchers, using hyprgrass-bind keyword.
 The syntax is like normal keybinds.
 
-### Hyprgrass-pulse
-
-see [./examples/hyprgrass-pulse/README.md](./examples/hyprgrass-pulse/README.md)
-
 #### Syntax
 
 ```
@@ -228,6 +224,10 @@ plugin {
     }
 }
 ```
+
+### Hyprgrass-pulse
+
+see [./examples/hyprgrass-pulse/README.md](./examples/hyprgrass-pulse/README.md)
 
 # Other touch screen goodies
 
