@@ -35,6 +35,7 @@ commit_pins = [
     ["8d6618104e28f6444d917b398244c56ac32ae993", "aca99f87998a698cbdcaa53dc113ffb2be60c946"], # helpers class members refactor
     ["46ac115bd19ee3aff5c816033de0b1d55a74e33f", "b4b20b93b49b135b26b332454fa9a70e4f7ac4a5"], # input class members refactor
     ["997fefbc1113323ed2bf5d782bdafc0d17532647", "40d9cc4d9529e1e81305bc2681082bdb45118ce9"], # texture class members refactor
+    ["9958d297641b5c84dcff93f9039d80a5ad37ab00", "51da8d137e042c117fe46a5c019ec38c0de0342a"], # v0.49.0
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
