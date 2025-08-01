@@ -54,7 +54,7 @@ void Visualizer::onRender() {
 
     for (auto& finger : this->finger_positions) {
         CBox dmg = boxAroundCenter(finger.second.curr, TOUCH_POINT_RADIUS);
-        g_pHyprOpenGL->renderTexture(this->texture, dmg, 1.f, 0, true);
+        g_pHyprOpenGL->renderTexture(this->texture, dmg, { .a = 1.f, .round = 0, .discardActive = true });
     }
 }
 
