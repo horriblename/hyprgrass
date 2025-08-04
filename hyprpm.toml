@@ -37,6 +37,8 @@ commit_pins = [
     ["997fefbc1113323ed2bf5d782bdafc0d17532647", "40d9cc4d9529e1e81305bc2681082bdb45118ce9"], # texture class members refactor
     ["9958d297641b5c84dcff93f9039d80a5ad37ab00", "51da8d137e042c117fe46a5c019ec38c0de0342a"], # v0.49.0
     ["a907ecd4ff736a3a09410532b405a437eb48033c", "debbc2a4f9a4092856737d24eb01802e0e914e76"], # renderTexture changes
+    ["c4a4c341568944bd4fb9cd503558b2de602c0213", "7dafd92afedda246a9c1c4187784c3fc1d6261e5"], # v0.50.0
+    ["4e242d086e20b32951fdc0ebcbfb4d41b5be8dcc", "7dafd92afedda246a9c1c4187784c3fc1d6261e5"], # v0.50.1
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 

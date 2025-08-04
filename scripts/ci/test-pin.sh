@@ -23,7 +23,19 @@ hyprgrassRev=${2:-main}
 hyprlandCommit="$(git ls-remote https://github.com/hyprwm/Hyprland.git "${hyprlandRev}" | cut -f 1)"
 hyprgrassCommit="$(git rev-parse "${hyprgrassRev}")"
 
-nix build --no-link "git+file://$(pwd)?rev=${hyprgrassCommit}&shallow=1#hyprgrassWithTests" \
-	--override-input hyprland "github:hyprwm/Hyprland/${hyprlandRev}" \
+hlUrl="github:hyprwm/Hyprland/${hyprlandRev}" 
+
+worktreeDir="pin-build"
+
+git worktree add "$worktreeDir" "$hyprgrassCommit"
+pushd pin-build
+
+# NOTE: nix build --override-input does not override input of inputs, i.e. hyprland/aquamarine
+# will not be updated, hence we need to run `flake update` :<
+nix flake update --override-input hyprland "$hlUrl"
+nix build --no-link '.#hyprgrassWithTests'
+
+popd
+git worktree remove "$worktreeDir"
 
 echo "[\"${hyprlandCommit}\", \"${hyprgrassCommit}\"], # ${hyprlandRev}"
