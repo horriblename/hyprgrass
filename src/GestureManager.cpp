@@ -4,8 +4,8 @@
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
-#include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/managers/HookSystemManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
@@ -120,10 +120,6 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 
     auto const workspace_swipe_edge_str = std::string{*WORKSPACE_SWIPE_EDGE};
 
-    if (g_pSessionLockManager->isSessionLocked()) {
-        return this->handleGestureBind(gev.to_string(), true);
-    }
-
     switch (gev.type) {
         case DragGestureType::SWIPE: {
             static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:swipeBegin");
@@ -185,6 +181,10 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
         }
 
         case DragGestureType::LONG_PRESS:
+            if (g_pSessionLockManager->isSessionLocked()) {
+                return this->handleGestureBind(gev.to_string(), true);
+            }
+
             if (**RESIZE_LONG_PRESS && gev.finger_count == 1) {
                 const auto BORDER_GRAB_AREA = **PBORDERSIZE + **PBORDERGRABEXTEND;
 
@@ -253,14 +253,14 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
             continue;
         }
 
-        // call the dispatcher
-        Debug::log(LOG, "[hyprgrass] calling dispatcher ({})", bind);
-
         if (k->handler == "pass")
             continue;
 
         if (k->locked != g_pSessionLockManager->isSessionLocked())
             continue;
+
+        // call the dispatcher
+        Debug::log(LOG, "[hyprgrass] calling dispatcher ({})", bind);
 
         if (k->handler == "mouse") {
             DISPATCHER->second((pressed ? "1" : "0") + k->arg);
@@ -360,9 +360,10 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
             if (this->hookHandled) {
                 EMIT_HOOK_EVENT("hyprgrass:edgeEnd", 0);
                 this->hookHandled = false;
-            } else {
+            } else if (this->workspaceSwipeActive) {
                 g_pInputManager->endWorkspaceSwipe();
             }
+            break;
     }
 }
 
@@ -391,8 +392,8 @@ void GestureManager::updateWorkspaceSwipe() {
     const bool VERTANIMS =
         g_pInputManager->m_activeSwipe.pWorkspaceBegin->m_renderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pInputManager->m_activeSwipe.pWorkspaceBegin->m_renderOffset->getConfig()
-            ->pValues->internalStyle.starts_with("slidefadevert");
+        g_pInputManager->m_activeSwipe.pWorkspaceBegin->m_renderOffset->getConfig()->pValues->internalStyle.starts_with(
+            "slidefadevert");
 
     static auto const PSWIPEDIST =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
@@ -448,7 +449,7 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
 
     const auto& monitorPos  = this->m_lastTouchedMonitor->m_position;
     const auto& monitorSize = this->m_lastTouchedMonitor->m_size;
-    this->m_monitorArea    = {monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
+    this->m_monitorArea     = {monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
 
     g_pCompositor->warpCursorTo({
         monitorPos.x + ev.pos.x * monitorSize.x,
@@ -603,4 +604,8 @@ void GestureManager::touchBindDispatcher(std::string args) {
         .handler = dispatcher,
         .arg     = dispatcherArgs,
     }));
+}
+
+void GestureManager::debugLog(const std::string& msg) {
+    Debug::log(LOG, "[hyprgrass] " + msg);
 }

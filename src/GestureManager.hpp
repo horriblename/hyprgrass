@@ -37,6 +37,8 @@ class GestureManager : public IGestureManager {
     bool handleCompletedGesture(const CompletedGestureEvent& gev) override;
     void handleCancelledGesture() override;
 
+    void debugLog(const std::string& msg) override;
+
   private:
     VecSet<CWeakPointer<CWLTouchResource>> touchedResources;
     PHLMONITOR m_lastTouchedMonitor;

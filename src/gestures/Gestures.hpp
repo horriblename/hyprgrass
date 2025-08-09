@@ -78,6 +78,8 @@ class IGestureManager {
     virtual void updateLongPressTimer(uint32_t current_time, uint32_t delay) = 0;
     virtual void stopLongPressTimer()                                        = 0;
 
+    virtual void debugLog(const std::string& msg) {};
+
   private:
     std::unique_ptr<Logger> logger;
     bool inhibitTouchEvents;
