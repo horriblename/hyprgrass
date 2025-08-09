@@ -4,8 +4,8 @@
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
-#include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/managers/HookSystemManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
@@ -120,10 +120,6 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 
     auto const workspace_swipe_edge_str = std::string{*WORKSPACE_SWIPE_EDGE};
 
-    if (g_pSessionLockManager->isSessionLocked()) {
-        return this->handleGestureBind(gev.to_string(), true);
-    }
-
     switch (gev.type) {
         case DragGestureType::SWIPE: {
             static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:swipeBegin");
@@ -185,6 +181,10 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
         }
 
         case DragGestureType::LONG_PRESS:
+            if (g_pSessionLockManager->isSessionLocked()) {
+                return this->handleGestureBind(gev.to_string(), true);
+            }
+
             if (**RESIZE_LONG_PRESS && gev.finger_count == 1) {
                 const auto BORDER_GRAB_AREA = **PBORDERSIZE + **PBORDERGRABEXTEND;
 
