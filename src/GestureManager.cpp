@@ -253,14 +253,14 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
             continue;
         }
 
-        // call the dispatcher
-        Debug::log(LOG, "[hyprgrass] calling dispatcher ({})", bind);
-
         if (k->handler == "pass")
             continue;
 
         if (k->locked != g_pSessionLockManager->isSessionLocked())
             continue;
+
+        // call the dispatcher
+        Debug::log(LOG, "[hyprgrass] calling dispatcher ({})", bind);
 
         if (k->handler == "mouse") {
             DISPATCHER->second((pressed ? "1" : "0") + k->arg);
