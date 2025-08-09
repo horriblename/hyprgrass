@@ -391,8 +391,8 @@ void GestureManager::updateWorkspaceSwipe() {
     const bool VERTANIMS =
         g_pInputManager->m_activeSwipe.pWorkspaceBegin->m_renderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pInputManager->m_activeSwipe.pWorkspaceBegin->m_renderOffset->getConfig()
-            ->pValues->internalStyle.starts_with("slidefadevert");
+        g_pInputManager->m_activeSwipe.pWorkspaceBegin->m_renderOffset->getConfig()->pValues->internalStyle.starts_with(
+            "slidefadevert");
 
     static auto const PSWIPEDIST =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
@@ -448,7 +448,7 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
 
     const auto& monitorPos  = this->m_lastTouchedMonitor->m_position;
     const auto& monitorSize = this->m_lastTouchedMonitor->m_size;
-    this->m_monitorArea    = {monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
+    this->m_monitorArea     = {monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
 
     g_pCompositor->warpCursorTo({
         monitorPos.x + ev.pos.x * monitorSize.x,
