@@ -360,9 +360,10 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
             if (this->hookHandled) {
                 EMIT_HOOK_EVENT("hyprgrass:edgeEnd", 0);
                 this->hookHandled = false;
-            } else {
+            } else if (this->workspaceSwipeActive) {
                 g_pInputManager->endWorkspaceSwipe();
             }
+            break;
     }
 }
 
