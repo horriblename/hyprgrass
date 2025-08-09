@@ -604,3 +604,7 @@ void GestureManager::touchBindDispatcher(std::string args) {
         .arg     = dispatcherArgs,
     }));
 }
+
+void GestureManager::debugLog(const std::string& msg) {
+    Debug::log(LOG, "[hyprgrass] " + msg);
+}
