@@ -14,8 +14,8 @@ description = "Hyprgras extension to control audio volume in pulse-audio"
 author = "horriblename"
 
 [hyprgrass-pulse]
-output = "build/examples/hyprgrass-pulse/libhyprgrass-pulse.so"
+output = "build/pulse/examples/hyprgrass-pulse/libhyprgrass-pulse.so"
 steps = [
-    "meson setup build -Dhyprgrass=false -Dhyprgrass-pulse=true",
-    "ninja -C build",
+    "meson setup build/pulse -Dhyprgrass=false -Dhyprgrass-pulse=true",
+    "ninja -C build/pulse",
 ]
