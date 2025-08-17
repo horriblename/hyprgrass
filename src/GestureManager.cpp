@@ -92,7 +92,7 @@ GestureManager::~GestureManager() {
 }
 
 bool GestureManager::handleCompletedGesture(const CompletedGestureEvent& gev) {
-    return this->handleGestureBind(gev.to_string(), false);
+    return this->handleGestureBind(gev.to_string(), GestureEventType::COMPLETED);
 }
 
 bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
@@ -182,7 +182,7 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 
         case DragGestureType::LONG_PRESS:
             if (g_pSessionLockManager->isSessionLocked()) {
-                return this->handleGestureBind(gev.to_string(), true);
+                return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
             }
 
             if (**RESIZE_LONG_PRESS && gev.finger_count == 1) {
@@ -227,7 +227,7 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                     }
                 }
             }
-            return this->handleGestureBind(gev.to_string(), true);
+            return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
     }
 
     return false;
@@ -235,7 +235,7 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 
 // bind is the name of the gesture event.
 // pressed only matters for mouse binds: only start of drag gestures should set it to true
-bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
+bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) {
     bool found = false;
     Debug::log(LOG, "[hyprgrass] Looking for binds matching: {}", bind);
 
@@ -259,14 +259,23 @@ bool GestureManager::handleGestureBind(std::string bind, bool pressed) {
         if (k->locked != g_pSessionLockManager->isSessionLocked())
             continue;
 
-        // call the dispatcher
-        Debug::log(LOG, "[hyprgrass] calling dispatcher ({})", bind);
-
-        if (k->handler == "mouse") {
-            DISPATCHER->second((pressed ? "1" : "0") + k->arg);
-        } else {
-            DISPATCHER->second(k->arg);
+        switch (type) {
+            case GestureEventType::COMPLETED:
+                if (k->handler != "mouse") {
+                    Debug::log(LOG, "[hyprgrass] calling dispatcher ({})", bind);
+                    DISPATCHER->second(k->arg);
+                    found = found || !k->nonConsuming;
+                }
+            default:
+                if (k->handler == "mouse") {
+                    Debug::log(LOG, "[hyprgrass] calling mouse dispatcher ({})", bind);
+                    char pressed = type == GestureEventType::DRAG_BEGIN ? '1' : '0';
+                    DISPATCHER->second(pressed + k->arg);
+                    found = found || !k->nonConsuming;
+                }
         }
+
+        // call the dispatcher
 
         if (!k->nonConsuming) {
             found = true;
@@ -328,7 +337,7 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
             ->getDataStaticPtr();
 
     if (g_pSessionLockManager->isSessionLocked()) {
-        this->handleGestureBind(gev.to_string(), false);
+        this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_END);
         return;
     }
 
@@ -354,7 +363,7 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
                 return;
             }
 
-            this->handleGestureBind(gev.to_string(), false);
+            this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_END);
             return;
         case DragGestureType::EDGE_SWIPE:
             if (this->hookHandled) {
