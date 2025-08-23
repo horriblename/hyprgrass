@@ -8,6 +8,12 @@
 #include <hyprland/src/managers/KeybindManager.hpp>
 #undef private
 
+enum class GestureEventType {
+    DRAG_BEGIN,
+    DRAG_END,
+    COMPLETED, // CompletedGestureEvent
+};
+
 class GestureManager : public IGestureManager {
   public:
     uint32_t long_press_next_trigger_time;
@@ -52,7 +58,7 @@ class GestureManager : public IGestureManager {
     bool hookHandled          = false;
     wf::touch::point_t emulatedSwipePoint;
 
-    bool handleGestureBind(std::string bind, bool pressed);
+    bool handleGestureBind(std::string bind, GestureEventType);
 
     // converts wlr touch event positions (number between 0.0 to 1.0) to pixel position,
     // takes into consideration monitor size and offset

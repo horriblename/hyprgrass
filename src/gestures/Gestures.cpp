@@ -199,7 +199,12 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
             const auto gesture = DragGestureEvent{DragGestureType::LONG_PRESS, 0,
                                                   static_cast<int>(this->m_sGestureState.fingers.size())};
 
-            if (this->emitDragGesture(gesture)) {
+            const auto gesture1 = CompletedGestureEvent{CompletedGestureType::LONG_PRESS, 0,
+                                                        static_cast<int>(this->m_sGestureState.fingers.size())};
+
+            bool handled = this->emitDragGesture(gesture) || this->emitCompletedGesture(gesture1);
+
+            if (handled) {
                 this->cancelTouchEventsOnAllWindows();
             }
         });
@@ -214,11 +219,6 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
         if (this->activeDragGesture.has_value()) {
             this->emitDragGestureEnd(this->activeDragGesture.value());
             return;
-        } else {
-            const auto gesture = CompletedGestureEvent{CompletedGestureType::LONG_PRESS, 0,
-                                                       static_cast<int>(this->m_sGestureState.fingers.size())};
-
-            this->emitCompletedGesture(gesture);
         };
     };
     auto cancel = [this]() {
