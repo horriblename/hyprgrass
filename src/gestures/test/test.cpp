@@ -234,7 +234,7 @@ TEST_CASE("Long press: begin drag") {
     ProcessEvents(gm, {.type = ExpectResultType::DRAG_TRIGGERED}, events);
 }
 
-TEST_CASE("Long press and drag: full drag") {
+TEST_CASE("Long press and drag: drag ends after all fingers lifted") {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newDragHandler();
     gm.addLongPress(&SENSITIVITY, &LONG_PRESS_DELAY);
