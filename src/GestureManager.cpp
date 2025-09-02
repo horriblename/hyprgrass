@@ -9,6 +9,7 @@
 #include <hyprland/src/managers/HookSystemManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/managers/input/UnifiedWorkspaceSwipeGesture.hpp>
 #include <hyprland/src/protocols/core/Compositor.hpp>
 #undef private
 
@@ -348,7 +349,7 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
                 EMIT_HOOK_EVENT("hyprgrass:swipeEnd", 0)
                 this->hookHandled = false;
             } else if (this->workspaceSwipeActive) {
-                g_pInputManager->endWorkspaceSwipe();
+                g_pUnifiedWorkspaceSwipe->end();
                 this->workspaceSwipeActive = false;
             } else if (**EMULATE_TOUCHPAD) {
                 g_pInputManager->onSwipeEnd(IPointer::SSwipeEndEvent{.cancelled = false});
@@ -370,7 +371,7 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
                 EMIT_HOOK_EVENT("hyprgrass:edgeEnd", 0);
                 this->hookHandled = false;
             } else if (this->workspaceSwipeActive) {
-                g_pInputManager->endWorkspaceSwipe();
+                g_pUnifiedWorkspaceSwipe->end();
             }
             break;
     }
@@ -390,7 +391,7 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
 
     if (direction & workspace_directions && !(direction & anti_directions)) {
         this->workspaceSwipeActive = true;
-        g_pInputManager->beginWorkspaceSwipe();
+        g_pUnifiedWorkspaceSwipe->begin();
         return true;
     }
 
@@ -398,11 +399,8 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
 }
 
 void GestureManager::updateWorkspaceSwipe() {
-    const bool VERTANIMS =
-        g_pInputManager->m_activeSwipe.pWorkspaceBegin->m_renderOffset->getConfig()->pValues->internalStyle ==
-            "slidevert" ||
-        g_pInputManager->m_activeSwipe.pWorkspaceBegin->m_renderOffset->getConfig()->pValues->internalStyle.starts_with(
-            "slidefadevert");
+    const auto  ANIMSTYLE = g_pUnifiedWorkspaceSwipe->m_workspaceBegin->m_renderOffset->getStyle();
+    const bool  VERTANIMS = ANIMSTYLE == "slidevert" || ANIMSTYLE.starts_with("slidefadevert");
 
     static auto const PSWIPEDIST =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
@@ -414,7 +412,7 @@ void GestureManager::updateWorkspaceSwipe() {
 
     const auto swipe_delta = Vector2D(delta_percent.x * SWIPEDISTANCE, delta_percent.y * SWIPEDISTANCE);
 
-    g_pInputManager->updateWorkspaceSwipe(VERTANIMS ? -swipe_delta.y : -swipe_delta.x);
+    g_pUnifiedWorkspaceSwipe->update(VERTANIMS ? -swipe_delta.y : -swipe_delta.x);
     return;
 }
 
