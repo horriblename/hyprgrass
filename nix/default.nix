@@ -12,11 +12,12 @@
   runTests ? false,
   ...
 }:
-hyprlandPlugins.mkHyprlandPlugin hyprland {
+hyprlandPlugins.mkHyprlandPlugin {
   pluginName = "hyprgrass";
   version = "${tag}+${commit}";
   src = ./..;
 
+  inherit hyprland;
   nativeBuildInputs = [cmake ninja meson] ++ lib.optional runTests doctest;
 
   buildInputs = [wf-touch doctest];
