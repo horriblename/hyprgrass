@@ -10,11 +10,12 @@
   commit,
   ...
 }:
-hyprlandPlugins.mkHyprlandPlugin hyprland {
+hyprlandPlugins.mkHyprlandPlugin {
   pluginName = "hyprgrass-pulse";
   version = "${tag}+${commit}";
   src = ./..;
 
+  inherit hyprland;
   nativeBuildInputs = [ninja meson pkg-config];
 
   buildInputs = [libpulseaudio];
