@@ -1,7 +1,7 @@
 #include "../../src/version.hpp"
 #include "Debouncer.hpp"
 #include "globals.hpp"
-#include "pulse.hpp"
+#include "backlight.hpp"
 #include "src/SharedDefs.hpp"
 
 #include <any>
@@ -23,7 +23,7 @@
 
 const Hyprgraphics::CColor s_pluginColor = (Hyprgraphics::CColor::SSRGB{0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f});
 
-std::shared_ptr<AudioBackend> g_pAudioBackend;
+std::shared_ptr<BacklightBackend> g_pBackend;
 std::unique_ptr<Debouncer> g_pDebouncer;
 struct GlobalState {
     Vector2D last_triggered_pos;
@@ -38,7 +38,7 @@ void onEdgeBegin(void*, SCallbackInfo& cbinfo, std::any args) {
     auto ev = std::any_cast<std::pair<std::string, Vector2D>>(args);
 
     static auto const SWIPE_EDGE =
-        (Hyprlang::STRING const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:hyprgrass-pulse:edge")
+        (Hyprlang::STRING const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:hyprgrass-backlight:edge")
             ->getDataStaticPtr();
 
     // we only accept "edge:a:b"
@@ -98,7 +98,7 @@ bool boolXor(bool a, bool b) {
 
 void onDebounceTrigger() {
     static auto const SWIPE_EDGE =
-        (Hyprlang::STRING const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:hyprgrass-pulse:edge")
+        (Hyprlang::STRING const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:hyprgrass-backlight:edge")
             ->getDataStaticPtr();
 
     if (g_pGlobalState->latest_pos == g_pGlobalState->last_triggered_pos) {
@@ -122,7 +122,7 @@ void onDebounceTrigger() {
 
     double steps = PA_MAX_VOLUME * (delta / MAX_RANGE);
 
-    g_pAudioBackend->changeVolume(change, steps, PA_MAX_VOLUME);
+    g_pBackend->set_brightness("", change, steps);
 
     g_pGlobalState->last_triggered_pos = g_pGlobalState->latest_pos;
 }
@@ -135,7 +135,7 @@ APICALL EXPORT std::string PLUGIN_API_VERSION() {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:hyprgrass-pulse:edge", Hyprlang::CConfigValue((Hyprlang::STRING) "r"));
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:hyprgrass-backlight:edge", Hyprlang::CConfigValue((Hyprlang::STRING) "l"));
 
     const auto hlTargetVersion = GIT_COMMIT_HASH;
     const auto hlVersion       = HyprlandAPI::getHyprlandVersion(PHANDLE);
@@ -149,7 +149,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     }
 
     g_pGlobalState  = std::make_unique<GlobalState>();
-    g_pAudioBackend = AudioBackend::getInstance();
+    g_pBackend = std::make_shared<BacklightBackend>();
     g_pDebouncer    = std::make_unique<Debouncer>(g_pCompositor->m_wlEventLoop, 16, onDebounceTrigger);
 
     static auto P1 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "hyprgrass:edgeBegin", onEdgeBegin);
@@ -157,16 +157,16 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     static auto P3 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "hyprgrass:edgeEnd", onEdgeEnd);
 
     if (!P1 || !P2 || !P3) {
-        Debug::log(LOG, "[hyprgrass pulse] something went wrong: could not register hooks");
+        Debug::log(LOG, "[hyprgrass backlight] something went wrong: could not register hooks");
     }
 
     HyprlandAPI::reloadConfig();
 
-    return {"hyprgrass-pulse", "Hyprgrass pulseaudio extension", "horriblename", HYPRGRASS_VERSION};
+    return {"hyprgrass-backlight", "Hyprgrass backlight extension", "horriblename", HYPRGRASS_VERSION};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
     g_pDebouncer.reset();
-    g_pAudioBackend.reset();
+    g_pBackend.reset();
     g_pGlobalState.reset();
 }

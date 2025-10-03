@@ -40,6 +40,7 @@ commit_pins = [
     ["c4a4c341568944bd4fb9cd503558b2de602c0213", "7dafd92afedda246a9c1c4187784c3fc1d6261e5"], # v0.50.0
     ["4e242d086e20b32951fdc0ebcbfb4d41b5be8dcc", "7dafd92afedda246a9c1c4187784c3fc1d6261e5"], # v0.50.1
     ["127aab815908ecbd3db4d23f127d2e96b79855f9", "faedd0064291c353a204ba568f52b15a3cc1aa85"], # g_pUnifiedWorkspaceSwipe
+    ["127aab815908ecbd3db4d23f127d2e96b79855f9", "e9e2603f0968d835a27cd60aaa67dc97c4975d2f"], # backlight extention
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
@@ -59,4 +60,13 @@ output = "examples/hyprgrass-pulse/build/examples/hyprgrass-pulse/libhyprgrass-p
 build = [
     "meson setup examples/hyprgrass-pulse/build -Dhyprgrass=false -Dhyprgrass-pulse=true",
     "ninja -C examples/hyprgrass-pulse/build",
+]
+
+[hyprgrass-backlight]
+description = "Hyprgrass extension to control brightness of backlight"
+author = "horriblename"
+output = "examples/hyprgrass-backlight/build/examples/hyprgrass-backlight/libhyprgrass-backlight.so"
+build = [
+    "meson setup examples/hyprgrass-backlight/build -Dhyprgrass=false -Dhyprgrass-backlight=true -Dlogin-proxy=true",
+    "ninja -C examples/hyprgrass-backlight/build",
 ]
