@@ -36,6 +36,6 @@ nix flake update --override-input hyprland "$hlUrl"
 nix build --no-link '.#hyprgrassWithTests'
 
 cd ..
-git worktree remove "$worktreeDir"
+git worktree remove --force "$worktreeDir"
 
 echo "[\"${hyprlandCommit}\", \"${hyprgrassCommit}\"], # ${hyprlandRev}"
