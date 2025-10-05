@@ -27,15 +27,17 @@ hlUrl="github:hyprwm/Hyprland/${hyprlandRev}"
 
 worktreeDir="pin-build"
 
-git worktree add "$worktreeDir" "$hyprgrassCommit"
-cd "$worktreeDir"
+{
+	git worktree add "$worktreeDir" "$hyprgrassCommit"
+	cd "$worktreeDir"
 
-# NOTE: nix build --override-input does not override input of inputs, i.e. hyprland/aquamarine
-# will not be updated, hence we need to run `flake update` :<
-nix flake update --override-input hyprland "$hlUrl"
-nix build --no-link '.#hyprgrassWithTests'
+	# NOTE: nix build --override-input does not override input of inputs, i.e. hyprland/aquamarine
+	# will not be updated, hence we need to run `flake update` :<
+	nix flake update --override-input hyprland "$hlUrl"
+	nix build --no-link '.#hyprgrassWithTests'
 
-cd ..
-git worktree remove "$worktreeDir"
+	cd ..
+	git worktree remove --force "$worktreeDir"
+} >&2 # avoid cluttering stdout
 
 echo "[\"${hyprlandCommit}\", \"${hyprgrassCommit}\"], # ${hyprlandRev}"
