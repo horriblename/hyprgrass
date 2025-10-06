@@ -126,9 +126,12 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:swipeBegin");
 
             bool handled = emitHookEvent(
-                PEVENTVEC, std::tuple<std::string, std::uint64_t, Vector2D>{
-                               stringifyDirection(gev.direction), gev.finger_count,
-                               pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)});
+                PEVENTVEC,
+                std::tuple<std::string, std::uint64_t, Vector2D>{
+                    stringifyDirection(gev.direction), gev.finger_count,
+                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)
+                }
+            );
 
             if (handled) {
                 this->hookHandled = true;
@@ -158,7 +161,9 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             bool handled = emitHookEvent(
                 PEVENTVEC,
                 std::pair<std::string, Vector2D>(
-                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)));
+                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)
+                )
+            );
 
             if (handled) {
                 this->hookHandled = true;
@@ -195,10 +200,14 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                     pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current) *
                     this->m_lastTouchedMonitor->m_size;
                 if (w && !w->isFullscreen()) {
-                    const CBox real = {w->m_realPosition->value().x, w->m_realPosition->value().y,
-                                       w->m_realSize->value().x, w->m_realSize->value().y};
-                    const CBox grab = {real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA,
-                                       real.width + 2 * BORDER_GRAB_AREA, real.height + 2 * BORDER_GRAB_AREA};
+                    const CBox real = {
+                        w->m_realPosition->value().x, w->m_realPosition->value().y, w->m_realSize->value().x,
+                        w->m_realSize->value().y
+                    };
+                    const CBox grab = {
+                        real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA, real.width + 2 * BORDER_GRAB_AREA,
+                        real.height + 2 * BORDER_GRAB_AREA
+                    };
 
                     bool notInRealWindow = !real.containsPoint(touchPos) || w->isInCurvedCorner(touchPos.x, touchPos.y);
                     bool onTiledGap      = !w->m_isFloating && !w->isFullscreen() && notInRealWindow;
@@ -300,8 +309,10 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
     switch (this->getActiveDragGesture()->type) {
         case DragGestureType::SWIPE:
             if (this->hookHandled) {
-                EMIT_HOOK_EVENT("hyprgrass:swipeUpdate",
-                                pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
+                EMIT_HOOK_EVENT(
+                    "hyprgrass:swipeUpdate",
+                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current)
+                )
             } else if (this->workspaceSwipeActive) {
                 this->updateWorkspaceSwipe();
             } else if (**EMULATE_TOUCHPAD) {
@@ -309,7 +320,8 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
                 const auto delta                  = currentPoint - this->emulatedSwipePoint;
                 IPointer::SSwipeUpdateEvent swipe = {
                     .fingers = static_cast<uint32_t>(this->getActiveDragGesture()->finger_count),
-                    .delta   = Vector2D(delta.x, delta.y)};
+                    .delta   = Vector2D(delta.x, delta.y)
+                };
                 g_pInputManager->onSwipeUpdate(swipe);
                 this->emulatedSwipePoint = currentPoint;
             };
@@ -322,8 +334,10 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
         }
         case DragGestureType::EDGE_SWIPE:
             if (this->hookHandled) {
-                EMIT_HOOK_EVENT("hyprgrass:edgeUpdate",
-                                pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
+                EMIT_HOOK_EVENT(
+                    "hyprgrass:edgeUpdate",
+                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current)
+                )
 
                 return;
             }
@@ -358,8 +372,9 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
         case DragGestureType::LONG_PRESS:
             if (this->resizeOnBorderInfo.active) {
                 g_pKeybindManager->changeMouseBindMode(eMouseBindMode::MBIND_INVALID);
-                g_pConfigManager->parseKeyword("general:gaps_in",
-                                               commaSeparatedCssGaps(this->resizeOnBorderInfo.old_gaps_in));
+                g_pConfigManager->parseKeyword(
+                    "general:gaps_in", commaSeparatedCssGaps(this->resizeOnBorderInfo.old_gaps_in)
+                );
                 this->resizeOnBorderInfo = {};
                 return;
             }
@@ -399,8 +414,8 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
 }
 
 void GestureManager::updateWorkspaceSwipe() {
-    const auto  ANIMSTYLE = g_pUnifiedWorkspaceSwipe->m_workspaceBegin->m_renderOffset->getStyle();
-    const bool  VERTANIMS = ANIMSTYLE == "slidevert" || ANIMSTYLE.starts_with("slidefadevert");
+    const auto ANIMSTYLE = g_pUnifiedWorkspaceSwipe->m_workspaceBegin->m_renderOffset->getStyle();
+    const bool VERTANIMS = ANIMSTYLE == "slidevert" || ANIMSTYLE.starts_with("slidefadevert");
 
     static auto const PSWIPEDIST =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
