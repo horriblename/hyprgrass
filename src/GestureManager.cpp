@@ -90,8 +90,10 @@ static HookResult emitOneHook(const SCallbackFNPtr& cb, std::any data, std::vect
     } catch (std::exception& e) {
         // TODO: this works only once...?
         faultyHandles.push_back(cb.handle);
-        Debug::log(ERR, "[hookSystem] Hook from plugin {:x} caused a SIGSEGV, queueing for unloading.",
-                   rc<uintptr_t>(cb.handle));
+        Debug::log(
+            ERR, "[hookSystem] Hook from plugin {:x} caused a SIGSEGV, queueing for unloading.",
+            rc<uintptr_t>(cb.handle)
+        );
     }
 
     return HookResult{.handled = nullptr, .needsDeadCleanup = false};
@@ -231,9 +233,12 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:swipeBegin");
 
             HANDLE handler = emitHookEventForOne(
-                PEVENTVEC, std::tuple<std::string, std::uint64_t, Vector2D>{
-                               stringifyDirection(gev.direction), gev.finger_count,
-                               pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)});
+                PEVENTVEC,
+                std::tuple<std::string, std::uint64_t, Vector2D>{
+                    stringifyDirection(gev.direction), gev.finger_count,
+                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)
+                }
+            );
 
             if (handler) {
                 this->hookHandled = handler;
@@ -263,7 +268,9 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             HANDLE handler = emitHookEventForOne(
                 PEVENTVEC,
                 std::pair<std::string, Vector2D>(
-                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)));
+                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)
+                )
+            );
 
             if (handler) {
                 this->hookHandled = handler;
@@ -300,10 +307,14 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                     pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current) *
                     this->m_lastTouchedMonitor->m_size;
                 if (w && !w->isFullscreen()) {
-                    const CBox real = {w->m_realPosition->value().x, w->m_realPosition->value().y,
-                                       w->m_realSize->value().x, w->m_realSize->value().y};
-                    const CBox grab = {real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA,
-                                       real.width + 2 * BORDER_GRAB_AREA, real.height + 2 * BORDER_GRAB_AREA};
+                    const CBox real = {
+                        w->m_realPosition->value().x, w->m_realPosition->value().y, w->m_realSize->value().x,
+                        w->m_realSize->value().y
+                    };
+                    const CBox grab = {
+                        real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA, real.width + 2 * BORDER_GRAB_AREA,
+                        real.height + 2 * BORDER_GRAB_AREA
+                    };
 
                     bool notInRealWindow = !real.containsPoint(touchPos) || w->isInCurvedCorner(touchPos.x, touchPos.y);
                     bool onTiledGap      = !w->m_isFloating && !w->isFullscreen() && notInRealWindow;
@@ -407,7 +418,8 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             if (this->hookHandled) {
                 EMIT_HOOK_EVENT_FOR_PLUGIN(
                     "hyprgrass:swipeUpdate", this->hookHandled,
-                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
+                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current)
+                )
             } else if (this->workspaceSwipeActive) {
                 this->updateWorkspaceSwipe();
             } else if (**EMULATE_TOUCHPAD) {
@@ -415,7 +427,8 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
                 const auto delta                  = currentPoint - this->emulatedSwipePoint;
                 IPointer::SSwipeUpdateEvent swipe = {
                     .fingers = static_cast<uint32_t>(this->getActiveDragGesture()->finger_count),
-                    .delta   = Vector2D(delta.x, delta.y)};
+                    .delta   = Vector2D(delta.x, delta.y)
+                };
                 g_pInputManager->onSwipeUpdate(swipe);
                 this->emulatedSwipePoint = currentPoint;
             };
@@ -430,7 +443,8 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             if (this->hookHandled) {
                 EMIT_HOOK_EVENT_FOR_PLUGIN(
                     "hyprgrass:edgeUpdate", this->hookHandled,
-                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
+                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current)
+                )
 
                 return;
             }
@@ -465,8 +479,9 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
         case DragGestureType::LONG_PRESS:
             if (this->resizeOnBorderInfo.active) {
                 g_pKeybindManager->changeMouseBindMode(eMouseBindMode::MBIND_INVALID);
-                g_pConfigManager->parseKeyword("general:gaps_in",
-                                               commaSeparatedCssGaps(this->resizeOnBorderInfo.old_gaps_in));
+                g_pConfigManager->parseKeyword(
+                    "general:gaps_in", commaSeparatedCssGaps(this->resizeOnBorderInfo.old_gaps_in)
+                );
                 this->resizeOnBorderInfo = {};
                 return;
             }
