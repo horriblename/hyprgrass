@@ -223,8 +223,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     HyprlandAPI::reloadConfig();
 
-    g_pGestureManager = std::make_unique<GestureManager>();
-    g_pVisualizer     = std::make_unique<Visualizer>();
+    g_pGestureManager            = std::make_unique<GestureManager>();
+    g_pHyprgrassTrackpadGestures = std::make_unique<CTrackpadGestures>();
+    g_pVisualizer                = std::make_unique<Visualizer>();
 
     return {"hyprgrass", "Touchscreen gestures", "horriblename", HYPRGRASS_VERSION};
 }

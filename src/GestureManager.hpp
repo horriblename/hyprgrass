@@ -6,6 +6,7 @@
 #include <hyprland/src/config/ConfigDataValues.hpp>
 #include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
+#include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
 #undef private
 
 enum class GestureEventType {
@@ -79,3 +80,4 @@ class GestureManager : public IGestureManager {
 };
 
 inline std::unique_ptr<GestureManager> g_pGestureManager;
+inline std::unique_ptr<CTrackpadGestures> g_pHyprgrassTrackpadGestures;
