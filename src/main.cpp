@@ -10,19 +10,33 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/debug/Log.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>
+#include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
+#include <hyprland/src/managers/input/trackpad/gestures/CloseGesture.hpp>
+#include <hyprland/src/managers/input/trackpad/gestures/DispatcherGesture.hpp>
+#include <hyprland/src/managers/input/trackpad/gestures/FloatGesture.hpp>
+#include <hyprland/src/managers/input/trackpad/gestures/FullscreenGesture.hpp>
+#include <hyprland/src/managers/input/trackpad/gestures/MoveGesture.hpp>
+#include <hyprland/src/managers/input/trackpad/gestures/ResizeGesture.hpp>
+#include <hyprland/src/managers/input/trackpad/gestures/SpecialWorkspaceGesture.hpp>
+#include <hyprland/src/managers/input/trackpad/gestures/WorkspaceSwipeGesture.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/version.h>
 
 #include <hyprlang.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
+#include <hyprutils/string/ConstVarList.hpp>
 #include <memory>
 #include <string>
 
-const CHyprColor s_pluginColor    = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
-const CHyprColor error_color      = {204. / 255.0, 2. / 255.0, 2. / 255.0, 1.0};
-const std::string KEYWORD_HG_BIND = "hyprgrass-bind";
+const CHyprColor s_pluginColor       = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
+const CHyprColor error_color         = {204. / 255.0, 2. / 255.0, 2. / 255.0, 1.0};
+const std::string KEYWORD_HG_BIND    = "hyprgrass-bind";
+const std::string KEYWORD_HG_GESTURE = "hyprgrass-gesture";
 
 inline std::unique_ptr<Visualizer> g_pVisualizer;
+
+static bool g_unloading = false;
 
 void hkOnTouchDown(void* _, SCallbackInfo& cbinfo, std::any e) {
     auto ev = std::any_cast<ITouch::SDownEvent>(e);
@@ -60,8 +74,120 @@ void hkOnTouchMove(void* _, SCallbackInfo& cbinfo, std::any e) {
     cbinfo.cancelled = g_pGestureManager->onTouchMove(ev);
 }
 
+static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const char* RHS) {
+    Hyprlang::CParseResult result;
+
+    if (g_unloading)
+        return result;
+
+    CConstVarList data(RHS);
+
+    size_t fingerCount                  = 0;
+    eTrackpadGestureDirection direction = TRACKPAD_GESTURE_DIR_NONE;
+
+    try {
+        fingerCount = std::stoul(std::string{data[0]});
+    } catch (...) {
+        result.setError(std::format("Invalid value {} for finger count", data[0]).c_str());
+        return result;
+    }
+
+    if (fingerCount <= 1 || fingerCount >= 10) {
+        result.setError(std::format("Invalid value {} for finger count", data[0]).c_str());
+        return result;
+    }
+
+    direction = g_pHyprgrassTrackpadGestures->dirForString(data[1]);
+
+    if (direction == TRACKPAD_GESTURE_DIR_NONE) {
+        result.setError(std::format("Invalid direction: {}", data[1]).c_str());
+        return result;
+    }
+
+    int startDataIdx = 2;
+    uint32_t modMask = 0;
+    float deltaScale = 1.F;
+
+    while (true) {
+
+        if (data[startDataIdx].starts_with("mod:")) {
+            modMask = g_pKeybindManager->stringToModMask(std::string{data[startDataIdx].substr(4)});
+            startDataIdx++;
+            continue;
+        } else if (data[startDataIdx].starts_with("scale:")) {
+            try {
+                deltaScale = std::clamp(std::stof(std::string{data[startDataIdx].substr(6)}), 0.1F, 10.F);
+                startDataIdx++;
+                continue;
+            } catch (...) {
+                result.setError(
+                    std::format("Invalid delta scale: {}", std::string{data[startDataIdx].substr(6)}).c_str()
+                );
+                return result;
+            }
+        }
+
+        break;
+    }
+
+    std::expected<void, std::string> resultFromGesture;
+
+    if (data[startDataIdx] == "dispatcher")
+        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
+            makeUnique<CDispatcherTrackpadGesture>(
+                std::string{data[startDataIdx + 1]}, data.join(",", startDataIdx + 2)
+            ),
+            fingerCount, direction, modMask, deltaScale
+        );
+    else if (data[startDataIdx] == "workspace")
+        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
+            makeUnique<CWorkspaceSwipeGesture>(), fingerCount, direction, modMask, deltaScale
+        );
+    else if (data[startDataIdx] == "resize")
+        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
+            makeUnique<CResizeTrackpadGesture>(), fingerCount, direction, modMask, deltaScale
+        );
+    else if (data[startDataIdx] == "move")
+        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
+            makeUnique<CMoveTrackpadGesture>(), fingerCount, direction, modMask, deltaScale
+        );
+    else if (data[startDataIdx] == "special")
+        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
+            makeUnique<CSpecialWorkspaceGesture>(std::string{data[startDataIdx + 1]}), fingerCount, direction, modMask,
+            deltaScale
+        );
+    else if (data[startDataIdx] == "close")
+        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
+            makeUnique<CCloseTrackpadGesture>(), fingerCount, direction, modMask, deltaScale
+        );
+    else if (data[startDataIdx] == "float")
+        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
+            makeUnique<CFloatTrackpadGesture>(std::string{data[startDataIdx + 1]}), fingerCount, direction, modMask,
+            deltaScale
+        );
+    else if (data[startDataIdx] == "fullscreen")
+        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
+            makeUnique<CFullscreenTrackpadGesture>(std::string{data[startDataIdx + 1]}), fingerCount, direction,
+            modMask, deltaScale
+        );
+    else if (data[startDataIdx] == "unset")
+        resultFromGesture = g_pHyprgrassTrackpadGestures->removeGesture(fingerCount, direction, modMask, deltaScale);
+    else {
+        result.setError(std::format("Invalid gesture: {}", data[startDataIdx]).c_str());
+        return result;
+    }
+
+    if (!resultFromGesture) {
+        result.setError(resultFromGesture.error().c_str());
+        return result;
+    }
+
+    return result;
+}
+
 static void onPreConfigReload() {
     g_pGestureManager->internalBinds.clear();
+    g_pHyprgrassTrackpadGestures->clearGestures();
 }
 
 void onRenderStage(eRenderStage stage) {
@@ -136,8 +262,9 @@ Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
                 flags.locked = true;
                 break;
             default:
-                HyprlandAPI::addNotification(PHANDLE, std::string("ignoring invalid hyprgrass-bind flag: ") + c,
-                                             error_color, 5000);
+                HyprlandAPI::addNotification(
+                    PHANDLE, std::string("ignoring invalid hyprgrass-bind flag: ") + c, error_color, 5000
+                );
         }
     }
 
@@ -168,33 +295,45 @@ APICALL EXPORT std::string PLUGIN_API_VERSION() {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers",
-                                Hyprlang::CConfigValue((Hyprlang::INT)3));
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_edge",
-                                Hyprlang::CConfigValue((Hyprlang::STRING) "d"));
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity",
-                                Hyprlang::CConfigValue((Hyprlang::FLOAT)1.0));
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay",
-                                Hyprlang::CConfigValue((Hyprlang::INT)400));
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:edge_margin",
-                                Hyprlang::CConfigValue((Hyprlang::INT)10));
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel",
-                                Hyprlang::CConfigValue((Hyprlang::INT)1));
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:resize_on_border_long_press",
-                                Hyprlang::CConfigValue((Hyprlang::INT)1));
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:emulate_touchpad_swipe",
-                                Hyprlang::CConfigValue((Hyprlang::INT)0));
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch",
-                                Hyprlang::CConfigValue((Hyprlang::INT)0));
+    HyprlandAPI::addConfigValue(
+        PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers", Hyprlang::CConfigValue((Hyprlang::INT)3)
+    );
+    HyprlandAPI::addConfigValue(
+        PHANDLE, "plugin:touch_gestures:workspace_swipe_edge", Hyprlang::CConfigValue((Hyprlang::STRING) "d")
+    );
+    HyprlandAPI::addConfigValue(
+        PHANDLE, "plugin:touch_gestures:sensitivity", Hyprlang::CConfigValue((Hyprlang::FLOAT)1.0)
+    );
+    HyprlandAPI::addConfigValue(
+        PHANDLE, "plugin:touch_gestures:long_press_delay", Hyprlang::CConfigValue((Hyprlang::INT)400)
+    );
+    HyprlandAPI::addConfigValue(
+        PHANDLE, "plugin:touch_gestures:edge_margin", Hyprlang::CConfigValue((Hyprlang::INT)10)
+    );
+    HyprlandAPI::addConfigValue(
+        PHANDLE, "plugin:touch_gestures:experimental:send_cancel", Hyprlang::CConfigValue((Hyprlang::INT)1)
+    );
+    HyprlandAPI::addConfigValue(
+        PHANDLE, "plugin:touch_gestures:resize_on_border_long_press", Hyprlang::CConfigValue((Hyprlang::INT)1)
+    );
+    HyprlandAPI::addConfigValue(
+        PHANDLE, "plugin:touch_gestures:emulate_touchpad_swipe", Hyprlang::CConfigValue((Hyprlang::INT)0)
+    );
+    HyprlandAPI::addConfigValue(
+        PHANDLE, "plugin:touch_gestures:debug:visualize_touch", Hyprlang::CConfigValue((Hyprlang::INT)0)
+    );
 
     HyprlandAPI::addConfigKeyword(PHANDLE, KEYWORD_HG_BIND, onNewBind, Hyprlang::SHandlerOptions{.allowFlags = true});
+    HyprlandAPI::addConfigKeyword(PHANDLE, KEYWORD_HG_GESTURE, hyprgrassGestureKeyword, Hyprlang::SHandlerOptions{});
     static auto P0 = HyprlandAPI::registerCallbackDynamic(
-        PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) { onPreConfigReload(); });
+        PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) { onPreConfigReload(); }
+    );
 
     HyprlandAPI::addDispatcherV2(PHANDLE, "touchBind", [&](std::string args) {
         HyprlandAPI::addNotification(
             PHANDLE, "[hyprgrass] touchBind dispatcher deprecated, use the hyprgrass-bind keyword instead",
-            CHyprColor(0.8, 0.2, 0.2, 1.0), 5000);
+            CHyprColor(0.8, 0.2, 0.2, 1.0), 5000
+        );
         g_pGestureManager->touchBindDispatcher(args);
         return SDispatchResult{
             .success = true,
@@ -208,8 +347,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     const auto hlVersion       = HyprlandAPI::getHyprlandVersion(PHANDLE);
 
     if (hlVersion.hash != hlTargetVersion) {
-        HyprlandAPI::addNotification(PHANDLE, "Mismatched Hyprland version! check logs for details",
-                                     CHyprColor(0.8, 0.7, 0.26, 1.0), 5000);
+        HyprlandAPI::addNotification(
+            PHANDLE, "Mismatched Hyprland version! check logs for details", CHyprColor(0.8, 0.7, 0.26, 1.0), 5000
+        );
         Debug::log(ERR, "[hyprgrass] version mismatch!");
         Debug::log(ERR, "[hyprgrass] | hyprgrass was built against: {}", hlTargetVersion);
         Debug::log(ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion.hash);
@@ -218,8 +358,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     static auto P1 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchDown", hkOnTouchDown);
     static auto P2 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchUp", hkOnTouchUp);
     static auto P3 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchMove", hkOnTouchMove);
-    static auto P4 = HyprlandAPI::registerCallbackDynamic(
-        PHANDLE, "render", [](void*, SCallbackInfo, std::any arg) { onRenderStage(std::any_cast<eRenderStage>(arg)); });
+    static auto P4 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "render", [](void*, SCallbackInfo, std::any arg) {
+        onRenderStage(std::any_cast<eRenderStage>(arg));
+    });
 
     HyprlandAPI::reloadConfig();
 
@@ -233,4 +374,5 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 APICALL EXPORT void PLUGIN_EXIT() {
     // idk if I should do this, but just in case
     g_pGestureManager.reset();
+    g_unloading = true;
 }
