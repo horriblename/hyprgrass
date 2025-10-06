@@ -8,6 +8,7 @@ enum class DragGestureType {
 };
 
 struct DragGestureEvent {
+    uint32_t time;
     DragGestureType type;
     GestureDirection direction;
     int finger_count;
