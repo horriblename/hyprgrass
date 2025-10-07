@@ -109,7 +109,7 @@ void onDebounceTrigger() {
 
     // TODO: make configurable
     const double MAX_RANGE  = 0.7; // how much percent of the screen to swipe to get from volume 0 to 100
-    const int PA_MAX_VOLUME = 100;
+    const int MAX_BRIGHTNESS_PCT = 100;
 
     bool const vert_swipe = configEdge == 'l' || configEdge == 'r';
     const double last_triggered =
@@ -120,7 +120,7 @@ void onDebounceTrigger() {
     double delta      = std::abs(latest - last_triggered);
     ChangeType change = boolXor(vert_swipe, latest >= last_triggered) ? ChangeType::Increase : ChangeType::Decrease;
 
-    double steps = PA_MAX_VOLUME * (delta / MAX_RANGE);
+    double steps = MAX_BRIGHTNESS_PCT * (delta / MAX_RANGE);
 
     g_pBackend->set_brightness("", change, steps);
 
