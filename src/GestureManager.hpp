@@ -1,6 +1,7 @@
 #pragma once
 #include "./gestures/Gestures.hpp"
 #include "VecSet.hpp"
+#include "src/plugins/PluginAPI.hpp"
 
 #define private public
 #include <hyprland/src/config/ConfigDataValues.hpp>
@@ -55,7 +56,7 @@ class GestureManager : public IGestureManager {
         CCssGapData old_gaps_in;
     } resizeOnBorderInfo;
     bool workspaceSwipeActive = false;
-    bool hookHandled          = false;
+    HANDLE hookHandled        = nullptr;
     wf::touch::point_t emulatedSwipePoint;
 
     bool handleGestureBind(std::string bind, GestureEventType);

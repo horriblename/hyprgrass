@@ -56,7 +56,7 @@
         '';
         name = "hyprgrass-shell";
         nativeBuildInputs = with pkgs; [meson pkg-config ninja];
-        buildInputs = [pkgs.hyprland pkgs.libpulseaudio];
+        buildInputs = [pkgs.hyprland pkgs.pulseaudio];
         inputsFrom = [
           pkgs.hyprland
           pkgs.hyprlandPlugins.hyprgrass
