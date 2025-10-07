@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: "0 0 * * 0" # weekly on Sunday 00:00
 jobs:
-  tests:
+  pin-latest-hyprland:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
