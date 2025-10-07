@@ -6,6 +6,7 @@
 #include <hyprland/src/config/ConfigDataValues.hpp>
 #include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
+#include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
 #undef private
 
 enum class GestureEventType {
@@ -56,6 +57,7 @@ class GestureManager : public IGestureManager {
     } resizeOnBorderInfo;
     bool workspaceSwipeActive = false;
     bool hookHandled          = false;
+    // used by emulate_touchpad_swipe and trackpadGesture* functions
     wf::touch::point_t emulatedSwipePoint;
 
     bool handleGestureBind(std::string bind, GestureEventType);
@@ -65,8 +67,13 @@ class GestureManager : public IGestureManager {
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
     // reverse of wlrTouchEventPositionAsPixels
     Vector2D pixelPositionToPercentagePosition(wf::touch::point_t) const;
+    Vector2D pixelToTrackpadDistance(wf::touch::point_t) const;
     bool handleWorkspaceSwipe(const GestureDirection direction);
     void updateWorkspaceSwipe();
+
+    bool trackpadGestureBegin(const DragGestureEvent& gev);
+    void trackpadGestureUpdate(uint32_t time);
+    void trackpadGestureEnd(const DragGestureEvent& gev);
 
     bool handleDragGesture(const DragGestureEvent& gev) override;
     void dragGestureUpdate(const wf::touch::gesture_event_t&) override;
@@ -79,3 +86,4 @@ class GestureManager : public IGestureManager {
 };
 
 inline std::unique_ptr<GestureManager> g_pGestureManager;
+inline std::unique_ptr<CTrackpadGestures> g_pHyprgrassTrackpadGestures;

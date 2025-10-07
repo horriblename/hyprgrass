@@ -75,8 +75,9 @@ void ProcessEvent(CMockGestureManager& gm, const wf::touch::gesture_event_t& ev)
     }
 }
 
-void ProcessEvents(CMockGestureManager& gm, ExpectResult expect,
-                   const std::vector<wf::touch::gesture_event_t>& events) {
+void ProcessEvents(
+    CMockGestureManager& gm, ExpectResult expect, const std::vector<wf::touch::gesture_event_t>& events
+) {
     for (const auto& ev : events) {
         ProcessEvent(gm, ev);
     }
@@ -111,11 +112,13 @@ void ProcessEvents(CMockGestureManager& gm, ExpectResult expect,
 using TouchEvent = wf::touch::gesture_event_t;
 using wf::touch::point_t;
 
-TEST_CASE("Multifinger: block touch events to client surfaces when more than a "
-          "certain number of fingers touch down." *
-          // multi-finger used to cancel touch events on 3 finger touch down
-          // currently removed but may bring it back
-          doctest::should_fail()) {
+TEST_CASE(
+    "Multifinger: block touch events to client surfaces when more than a "
+    "certain number of fingers touch down." *
+    // multi-finger used to cancel touch events on 3 finger touch down
+    // currently removed but may bring it back
+    doctest::should_fail()
+) {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY);

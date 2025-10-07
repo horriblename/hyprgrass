@@ -1,6 +1,6 @@
 #include "TouchVisualizer.hpp"
-#include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/render/Renderer.hpp>
 
 CBox boxAroundCenter(Vector2D center, double radius) {
     return CBox(center.x - radius, center.y - radius, 2 * radius, 2 * radius);
@@ -26,8 +26,9 @@ Visualizer::Visualizer() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2 * TOUCH_POINT_RADIUS, 2 * TOUCH_POINT_RADIUS, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, data);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGBA, 2 * TOUCH_POINT_RADIUS, 2 * TOUCH_POINT_RADIUS, 0, GL_RGBA, GL_UNSIGNED_BYTE, data
+    );
 }
 
 Visualizer::~Visualizer() {
@@ -54,7 +55,7 @@ void Visualizer::onRender() {
 
     for (auto& finger : this->finger_positions) {
         CBox dmg = boxAroundCenter(finger.second.curr, TOUCH_POINT_RADIUS);
-        g_pHyprOpenGL->renderTexture(this->texture, dmg, { .a = 1.f, .round = 0, .discardActive = true });
+        g_pHyprOpenGL->renderTexture(this->texture, dmg, {.a = 1.f, .round = 0, .discardActive = true});
     }
 }
 
