@@ -135,7 +135,7 @@ APICALL EXPORT std::string PLUGIN_API_VERSION() {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:hyprgrass-pulse:edge", Hyprlang::CConfigValue((Hyprlang::STRING) "r"));
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:hyprgrass-pulse:edge", Hyprlang::CConfigValue((Hyprlang::STRING) "l"));
 
     const auto hlTargetVersion = GIT_COMMIT_HASH;
     const auto hlVersion       = HyprlandAPI::getHyprlandVersion(PHANDLE);
