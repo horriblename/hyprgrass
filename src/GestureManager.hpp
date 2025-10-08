@@ -1,5 +1,6 @@
 #pragma once
 #include "./gestures/Gestures.hpp"
+#include "ShimTrackpadGestures.hpp"
 #include "VecSet.hpp"
 
 #define private public
@@ -86,4 +87,3 @@ class GestureManager : public IGestureManager {
 };
 
 inline std::unique_ptr<GestureManager> g_pGestureManager;
-inline std::unique_ptr<CTrackpadGestures> g_pHyprgrassTrackpadGestures;
