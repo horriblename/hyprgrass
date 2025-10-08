@@ -6,6 +6,7 @@
 #include "version.hpp"
 
 #include <any>
+#define private public
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/debug/Log.hpp>
@@ -26,6 +27,8 @@
 #include <hyprlang.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
 #include <hyprutils/string/ConstVarList.hpp>
+#undef private
+
 #include <memory>
 #include <string>
 
@@ -82,29 +85,14 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
 
     CConstVarList data(RHS);
 
-    size_t fingerCount                  = 0;
-    eTrackpadGestureDirection direction = TRACKPAD_GESTURE_DIR_NONE;
-
-    try {
-        fingerCount = std::stoul(std::string{data[0]});
-    } catch (...) {
-        result.setError(std::format("Invalid value {} for finger count", data[0]).c_str());
+    auto maybePattern = parseGesturePattern(std::string(data[0]));
+    if (!maybePattern) {
+        result.setError(maybePattern.error().data());
         return result;
     }
+    GestureConfig pattern = maybePattern.value();
 
-    if (fingerCount <= 1 || fingerCount >= 10) {
-        result.setError(std::format("Invalid value {} for finger count", data[0]).c_str());
-        return result;
-    }
-
-    direction = g_pHyprgrassTrackpadGestures->dirForString(data[1]);
-
-    if (direction == TRACKPAD_GESTURE_DIR_NONE) {
-        result.setError(std::format("Invalid direction: {}", data[1]).c_str());
-        return result;
-    }
-
-    int startDataIdx = 2;
+    int startDataIdx = 1;
     uint32_t modMask = 0;
     float deltaScale = 1.F;
 
@@ -132,46 +120,48 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
 
     std::expected<void, std::string> resultFromGesture;
 
+    CTrackpadGestures* handler = g_pShimTrackpadGestures->get(pattern.type);
+
     if (data[startDataIdx] == "dispatcher")
-        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
+        resultFromGesture = handler->addGesture(
             makeUnique<CDispatcherTrackpadGesture>(
                 std::string{data[startDataIdx + 1]}, data.join(",", startDataIdx + 2)
             ),
-            fingerCount, direction, modMask, deltaScale
+            pattern.fingers, pattern.direction, modMask, deltaScale
         );
     else if (data[startDataIdx] == "workspace")
-        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
-            makeUnique<CWorkspaceSwipeGesture>(), fingerCount, direction, modMask, deltaScale
+        resultFromGesture = handler->addGesture(
+            makeUnique<CWorkspaceSwipeGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale
         );
     else if (data[startDataIdx] == "resize")
-        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
-            makeUnique<CResizeTrackpadGesture>(), fingerCount, direction, modMask, deltaScale
+        resultFromGesture = handler->addGesture(
+            makeUnique<CResizeTrackpadGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale
         );
     else if (data[startDataIdx] == "move")
-        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
-            makeUnique<CMoveTrackpadGesture>(), fingerCount, direction, modMask, deltaScale
+        resultFromGesture = handler->addGesture(
+            makeUnique<CMoveTrackpadGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale
         );
     else if (data[startDataIdx] == "special")
-        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
-            makeUnique<CSpecialWorkspaceGesture>(std::string{data[startDataIdx + 1]}), fingerCount, direction, modMask,
-            deltaScale
+        resultFromGesture = handler->addGesture(
+            makeUnique<CSpecialWorkspaceGesture>(std::string{data[startDataIdx + 1]}), pattern.fingers,
+            pattern.direction, modMask, deltaScale
         );
     else if (data[startDataIdx] == "close")
-        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
-            makeUnique<CCloseTrackpadGesture>(), fingerCount, direction, modMask, deltaScale
+        resultFromGesture = handler->addGesture(
+            makeUnique<CCloseTrackpadGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale
         );
     else if (data[startDataIdx] == "float")
-        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
-            makeUnique<CFloatTrackpadGesture>(std::string{data[startDataIdx + 1]}), fingerCount, direction, modMask,
-            deltaScale
-        );
-    else if (data[startDataIdx] == "fullscreen")
-        resultFromGesture = g_pHyprgrassTrackpadGestures->addGesture(
-            makeUnique<CFullscreenTrackpadGesture>(std::string{data[startDataIdx + 1]}), fingerCount, direction,
+        resultFromGesture = handler->addGesture(
+            makeUnique<CFloatTrackpadGesture>(std::string{data[startDataIdx + 1]}), pattern.fingers, pattern.direction,
             modMask, deltaScale
         );
+    else if (data[startDataIdx] == "fullscreen")
+        resultFromGesture = handler->addGesture(
+            makeUnique<CFullscreenTrackpadGesture>(std::string{data[startDataIdx + 1]}), pattern.fingers,
+            pattern.direction, modMask, deltaScale
+        );
     else if (data[startDataIdx] == "unset")
-        resultFromGesture = g_pHyprgrassTrackpadGestures->removeGesture(fingerCount, direction, modMask, deltaScale);
+        resultFromGesture = handler->removeGesture(pattern.fingers, pattern.direction, modMask, deltaScale);
     else {
         result.setError(std::format("Invalid gesture: {}", data[startDataIdx]).c_str());
         return result;
@@ -187,7 +177,9 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
 
 static void onPreConfigReload() {
     g_pGestureManager->internalBinds.clear();
-    g_pHyprgrassTrackpadGestures->clearGestures();
+    for (auto& g : g_pShimTrackpadGestures->gestures) {
+        g.clearGestures();
+    }
 }
 
 void onRenderStage(eRenderStage stage) {
@@ -364,9 +356,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     HyprlandAPI::reloadConfig();
 
-    g_pGestureManager            = std::make_unique<GestureManager>();
-    g_pHyprgrassTrackpadGestures = std::make_unique<CTrackpadGestures>();
-    g_pVisualizer                = std::make_unique<Visualizer>();
+    g_pGestureManager       = std::make_unique<GestureManager>();
+    g_pShimTrackpadGestures = std::make_unique<ShimTrackpadGestures>();
+    g_pVisualizer           = std::make_unique<Visualizer>();
 
     return {"hyprgrass", "Touchscreen gestures", "horriblename", HYPRGRASS_VERSION};
 }

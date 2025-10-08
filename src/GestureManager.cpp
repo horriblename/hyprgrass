@@ -416,9 +416,11 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
         return;
     }
 
-    if (g_pHyprgrassTrackpadGestures->m_activeGesture) {
-        this->trackpadGestureUpdate(ev.time);
-        return;
+    for (const auto& g : g_pShimTrackpadGestures->gestures) {
+        if (g.m_activeGesture) {
+            this->trackpadGestureUpdate(ev.time);
+            return;
+        }
     }
 
     switch (this->getActiveDragGesture()->type) {
@@ -471,9 +473,11 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
         return;
     }
 
-    if (g_pHyprgrassTrackpadGestures->m_activeGesture) {
-        this->trackpadGestureEnd(gev);
-        return;
+    for (auto& g : g_pShimTrackpadGestures->gestures) {
+        if (g.m_activeGesture) {
+            this->trackpadGestureEnd(gev);
+            return;
+        }
     }
 
     Debug::log(LOG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
@@ -543,27 +547,23 @@ void GestureManager::updateWorkspaceSwipe() {
 }
 
 bool GestureManager::trackpadGestureBegin(const DragGestureEvent& gev) {
-    Vector2D delta = pointToVector(this->m_sGestureState.get_center().delta());
+    Vector2D delta                        = pointToVector(this->m_sGestureState.get_center().delta());
+    IPointer::SSwipeBeginEvent swipeBegin = {
+        .timeMs  = gev.time,
+        .fingers = static_cast<uint32_t>(gev.finger_count),
+    };
+    IPointer::SSwipeUpdateEvent swipe = {
+        .timeMs  = gev.time,
+        .fingers = static_cast<uint32_t>(gev.finger_count),
+        .delta   = delta,
+    };
 
-    switch (gev.type) {
-        case DragGestureType::SWIPE:      /*fallthrough*/
-        case DragGestureType::LONG_PRESS: /*fallthrough*/
-        case DragGestureType::EDGE_SWIPE: /*fallthrough*/
-            IPointer::SSwipeBeginEvent swipeBegin = {
-                .timeMs  = gev.time,
-                .fingers = static_cast<uint32_t>(gev.finger_count),
-            };
-            IPointer::SSwipeUpdateEvent swipe = {
-                .timeMs  = gev.time,
-                .fingers = static_cast<uint32_t>(gev.finger_count),
-                .delta   = delta,
-            };
-            g_pHyprgrassTrackpadGestures->gestureBegin(swipeBegin);
-            g_pHyprgrassTrackpadGestures->gestureUpdate(swipe);
-            this->emulatedSwipePoint = this->m_sGestureState.get_center().current;
+    CTrackpadGestures* handler = g_pShimTrackpadGestures->get(gev.type);
+    handler->gestureBegin(swipeBegin);
+    handler->gestureUpdate(swipe);
+    this->emulatedSwipePoint = this->m_sGestureState.get_center().current;
 
-            return g_pHyprgrassTrackpadGestures->m_activeGesture;
-    }
+    return handler->m_activeGesture;
 }
 
 void GestureManager::trackpadGestureUpdate(uint32_t time) {
@@ -576,35 +576,25 @@ void GestureManager::trackpadGestureUpdate(uint32_t time) {
 
     this->emulatedSwipePoint = currentPoint;
 
-    DragGestureEvent activeDrag = this->getActiveDragGesture().value();
+    DragGestureEvent activeDrag       = this->getActiveDragGesture().value();
+    IPointer::SSwipeUpdateEvent swipe = {
+        .timeMs  = time,
+        .fingers = static_cast<uint32_t>(activeDrag.finger_count),
+        .delta   = delta,
+    };
 
-    switch (activeDrag.type) {
-        case DragGestureType::SWIPE:      /*fallthrough*/
-        case DragGestureType::LONG_PRESS: /*fallthrough*/
-        case DragGestureType::EDGE_SWIPE: /*fallthrough*/
-            IPointer::SSwipeUpdateEvent swipe = {
-                .timeMs  = time,
-                .fingers = static_cast<uint32_t>(activeDrag.finger_count),
-                .delta   = delta,
-            };
-            g_pHyprgrassTrackpadGestures->gestureUpdate(swipe);
-
-            return;
-    }
+    CTrackpadGestures* handler = g_pShimTrackpadGestures->get(activeDrag.type);
+    handler->gestureUpdate(swipe);
 }
 
 void GestureManager::trackpadGestureEnd(const DragGestureEvent& gev) {
-    switch (gev.type) {
-        case DragGestureType::SWIPE:      /*fallthrough*/
-        case DragGestureType::LONG_PRESS: /*fallthrough*/
-        case DragGestureType::EDGE_SWIPE: /*fallthrough*/
-            IPointer::SSwipeEndEvent end = {
-                .timeMs    = gev.time,
-                .cancelled = false,
-            };
-            g_pHyprgrassTrackpadGestures->gestureEnd(end);
-            return;
-    }
+    IPointer::SSwipeEndEvent swipe = {
+        .timeMs    = gev.time,
+        .cancelled = false,
+    };
+
+    CTrackpadGestures* handler = g_pShimTrackpadGestures->get(gev.type);
+    handler->gestureEnd(swipe);
 }
 
 void GestureManager::updateLongPressTimer(uint32_t current_time, uint32_t delay) {
