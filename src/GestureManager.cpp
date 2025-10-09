@@ -555,13 +555,15 @@ void GestureManager::updateWorkspaceSwipe() {
 
 bool GestureManager::trackpadGestureBegin(const DragGestureEvent& gev) {
     Vector2D delta = this->pixelToTrackpadDistance(this->m_sGestureState.get_center().delta());
+    uint32_t fingers = gev.type == DragGestureType::EDGE_SWIPE ? gev.edge_origin : gev.finger_count;
+
     IPointer::SSwipeBeginEvent swipeBegin = {
         .timeMs  = gev.time,
-        .fingers = static_cast<uint32_t>(gev.finger_count),
+        .fingers = fingers,
     };
     IPointer::SSwipeUpdateEvent swipe = {
         .timeMs  = gev.time,
-        .fingers = static_cast<uint32_t>(gev.finger_count),
+        .fingers = fingers,
         .delta   = delta,
     };
 
@@ -581,12 +583,15 @@ void GestureManager::trackpadGestureUpdate(uint32_t time) {
     const auto deltaPx      = currentPoint - this->emulatedSwipePoint;
     const Vector2D delta    = pixelToTrackpadDistance(deltaPx);
 
+    DragGestureEvent activeDrag = this->getActiveDragGesture().value();
+    uint32_t fingers =
+        activeDrag.type == DragGestureType::EDGE_SWIPE ? activeDrag.edge_origin : activeDrag.finger_count;
+
     this->emulatedSwipePoint = currentPoint;
 
-    DragGestureEvent activeDrag       = this->getActiveDragGesture().value();
     IPointer::SSwipeUpdateEvent swipe = {
         .timeMs  = time,
-        .fingers = static_cast<uint32_t>(activeDrag.finger_count),
+        .fingers = fingers,
         .delta   = delta,
     };
 
