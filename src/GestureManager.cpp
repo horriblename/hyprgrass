@@ -554,7 +554,7 @@ void GestureManager::updateWorkspaceSwipe() {
 }
 
 bool GestureManager::trackpadGestureBegin(const DragGestureEvent& gev) {
-    Vector2D delta                        = pointToVector(this->m_sGestureState.get_center().delta());
+    Vector2D delta = this->pixelToTrackpadDistance(this->m_sGestureState.get_center().delta());
     IPointer::SSwipeBeginEvent swipeBegin = {
         .timeMs  = gev.time,
         .fingers = static_cast<uint32_t>(gev.finger_count),
@@ -579,7 +579,7 @@ void GestureManager::trackpadGestureUpdate(uint32_t time) {
 
     const auto currentPoint = this->m_sGestureState.get_center().current;
     const auto deltaPx      = currentPoint - this->emulatedSwipePoint;
-    const Vector2D delta    = pointToVector(deltaPx);
+    const Vector2D delta    = pixelToTrackpadDistance(deltaPx);
 
     this->emulatedSwipePoint = currentPoint;
 
