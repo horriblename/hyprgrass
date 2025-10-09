@@ -191,6 +191,9 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
 
+            if (this->trackpadGestureBegin(gev))
+                return true;
+
             return false;
         }
 
@@ -245,6 +248,10 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                     }
                 }
             }
+
+            if (this->trackpadGestureBegin(gev))
+                return true;
+
             return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
     }
 
