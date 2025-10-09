@@ -555,6 +555,11 @@ void GestureManager::updateWorkspaceSwipe() {
 
 bool GestureManager::trackpadGestureBegin(const DragGestureEvent& gev) {
     Vector2D delta = this->pixelToTrackpadDistance(this->m_sGestureState.get_center().delta());
+    if (gev.type == DragGestureType::LONG_PRESS && std::abs(delta.x) < 5 && std::abs(delta.y) < 5) {
+        // hyprland has an arbitrary threshold of 5 pixels, we fake a bit of movement to trigger
+        // the gesture
+        delta = {0, 5};
+    }
     uint32_t fingers = gev.type == DragGestureType::EDGE_SWIPE ? gev.edge_origin : gev.finger_count;
 
     IPointer::SSwipeBeginEvent swipeBegin = {
