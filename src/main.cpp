@@ -193,6 +193,11 @@ void onRenderStage(eRenderStage stage) {
 }
 
 SDispatchResult listInternalBinds(std::string) {
+    static const DragGestureType dragGestureTypes[3] = {
+        DragGestureType::SWIPE,
+        DragGestureType::LONG_PRESS,
+        DragGestureType::EDGE_SWIPE,
+    };
     Debug::log(LOG, "[hyprgrass] Listing internal binds:");
     for (const auto& bind : g_pGestureManager->internalBinds) {
         Debug::log(LOG, "[hyprgrass] | gesture: {}", bind->key);
@@ -201,6 +206,22 @@ SDispatchResult listInternalBinds(std::string) {
         Debug::log(LOG, "[hyprgrass] |     mouse: {}", bind->mouse);
         Debug::log(LOG, "[hyprgrass] |     locked: {}", bind->locked);
         Debug::log(LOG, "[hyprgrass] |");
+    }
+
+    for (const auto& type : dragGestureTypes) {
+        auto handler = g_pShimTrackpadGestures->get(type);
+        for (const auto& g : handler->m_gestures) {
+            DragGestureEvent gev = {
+                .time         = 0,
+                .type         = type,
+                .direction    = toHyprgrassDirection(g->direction),
+                .finger_count = static_cast<int>(g->fingerCount),
+                .edge_origin  = static_cast<uint32_t>(g->fingerCount),
+            };
+            Debug::log(LOG, "[hyprgrass] | gesture: {}", gev.to_string());
+            Debug::log(LOG, "[hyprgrass] |     modifiers: {}", g->modMask);
+            Debug::log(LOG, "[hyprgrass] |     scaling: {}", g->deltaScale);
+        }
     }
     return SDispatchResult{.success = true};
 }
