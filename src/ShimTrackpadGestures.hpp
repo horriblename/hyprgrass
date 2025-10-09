@@ -15,6 +15,7 @@ struct GestureConfig {
 };
 
 std::expected<GestureConfig, std::string> parseGesturePattern(std::string p);
+GestureDirection toHyprgrassDirection(eTrackpadGestureDirection dir);
 
 struct ShimTrackpadGestures {
   public:

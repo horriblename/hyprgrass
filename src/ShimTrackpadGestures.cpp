@@ -43,3 +43,32 @@ std::expected<GestureConfig, std::string> parseGesturePattern(std::string p) {
         .fingers   = static_cast<size_t>(fingers),
     };
 }
+
+GestureDirection toHyprgrassDirection(eTrackpadGestureDirection dir) {
+    switch (dir) {
+        case TRACKPAD_GESTURE_DIR_NONE:
+            return 0;
+        case TRACKPAD_GESTURE_DIR_SWIPE:
+            return GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT | GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
+        case TRACKPAD_GESTURE_DIR_LEFT:
+            return GESTURE_DIRECTION_LEFT;
+        case TRACKPAD_GESTURE_DIR_RIGHT:
+            return GESTURE_DIRECTION_RIGHT;
+        case TRACKPAD_GESTURE_DIR_UP:
+            return GESTURE_DIRECTION_UP;
+        case TRACKPAD_GESTURE_DIR_DOWN:
+            return GESTURE_DIRECTION_DOWN;
+        case TRACKPAD_GESTURE_DIR_VERTICAL:
+            return GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
+        case TRACKPAD_GESTURE_DIR_HORIZONTAL:
+            return GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
+        case TRACKPAD_GESTURE_DIR_PINCH:
+            return 0; // TODO
+        case TRACKPAD_GESTURE_DIR_PINCH_OUT:
+            return 0; // TODO
+        case TRACKPAD_GESTURE_DIR_PINCH_IN:
+            return 0; // TODO
+    }
+
+    return 0;
+}
