@@ -122,7 +122,11 @@ void onDebounceTrigger() {
 
     double steps = MAX_BRIGHTNESS_PCT * (delta / MAX_RANGE);
 
-    g_pBackend->set_brightness("", change, steps);
+    if (!(ChangeType::Decrease == change && g_pBackend->get_scaled_brightness("") - steps <= 1)) {
+        g_pBackend->set_brightness("", change, steps);
+    } else {
+        g_pBackend->set_scaled_brightness("", 1);
+    }
 
     g_pGlobalState->last_triggered_pos = g_pGlobalState->latest_pos;
 }
