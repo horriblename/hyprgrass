@@ -1,6 +1,7 @@
 #include "GestureManager.hpp"
 #include "HyprLogger.hpp"
 #include "globals.hpp"
+#include <vector>
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
@@ -10,6 +11,7 @@
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/UnifiedWorkspaceSwipeGesture.hpp>
+#include <hyprland/src/plugins/PluginSystem.hpp>
 #include <hyprland/src/protocols/core/Compositor.hpp>
 #undef private
 
@@ -51,10 +53,113 @@ std::vector<std::string> splitString(const std::string& s, char delimiter, int n
     return substrings;
 }
 
-bool emitHookEvent(std::vector<SCallbackFNPtr>* hooks, std::any param) {
-    SCallbackInfo info;
-    g_pHookSystem->emit(hooks, info, param);
-    return info.cancelled;
+struct HookResult {
+    HANDLE handled;
+    bool needsDeadCleanup = false;
+};
+
+static HookResult emitOneHook(const SCallbackFNPtr& cb, std::any data, std::vector<HANDLE>& faultyHandles) {
+    SCallbackInfo info = {};
+
+    if (!cb.handle) {
+        // hyprland hooks, impossible to occur but we're skipping those just in case
+        return HookResult{.handled = nullptr};
+    }
+
+    if (std::ranges::find(faultyHandles, cb.handle) != faultyHandles.end())
+        return HookResult{.handled = nullptr};
+
+    g_pHookSystem->m_currentEventPlugin = true;
+
+    try {
+        if (!setjmp(g_pHookSystem->m_hookFaultJumpBuf)) {
+            if (SP<HOOK_CALLBACK_FN> fn = cb.fn.lock()) {
+                (*fn)(fn.get(), info, data);
+                if (info.cancelled)
+                    return HookResult{
+                        .handled          = cb.handle,
+                        .needsDeadCleanup = false,
+                    };
+            } else {
+                return HookResult{.handled = nullptr, .needsDeadCleanup = true};
+            }
+        } else {
+            // this module crashed.
+            throw std::exception();
+        }
+    } catch (std::exception& e) {
+        // TODO: this works only once...?
+        faultyHandles.push_back(cb.handle);
+        Debug::log(ERR, "[hookSystem] Hook from plugin {:x} caused a SIGSEGV, queueing for unloading.",
+                   rc<uintptr_t>(cb.handle));
+    }
+
+    return HookResult{.handled = nullptr, .needsDeadCleanup = false};
+}
+
+// copied from g_pHookSystem->emit(), emits events for each hook until one of them sets
+// info.cancelled=true; returns the handle of the plugin that handled the event.
+static HANDLE emitHookEventForOne(std::vector<SCallbackFNPtr>* const callbacks, std::any data) {
+    if (callbacks->empty())
+        return nullptr;
+
+    HANDLE handler = nullptr;
+
+    std::vector<HANDLE> faultyHandles;
+    volatile bool needsDeadCleanup = false;
+
+    for (auto const& cb : *callbacks) {
+        HookResult res = emitOneHook(cb, data, faultyHandles);
+        if (res.needsDeadCleanup)
+            needsDeadCleanup = true;
+        if (res.handled) {
+            handler = res.handled;
+            break;
+        }
+    }
+
+    if (needsDeadCleanup)
+        std::erase_if(*callbacks, [](const auto& fn) { return !fn.fn.lock(); });
+
+    if (!faultyHandles.empty()) {
+        for (auto const& h : faultyHandles)
+            g_pPluginSystem->unloadPlugin(g_pPluginSystem->getPluginByHandle(h), true);
+    }
+
+    return handler;
+}
+
+#define EMIT_HOOK_EVENT_FOR_PLUGIN(name, plugin, param)                                                                \
+    {                                                                                                                  \
+        static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent(name);                                            \
+        emitHookForPlugin(PEVENTVEC, plugin, param);                                                                   \
+    }
+
+static void emitHookForPlugin(std::vector<SCallbackFNPtr>* const callbacks, HANDLE plugin, std::any data) {
+    if (callbacks->empty())
+        return;
+
+    std::vector<HANDLE> faultyHandles;
+
+    volatile bool needsDeadCleanup = false;
+    for (auto const& cb : *callbacks) {
+        if (cb.handle == plugin) {
+            HookResult res = emitOneHook(cb, data, faultyHandles);
+            if (res.needsDeadCleanup)
+                needsDeadCleanup = true;
+            break;
+        }
+    }
+
+    if (needsDeadCleanup)
+        std::erase_if(*callbacks, [](const auto& fn) { return !fn.fn.lock(); });
+
+    if (!faultyHandles.empty()) {
+        for (auto const& h : faultyHandles)
+            g_pPluginSystem->unloadPlugin(g_pPluginSystem->getPluginByHandle(h), true);
+    }
+
+    return;
 }
 
 int handleLongPressTimer(void* data) {
@@ -125,13 +230,13 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
         case DragGestureType::SWIPE: {
             static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:swipeBegin");
 
-            bool handled = emitHookEvent(
+            HANDLE handler = emitHookEventForOne(
                 PEVENTVEC, std::tuple<std::string, std::uint64_t, Vector2D>{
                                stringifyDirection(gev.direction), gev.finger_count,
                                pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)});
 
-            if (handled) {
-                this->hookHandled = true;
+            if (handler) {
+                this->hookHandled = handler;
                 return true;
             }
 
@@ -155,13 +260,13 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
         case DragGestureType::EDGE_SWIPE: {
             static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:edgeBegin");
 
-            bool handled = emitHookEvent(
+            HANDLE handler = emitHookEventForOne(
                 PEVENTVEC,
                 std::pair<std::string, Vector2D>(
                     gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)));
 
-            if (handled) {
-                this->hookHandled = true;
+            if (handler) {
+                this->hookHandled = handler;
                 return true;
             }
 
@@ -300,8 +405,9 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
     switch (this->getActiveDragGesture()->type) {
         case DragGestureType::SWIPE:
             if (this->hookHandled) {
-                EMIT_HOOK_EVENT("hyprgrass:swipeUpdate",
-                                pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
+                EMIT_HOOK_EVENT_FOR_PLUGIN(
+                    "hyprgrass:swipeUpdate", this->hookHandled,
+                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
             } else if (this->workspaceSwipeActive) {
                 this->updateWorkspaceSwipe();
             } else if (**EMULATE_TOUCHPAD) {
@@ -322,8 +428,9 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
         }
         case DragGestureType::EDGE_SWIPE:
             if (this->hookHandled) {
-                EMIT_HOOK_EVENT("hyprgrass:edgeUpdate",
-                                pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
+                EMIT_HOOK_EVENT_FOR_PLUGIN(
+                    "hyprgrass:edgeUpdate", this->hookHandled,
+                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
 
                 return;
             }
@@ -346,8 +453,8 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
     switch (gev.type) {
         case DragGestureType::SWIPE:
             if (this->hookHandled) {
-                EMIT_HOOK_EVENT("hyprgrass:swipeEnd", 0)
-                this->hookHandled = false;
+                EMIT_HOOK_EVENT_FOR_PLUGIN("hyprgrass:swipeEnd", this->hookHandled, 0)
+                this->hookHandled = nullptr;
             } else if (this->workspaceSwipeActive) {
                 g_pUnifiedWorkspaceSwipe->end();
                 this->workspaceSwipeActive = false;
@@ -368,8 +475,8 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
             return;
         case DragGestureType::EDGE_SWIPE:
             if (this->hookHandled) {
-                EMIT_HOOK_EVENT("hyprgrass:edgeEnd", 0);
-                this->hookHandled = false;
+                EMIT_HOOK_EVENT_FOR_PLUGIN("hyprgrass:edgeEnd", this->hookHandled, 0);
+                this->hookHandled = nullptr;
             } else if (this->workspaceSwipeActive) {
                 g_pUnifiedWorkspaceSwipe->end();
             }
@@ -399,8 +506,8 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
 }
 
 void GestureManager::updateWorkspaceSwipe() {
-    const auto  ANIMSTYLE = g_pUnifiedWorkspaceSwipe->m_workspaceBegin->m_renderOffset->getStyle();
-    const bool  VERTANIMS = ANIMSTYLE == "slidevert" || ANIMSTYLE.starts_with("slidefadevert");
+    const auto ANIMSTYLE = g_pUnifiedWorkspaceSwipe->m_workspaceBegin->m_renderOffset->getStyle();
+    const bool VERTANIMS = ANIMSTYLE == "slidevert" || ANIMSTYLE.starts_with("slidefadevert");
 
     static auto const PSWIPEDIST =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
@@ -467,7 +574,7 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
 
     if (this->m_sGestureState.fingers.size() == 0) {
         this->touchedResources.clear();
-        this->hookHandled = false;
+        this->hookHandled = nullptr;
     }
 
     if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_touchData.touchFocusSurface) {
