@@ -134,12 +134,14 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
             makeUnique<CWorkspaceSwipeGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale
         );
     else if (data[startDataIdx] == "resize")
+        // this handler halves the deltaScale
         resultFromGesture = handler->addGesture(
-            makeUnique<CResizeTrackpadGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale
+            makeUnique<CResizeTrackpadGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale * 2
         );
     else if (data[startDataIdx] == "move")
+        // this handler halves the deltaScale
         resultFromGesture = handler->addGesture(
-            makeUnique<CMoveTrackpadGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale
+            makeUnique<CMoveTrackpadGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale * 2
         );
     else if (data[startDataIdx] == "special")
         resultFromGesture = handler->addGesture(
