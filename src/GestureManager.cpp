@@ -423,11 +423,9 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
         return;
     }
 
-    for (const auto& g : g_pShimTrackpadGestures->gestures) {
-        if (g.m_activeGesture) {
-            this->trackpadGestureUpdate(ev.time);
-            return;
-        }
+    if (this->activeTrackpadGesture) {
+        this->trackpadGestureUpdate(ev.time);
+        return;
     }
 
     switch (this->getActiveDragGesture()->type) {
@@ -480,11 +478,9 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
         return;
     }
 
-    for (auto& g : g_pShimTrackpadGestures->gestures) {
-        if (g.m_activeGesture) {
-            this->trackpadGestureEnd(gev);
-            return;
-        }
+    if (this->activeTrackpadGesture) {
+        this->trackpadGestureEnd(gev.time);
+        return;
     }
 
     Debug::log(LOG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
@@ -555,10 +551,18 @@ void GestureManager::updateWorkspaceSwipe() {
 
 bool GestureManager::trackpadGestureBegin(const DragGestureEvent& gev) {
     Vector2D delta = this->pixelToTrackpadDistance(this->m_sGestureState.get_center().delta());
+
+    // longpress events do not trigger a handler->m_activeGesture at the beginning,
+    // we look it up ourselves beforehand
+    bool foundLongPress = false;
+    // hyprland has an arbitrary threshold of 5 pixels
     if (gev.type == DragGestureType::LONG_PRESS && std::abs(delta.x) < 5 && std::abs(delta.y) < 5) {
-        // hyprland has an arbitrary threshold of 5 pixels, we fake a bit of movement to trigger
-        // the gesture
-        delta = {0, 5};
+        for (const auto& g : g_pShimTrackpadGestures->longPress()->m_gestures) {
+            if (g->fingerCount == gev.finger_count) {
+                foundLongPress = true;
+                break;
+            }
+        }
     }
     uint32_t fingers = gev.type == DragGestureType::EDGE_SWIPE ? gev.edge_origin : gev.finger_count;
 
@@ -577,11 +581,12 @@ bool GestureManager::trackpadGestureBegin(const DragGestureEvent& gev) {
     handler->gestureUpdate(swipe);
     this->emulatedSwipePoint = this->m_sGestureState.get_center().current;
 
-    return handler->m_activeGesture;
+    this->activeTrackpadGesture = foundLongPress || handler->m_activeGesture ? handler : nullptr;
+    return this->activeTrackpadGesture;
 }
 
 void GestureManager::trackpadGestureUpdate(uint32_t time) {
-    if (!this->getActiveDragGesture())
+    if (!this->activeTrackpadGesture)
         return;
 
     const auto currentPoint = this->m_sGestureState.get_center().current;
@@ -600,18 +605,17 @@ void GestureManager::trackpadGestureUpdate(uint32_t time) {
         .delta   = delta,
     };
 
-    CTrackpadGestures* handler = g_pShimTrackpadGestures->get(activeDrag.type);
-    handler->gestureUpdate(swipe);
+    this->activeTrackpadGesture->gestureUpdate(swipe);
 }
 
-void GestureManager::trackpadGestureEnd(const DragGestureEvent& gev) {
+void GestureManager::trackpadGestureEnd(uint32_t time) {
     IPointer::SSwipeEndEvent swipe = {
-        .timeMs    = gev.time,
+        .timeMs    = time,
         .cancelled = false,
     };
 
-    CTrackpadGestures* handler = g_pShimTrackpadGestures->get(gev.type);
-    handler->gestureEnd(swipe);
+    this->activeTrackpadGesture->gestureEnd(swipe);
+    this->activeTrackpadGesture = nullptr;
 }
 
 void GestureManager::updateLongPressTimer(uint32_t current_time, uint32_t delay) {
@@ -665,7 +669,8 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
 
     if (this->m_sGestureState.fingers.size() == 0) {
         this->touchedResources.clear();
-        this->hookHandled = nullptr;
+        this->hookHandled           = nullptr;
+        this->activeTrackpadGesture = nullptr;
     }
 
     if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_touchData.touchFocusSurface) {

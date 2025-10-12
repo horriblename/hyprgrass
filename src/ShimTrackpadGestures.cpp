@@ -80,9 +80,6 @@ std::expected<GestureConfig, std::string> parseGesturePattern(CConstVarList& var
         }
 
         direction = g_pTrackpadGestures->dirForString(vars[2]);
-        if (isPinch(direction)) {
-            return std::unexpected(std::format("invalid direction for a longpress gesture: {}", vars[2]));
-        }
     } else {
         return std::unexpected(std::format("invalid gesture event: {}", vars[0]));
     }

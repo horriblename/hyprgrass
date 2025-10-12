@@ -57,8 +57,9 @@ class GestureManager : public IGestureManager {
         bool active = false;
         CCssGapData old_gaps_in;
     } resizeOnBorderInfo;
-    bool workspaceSwipeActive = false;
-    HANDLE hookHandled        = nullptr;
+    bool workspaceSwipeActive                = false;
+    HANDLE hookHandled                       = nullptr;
+    CTrackpadGestures* activeTrackpadGesture = nullptr;
     // used by emulate_touchpad_swipe and trackpadGesture* functions
     wf::touch::point_t emulatedSwipePoint;
 
@@ -75,7 +76,7 @@ class GestureManager : public IGestureManager {
 
     bool trackpadGestureBegin(const DragGestureEvent& gev);
     void trackpadGestureUpdate(uint32_t time);
-    void trackpadGestureEnd(const DragGestureEvent& gev);
+    void trackpadGestureEnd(uint32_t time);
 
     bool handleDragGesture(const DragGestureEvent& gev) override;
     void dragGestureUpdate(const wf::touch::gesture_event_t&) override;
