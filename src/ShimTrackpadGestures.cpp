@@ -1,75 +1,96 @@
 #include "ShimTrackpadGestures.hpp"
-#include <cstring>
+#include <charconv>
 
-std::expected<GestureConfig, std::string> parseGesturePattern(std::string p) {
-    auto vars = CVarList(p, 0, ':');
+static std::expected<void, std::string> parseFingers(const std::string_view& s, size_t& fingers) {
+    auto result = std::from_chars(s.data(), s.data() + s.size(), fingers);
+    if (result.ec == std::errc::invalid_argument) {
+        return std::unexpected(
+            std::format("invalid swipe gesture pattern: second segment must be an integer, got {}", s)
+        );
+    } else if (result.ec == std::errc::result_out_of_range) {
+        return std::unexpected("finger count too large/too small");
+    }
+    return {};
+}
+
+static bool isSingleDirection(eTrackpadGestureDirection dir) {
+    switch (dir) {
+        case TRACKPAD_GESTURE_DIR_LEFT:
+        case TRACKPAD_GESTURE_DIR_RIGHT:
+        case TRACKPAD_GESTURE_DIR_UP:
+        case TRACKPAD_GESTURE_DIR_DOWN:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool isPinch(eTrackpadGestureDirection dir) {
+    switch (dir) {
+        case TRACKPAD_GESTURE_DIR_PINCH:
+        case TRACKPAD_GESTURE_DIR_PINCH_IN:
+        case TRACKPAD_GESTURE_DIR_PINCH_OUT:
+            return true;
+        default:
+            return false;
+    }
+}
+
+std::expected<GestureConfig, std::string> parseGesturePattern(CConstVarList& vars) {
     DragGestureType type;
-    int fingers                         = 0;
+    size_t fingersOrOrigin              = 0;
     eTrackpadGestureDirection direction = TRACKPAD_GESTURE_DIR_NONE;
 
-    if (vars.size() < 1) {
-        return std::unexpected(std::format("invalid gesture pattern: {}", p));
+    if (vars.size() < 4) {
+        return std::unexpected("hyprgrass-gesture must have at least 4 arguments");
     }
 
     if (vars[0] == "swipe") {
         type = DragGestureType::SWIPE;
-        if (vars.size() != 3) {
-            return std::unexpected("invalid swipe gesture pattern: " + p);
-        }
 
-        try {
-            fingers = std::stoi(vars[1]);
-        } catch (std::invalid_argument const&) {
-            return std::unexpected(
-                std::format("invalid swipe gesture pattern: {}, second segment must be an integer", p)
-            );
+        auto res = parseFingers(vars[1], fingersOrOrigin);
+        if (!res) {
+            return std::unexpected(res.error());
         }
 
         direction = g_pTrackpadGestures->dirForString(vars[2]);
-        if (direction == TRACKPAD_GESTURE_DIR_NONE)
-            direction = TRACKPAD_GESTURE_DIR_SWIPE; // TODO: do I need this
+        if (isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE) {
+            return std::unexpected(std::format("invalid direction for a swipe gesture: {}", vars[2]));
+        }
     } else if (vars[0] == "edge") {
-        if (vars.size() != 3) {
-            return std::unexpected("invalid edge gesture pattern: " + p);
+        type        = DragGestureType::EDGE_SWIPE;
+        auto origin = g_pTrackpadGestures->dirForString(vars[1]);
+        if (!isSingleDirection(origin)) {
+            return std::unexpected(
+                std::format("invalid ORIGIN for an edge gesture, expected a single direction, got {}", vars[1])
+            );
         }
 
-        type = DragGestureType::EDGE_SWIPE;
-        switch (vars[1][0]) {
-            case 'u':
-                fingers = GESTURE_DIRECTION_UP;
-                break;
-            case 'd':
-                fingers = GESTURE_DIRECTION_DOWN;
-                break;
-            case 'l':
-                fingers = GESTURE_DIRECTION_LEFT;
-                break;
-            case 'r':
-                fingers = GESTURE_DIRECTION_RIGHT;
-                break;
-            default:
-                return std::unexpected(
-                    std::format("invalid edge gesture pattern: {}, second segment must be an u, d, l or r", p)
-                );
-        }
+        fingersOrOrigin = toHyprgrassDirection(origin);
+
         direction = g_pTrackpadGestures->dirForString(vars[2]);
+        if (isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE) {
+            return std::unexpected(std::format("invalid direction for an edge gesture: {}", vars[2]));
+        }
     } else if (vars[0] == "longpress") {
-        type = DragGestureType::LONG_PRESS;
-        try {
-            fingers   = std::stoi(vars[1]);
-            direction = TRACKPAD_GESTURE_DIR_SWIPE;
-        } catch (std::invalid_argument const&) {
-            return std::unexpected(std::format("invalid longpress gesture pattern: {}, argument must be an integer", p)
-            );
+        type     = DragGestureType::LONG_PRESS;
+        auto res = parseFingers(vars[1], fingersOrOrigin);
+        if (!res) {
+            return std::unexpected(res.error());
+        }
+
+        direction = g_pTrackpadGestures->dirForString(vars[2]);
+        if (isPinch(direction)) {
+            return std::unexpected(std::format("invalid direction for a longpress gesture: {}", vars[2]));
         }
     } else {
-        return std::unexpected("invalid gesture pattern: " + p);
+        return std::unexpected(std::format("invalid gesture event: {}", vars[0]));
     }
 
     return GestureConfig{
         .type      = type,
         .direction = direction,
-        .fingers   = static_cast<size_t>(fingers),
+        .fingers   = static_cast<size_t>(fingersOrOrigin),
     };
 }
 

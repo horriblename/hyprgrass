@@ -85,14 +85,14 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
 
     CConstVarList data(RHS);
 
-    auto maybePattern = parseGesturePattern(std::string(data[0]));
+    auto maybePattern = parseGesturePattern(data);
     if (!maybePattern) {
         result.setError(maybePattern.error().data());
         return result;
     }
     GestureConfig pattern = maybePattern.value();
 
-    int startDataIdx = 1;
+    int startDataIdx = 3;
     uint32_t modMask = 0;
     float deltaScale = 1.F;
 

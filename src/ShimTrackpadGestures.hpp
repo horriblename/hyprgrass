@@ -14,7 +14,7 @@ struct GestureConfig {
     size_t fingers;
 };
 
-std::expected<GestureConfig, std::string> parseGesturePattern(std::string p);
+std::expected<GestureConfig, std::string> parseGesturePattern(CConstVarList& vars);
 GestureDirection toHyprgrassDirection(eTrackpadGestureDirection dir);
 
 struct ShimTrackpadGestures {
