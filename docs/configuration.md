@@ -1,8 +1,8 @@
 # Configuration
 
-## Configuration options
+## Options
 
-```
+```hyprlang
 plugin {
  touch_gestures {
   # The default sensitivity is probably too low on tablet screens,
@@ -22,24 +22,19 @@ plugin {
   long_press_delay = 400
 
   # resize windows by long-pressing on window borders and gaps.
-  # If general:resize_on_border is enabled, general:extend_border_grab_area is used for floating
-  # windows
+  # If general:resize_on_border is enabled, general:extend_border_grab_area is
+  # used for floating windows
   resize_on_border_long_press = true
 
   # in pixels, the distance from the edge that is considered an edge
   edge_margin = 10
 
-  # emulates touchpad swipes when swiping in a direction that does not trigger workspace swipe.
-  # ONLY triggers when finger count is equal to workspace_swipe_fingers
+  # emulates touchpad swipes when swiping in a direction that does not trigger
+  # workspace swipe. ONLY triggers when finger count is equal to 
+  # workspace_swipe_fingers.
   #
   # might be removed in the future in favor of event hooks
   emulate_touchpad_swipe = false
-
-  experimental {
-    # send proper cancel events to windows instead of hacky touch_up events,
-    # NOT recommended as it crashed a few times, once it's stabilized I'll make it the default
-    send_cancel = 0
-  }
  }
 }
 ```
@@ -49,7 +44,7 @@ plugin {
 I also recommend that you adjust the settings for the built-in gesture to make
 it easier to switch workspaces:
 
-```
+```hyprlang
 gestures {
   workspace_swipe = true
   workspace_swipe_cancel_ratio = 0.15
@@ -61,21 +56,20 @@ gestures {
 There are two ways to bind gesture events to some action.
 
 1. use `hyprgrass-bind`. The syntax is like normal keybinds
-2. use `hyprgrass-gesture`. The syntax is like `gesture`s (currently unstable,
-   prefer the `hyprgrass-bindm` counterpart if possible)
+2. use `hyprgrass-gesture`. The syntax is like `gesture`s
 
 You can also bind gesture events to dispatchers, using hyprgrass-bind keyword.
 The syntax is like normal keybinds.
 
 ### `hyprgrass-bind`
 
-#### Syntax
+#### hyprgrass-bind Syntax
 
-```
+```hyprlang
 hyprgrass-bind = , <gesture_name>, <dispatcher>, <args>
 ```
 
-where (skip to [examples](#examples) if this is confusing):
+where (skip to [examples](#hyprgrass-bind-examples) if this is confusing):
 
 - `gesture_name` is one of:
   1. `swipe:<finger_count>:<direction>`
@@ -89,9 +83,9 @@ where (skip to [examples](#examples) if this is confusing):
      - `<direction>` is in which direction to swipe (l/r/u/d/lu/ld/ru/rd)
   4. `longpress:<finger_count>`
 
-#### Examples
+#### hyprgrass-bind Examples
 
-```
+```hyprlang
 plugin {
     touch_gestures {
         # swipe left from right edge
@@ -128,9 +122,9 @@ plugin {
 The `move` action is known to work poorly, use [bindm](#hyprgrass-bind) with
 `movewindow` instead.
 
-#### Syntax
+#### hyrgrass-gesture Syntax
 
-```
+```hyprlang
 hyprgrass-gesture = <gesture_type>, <gesture_arg>, <direction>, [modifiers, ...] <action> [, <options>...]
 ```
 
@@ -153,9 +147,11 @@ hyprgrass-gesture = <gesture_type>, <gesture_arg>, <direction>, [modifiers, ...]
 - `vertical` -> vertical swipe
 - `left`, `right`, `up`, `down` -> swipe directions
 
-`longpress` events should leave this field empty.
+> [!NOTE]
+> Some actions only accept certain directions. E.g. `workspace` does not work
+> with `swipe`. `longpress` events should use a valid direction in this case.
 
-You can add zero or more **modifiers** after the direction:
+**Modifiers** can be added after the direction:
 
 - `mod: MODMASK` to add a modifier key
 - `scale: SCALE` to add scale the animation speed by a float
@@ -164,7 +160,7 @@ The following **actions** are currently supported (see
 [Hyprland wiki](https://wiki.hypr.land/Configuring/Gestures/#available-gestures)
 for details):
 
-```
+```text
 dispatcher
 workspace
 move
@@ -175,11 +171,17 @@ fullscreen
 float
 ```
 
-#### Examples
+#### hyprgrass-gesture Examples
 
-```
+```hyprlang
 hyprgrass-gesture = swipe, 3, down, close
-hyprgrass-gesture = edge, 3, down, special
+
+# Swipe from upper edge downwards
+hyprgrass-gesture = edge, up, down, special
+
+# Workspace does not work with the "swipe" direction,
+# make sure to put in an accepted direction even for longpress
+hyprgrass-gesture = longpress, 3, horizontal, workspace
 ```
 
 ## Hyprgrass-pulse
