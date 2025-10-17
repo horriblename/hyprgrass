@@ -248,7 +248,7 @@ SDispatchResult listHooks(std::string event) {
     return SDispatchResult{.success = true};
 }
 
-Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
+Hyprlang::CParseResult hyrgrassBindKeyword(const char* K, const char* V) {
     std::string v = V;
     auto vars     = CVarList(v, 4);
     Hyprlang::CParseResult result;
@@ -262,10 +262,7 @@ Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
         return result;
     }
 
-    if (!vars[0].empty()) {
-        result.setError("MODIFIER keys not currently supported");
-        return result;
-    }
+    uint32_t modMask = g_pKeybindManager->stringToModMask(vars[0]);
 
     const int prefix_size = std::size(KEYWORD_HG_BIND);
     for (char c : std::string(K).substr(prefix_size)) {
@@ -289,6 +286,7 @@ Hyprlang::CParseResult onNewBind(const char* K, const char* V) {
 
     g_pGestureManager->internalBinds.emplace_back(makeShared<SKeybind>(SKeybind{
         .key     = key,
+        .modmask = modMask,
         .handler = dispatcher,
         .arg     = dispatcherArgs,
         .locked  = flags.locked,
@@ -338,7 +336,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         PHANDLE, "plugin:touch_gestures:debug:visualize_touch", Hyprlang::CConfigValue((Hyprlang::INT)0)
     );
 
-    HyprlandAPI::addConfigKeyword(PHANDLE, KEYWORD_HG_BIND, onNewBind, Hyprlang::SHandlerOptions{.allowFlags = true});
+    HyprlandAPI::addConfigKeyword(
+        PHANDLE, KEYWORD_HG_BIND, hyrgrassBindKeyword, Hyprlang::SHandlerOptions{.allowFlags = true}
+    );
     HyprlandAPI::addConfigKeyword(PHANDLE, KEYWORD_HG_GESTURE, hyprgrassGestureKeyword, Hyprlang::SHandlerOptions{});
     static auto P0 = HyprlandAPI::registerCallbackDynamic(
         PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) { onPreConfigReload(); }

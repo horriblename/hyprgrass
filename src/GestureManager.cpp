@@ -366,7 +366,8 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
     bool found = false;
     Debug::log(LOG, "[hyprgrass] Looking for binds matching: {}", bind);
 
-    auto allBinds = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
+    auto allBinds   = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
+    const auto MODS = g_pInputManager->getModsFromAllKBs();
 
     for (const auto& k : allBinds) {
         if (k->key != bind)
@@ -384,6 +385,9 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
             continue;
 
         if (k->locked != g_pSessionLockManager->isSessionLocked())
+            continue;
+
+        if (k->modmask != MODS)
             continue;
 
         switch (type) {
@@ -556,8 +560,9 @@ bool GestureManager::trackpadGestureBegin(const DragGestureEvent& gev) {
     bool foundLongPress = false;
     // hyprland has an arbitrary threshold of 5 pixels
     if (gev.type == DragGestureType::LONG_PRESS && std::abs(delta.x) < 5 && std::abs(delta.y) < 5) {
+        const auto MODS = g_pInputManager->getModsFromAllKBs();
         for (const auto& g : g_pShimTrackpadGestures->longPress()->m_gestures) {
-            if (g->fingerCount == gev.finger_count) {
+            if (g->fingerCount == gev.finger_count && g->modMask == MODS) {
                 foundLongPress = true;
                 break;
             }
