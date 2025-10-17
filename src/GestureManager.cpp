@@ -1,7 +1,6 @@
 #include "GestureManager.hpp"
 #include "HyprLogger.hpp"
 #include "globals.hpp"
-#include <vector>
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
@@ -15,7 +14,9 @@
 #include <hyprland/src/protocols/core/Compositor.hpp>
 #undef private
 
+#include <algorithm>
 #include <ranges>
+#include <vector>
 
 // constexpr double SWIPE_THRESHOLD = 30.;
 constexpr int RESIZE_BORDER_GAP_INCREMENT = 10;
