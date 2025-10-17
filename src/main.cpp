@@ -217,7 +217,7 @@ SDispatchResult listInternalBinds(std::string) {
                 .time         = 0,
                 .type         = type,
                 .direction    = toHyprgrassDirection(g->direction),
-                .finger_count = static_cast<int>(g->fingerCount),
+                .finger_count = static_cast<uint32_t>(g->fingerCount),
                 .edge_origin  = static_cast<uint32_t>(g->fingerCount),
             };
             Debug::log(LOG, "[hyprgrass] | gesture: {}", gev.to_string());

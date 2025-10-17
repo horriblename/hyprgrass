@@ -143,7 +143,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
             .time         = time,
             .type         = DragGestureType::SWIPE,
             .direction    = swipe_ptr->target_direction,
-            .finger_count = static_cast<int>(this->m_sGestureState.fingers.size())
+            .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
         };
 
         if (this->emitDragGesture(gesture)) {
@@ -157,7 +157,7 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
             .time         = time,
             .type         = DragGestureType::SWIPE,
             .direction    = 0,
-            .finger_count = static_cast<int>(this->m_sGestureState.fingers.size())
+            .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
         };
         if (this->emitDragGestureEnd(drag)) {
             return;
@@ -212,7 +212,7 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
                 .time         = time,
                 .type         = DragGestureType::LONG_PRESS,
                 .direction    = 0,
-                .finger_count = static_cast<int>(this->m_sGestureState.fingers.size())
+                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
             };
 
             const auto gesture1 = CompletedGestureEvent{
@@ -264,7 +264,7 @@ void IGestureManager::addEdgeSwipeGesture(
               .time         = time,
               .type         = DragGestureType::EDGE_SWIPE,
               .direction    = direction,
-              .finger_count = edge_ptr->finger_count,
+              .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
               .edge_origin  = origin_edges
         };
         if (this->emitDragGesture(gesture)) {
@@ -280,7 +280,7 @@ void IGestureManager::addEdgeSwipeGesture(
                    .time         = time,
                    .type         = DragGestureType::EDGE_SWIPE,
                    .direction    = direction,
-                   .finger_count = edge_ptr->finger_count,
+                   .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
                    .edge_origin  = origin_edges,
             };
 

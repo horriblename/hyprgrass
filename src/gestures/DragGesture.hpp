@@ -11,7 +11,7 @@ struct DragGestureEvent {
     uint32_t time;
     DragGestureType type;
     GestureDirection direction;
-    int finger_count;
+    uint32_t finger_count;
 
     GestureDirection edge_origin;
 

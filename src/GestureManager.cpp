@@ -441,8 +441,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
                 const auto currentPoint           = this->m_sGestureState.get_center().current;
                 const auto delta                  = currentPoint - this->emulatedSwipePoint;
                 IPointer::SSwipeUpdateEvent swipe = {
-                    .fingers = static_cast<uint32_t>(this->getActiveDragGesture()->finger_count),
-                    .delta   = Vector2D(delta.x, delta.y)
+                    .fingers = this->getActiveDragGesture()->finger_count, .delta = Vector2D(delta.x, delta.y)
                 };
                 g_pInputManager->onSwipeUpdate(swipe);
                 this->emulatedSwipePoint = currentPoint;

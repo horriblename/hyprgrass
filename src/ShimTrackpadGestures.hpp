@@ -44,6 +44,7 @@ struct ShimTrackpadGestures {
             case DragGestureType::EDGE_SWIPE:
                 return this->edge();
         }
+        return nullptr;
     }
 
     // maybe making a function returning std::array would be better? idk
