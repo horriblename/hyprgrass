@@ -1,8 +1,8 @@
 #include "Actions.hpp"
 #include <glm/glm.hpp>
 
-wf::touch::action_status_t CMultiAction::update_state(const wf::touch::gesture_state_t& state,
-                                                      const wf::touch::gesture_event_t& event) {
+wf::touch::action_status_t
+CMultiAction::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
     if (event.time - this->start_time > *this->timeout) {
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
@@ -44,8 +44,8 @@ wf::touch::action_status_t CMultiAction::update_state(const wf::touch::gesture_s
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 
-wf::touch::action_status_t MultiFingerDownAction::update_state(const wf::touch::gesture_state_t& state,
-                                                               const wf::touch::gesture_event_t& event) {
+wf::touch::action_status_t
+MultiFingerDownAction::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
     if (event.time - this->start_time > this->get_duration()) {
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
@@ -61,8 +61,8 @@ wf::touch::action_status_t MultiFingerDownAction::update_state(const wf::touch::
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 
-wf::touch::action_status_t MultiFingerTap::update_state(const wf::touch::gesture_state_t& state,
-                                                        const wf::touch::gesture_event_t& event) {
+wf::touch::action_status_t
+MultiFingerTap::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
     if (event.time - this->start_time > *this->timeout) {
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
@@ -83,8 +83,8 @@ wf::touch::action_status_t MultiFingerTap::update_state(const wf::touch::gesture
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 
-wf::touch::action_status_t LongPress::update_state(const wf::touch::gesture_state_t& state,
-                                                   const wf::touch::gesture_event_t& event) {
+wf::touch::action_status_t
+LongPress::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
     if (event.time - this->start_time > *this->delay) {
         return wf::touch::ACTION_STATUS_COMPLETED;
     }
@@ -112,8 +112,8 @@ wf::touch::action_status_t LongPress::update_state(const wf::touch::gesture_stat
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 
-wf::touch::action_status_t LiftoffAction::update_state(const wf::touch::gesture_state_t& state,
-                                                       const wf::touch::gesture_event_t& event) {
+wf::touch::action_status_t
+LiftoffAction::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
     if (event.time - this->start_time > this->get_duration()) {
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
@@ -129,8 +129,8 @@ wf::touch::action_status_t LiftoffAction::update_state(const wf::touch::gesture_
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 
-wf::touch::action_status_t TouchUpOrDownAction::update_state(const wf::touch::gesture_state_t& state,
-                                                             const wf::touch::gesture_event_t& event) {
+wf::touch::action_status_t
+TouchUpOrDownAction::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
     if (event.time - this->start_time > this->get_duration()) {
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
@@ -142,8 +142,8 @@ wf::touch::action_status_t TouchUpOrDownAction::update_state(const wf::touch::ge
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 
-wf::touch::action_status_t LiftAll::update_state(const wf::touch::gesture_state_t& state,
-                                                 const wf::touch::gesture_event_t& event) {
+wf::touch::action_status_t
+LiftAll::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
     if (event.time - this->start_time > this->get_duration()) {
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
@@ -154,12 +154,12 @@ wf::touch::action_status_t LiftAll::update_state(const wf::touch::gesture_state_
 
     return wf::touch::ACTION_STATUS_RUNNING;
 }
-wf::touch::action_status_t OnCompleteAction::update_state(const wf::touch::gesture_state_t& state,
-                                                          const wf::touch::gesture_event_t& event) {
+wf::touch::action_status_t
+OnCompleteAction::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
     auto status = this->action->update_state(state, event);
 
     if (status == wf::touch::ACTION_STATUS_COMPLETED) {
-        this->callback();
+        this->callback(event.time);
     }
 
     return status;
