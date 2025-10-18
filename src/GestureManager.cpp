@@ -195,7 +195,7 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
     this->addLongPress(*PSENSITIVITY, *LONG_PRESS_DELAY);
     this->addMultiFingerGesture(*PSENSITIVITY, *LONG_PRESS_DELAY, *PINCH_THRESHOLD);
     this->addMultiFingerTap(*PSENSITIVITY, *LONG_PRESS_DELAY);
-    this->addPinchGesture(*PINCH_THRESHOLD, *LONG_PRESS_DELAY);
+    this->addPinchGesture(*PSENSITIVITY, *LONG_PRESS_DELAY);
 
     this->long_press_timer = wl_event_loop_add_timer(g_pCompositor->m_wlEventLoop, handleLongPressTimer, this);
 }
@@ -362,7 +362,6 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
 
         case DragGestureType::PINCH:
-            // TODO: idk do we need this?
             break;
     }
 

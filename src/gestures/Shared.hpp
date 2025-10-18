@@ -8,8 +8,9 @@ constexpr static double MAX_SWIPE_DISTANCE             = 450;
 constexpr static double SWIPE_INCORRECT_DRAG_TOLERANCE = 150;
 
 // Pinch params
-constexpr static double PINCH_INCORRECT_DRAG_TOLERANCE = 200;
-constexpr static double PINCH_THRESHOLD                = 1.5;
+// based on libinput's parameters (PINCH_DISAMBIGUATION_MOVE_THRESHOLD is three times the amount
+// of HOLD_AND_MOTION_THRESHOLD but they are technically "squared" values so 150*sqrt(3) ~ 260)
+constexpr static double PINCH_INCORRECT_DRAG_TOLERANCE = 260;
 
 // Hold params
 constexpr static double HOLD_INCORRECT_DRAG_TOLERANCE = 100;

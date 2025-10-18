@@ -133,14 +133,15 @@ class PinchAction : public wf::touch::gesture_action_t {
      * - you need to pinch in to 80% of the initial size (1.0 - 0.2 = 0.8)
      * - you need to pinch out to 120% of the initial size (1.0 + 0.2)
      */
-    PinchAction(const float* threshold) : threshold(threshold) {}
+    PinchAction(float base_threshold, const float* sensitivity)
+        : base_threshold(base_threshold), sensitivity(sensitivity) {}
 
     /**
      * The action is already completed iff no fingers have been added or
      * released and the pinch threshold has been reached without much movement.
      */
-    wf::touch::action_status_t update_state(const wf::touch::gesture_state_t& state,
-                                            const wf::touch::gesture_event_t& event) override;
+    wf::touch::action_status_t
+    update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) override;
 
   protected:
     /**
@@ -149,6 +150,7 @@ class PinchAction : public wf::touch::gesture_action_t {
     bool exceeds_tolerance(const wf::touch::gesture_state_t& state) override;
 
   private:
-    const float* threshold;
+    const float base_threshold;
+    const float* sensitivity;
     uint32_t move_tolerance = 1e9;
 };

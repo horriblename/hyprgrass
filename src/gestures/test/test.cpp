@@ -7,10 +7,9 @@
 #include "wayfire/touch/touch.hpp"
 #include <vector>
 
-constexpr float SENSITIVITY          = 1.0;
-constexpr int64_t LONG_PRESS_DELAY   = GESTURE_BASE_DURATION;
-constexpr long int EDGE_MARGIN       = 10;
-constexpr float TEST_PINCH_THRESHOLD = 0.4;
+constexpr float SENSITIVITY        = 1.0;
+constexpr int64_t LONG_PRESS_DELAY = GESTURE_BASE_DURATION;
+constexpr long int EDGE_MARGIN     = 10;
 
 void Tester::testFindSwipeEdges() {
     using Test = struct {
@@ -131,7 +130,7 @@ TEST_CASE(
 ) {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &TEST_PINCH_THRESHOLD);
+    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &SENSITIVITY);
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 120, 1, {500, 300}},
@@ -145,7 +144,7 @@ TEST_CASE(
 TEST_CASE("Swipe Drag: Start drag upon moving more than the threshold") {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &TEST_PINCH_THRESHOLD);
+    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &SENSITIVITY);
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
@@ -159,7 +158,7 @@ TEST_CASE("Swipe Drag: Cancel 3 finger swipe due to moving too much before "
           "adding new finger, but not enough to trigger 3 finger swipe first") {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &TEST_PINCH_THRESHOLD);
+    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &SENSITIVITY);
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
@@ -175,7 +174,7 @@ TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
           "finger") {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &TEST_PINCH_THRESHOLD);
+    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &SENSITIVITY);
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
@@ -481,7 +480,7 @@ TEST_CASE("Edge swipe: block touch events") {
 TEST_CASE("Pinch in: full drag") {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addPinchGesture(&TEST_PINCH_THRESHOLD, &LONG_PRESS_DELAY);
+    gm.addPinchGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         // origin center is (200, 180)
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {150, 200}},
@@ -510,7 +509,7 @@ TEST_CASE("Pinch in: full drag") {
 TEST_CASE("Pinch out: full drag") {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addPinchGesture(&TEST_PINCH_THRESHOLD, &LONG_PRESS_DELAY);
+    gm.addPinchGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         // origin center is (200, 180)
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {100, 200}}, // delta_01 = (-100, 20)
@@ -542,7 +541,7 @@ TEST_CASE("Pinch out: full drag") {
 TEST_CASE("Pinch out: completed gesture") {
     std::cout << "  ==== stdout:" << std::endl;
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addPinchGesture(&TEST_PINCH_THRESHOLD, &LONG_PRESS_DELAY);
+    gm.addPinchGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         // origin center is (200, 180)
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {100, 200}},
