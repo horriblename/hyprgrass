@@ -362,15 +362,16 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
 
         case DragGestureType::PINCH:
+            if (this->findOrRunGestureBind(gev.to_string(), GestureEventType::COMPLETED, true)) {
+                return true;
+            }
             break;
     }
 
     return false;
 }
 
-// bind is the name of the gesture event.
-// pressed only matters for mouse binds: only start of drag gestures should set it to true
-bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) {
+bool GestureManager::findOrRunGestureBind(std::string bind, GestureEventType type, bool dry_run) {
     bool found = false;
     Debug::log(LOG, "[hyprgrass] Looking for binds matching: {}", bind);
 
@@ -381,14 +382,6 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
         if (k->key != bind)
             continue;
 
-        const auto DISPATCHER = g_pKeybindManager->m_dispatchers.find(k->mouse ? "mouse" : k->handler);
-
-        // Should never happen, as we check in the ConfigManager, but oh well
-        if (DISPATCHER == g_pKeybindManager->m_dispatchers.end()) {
-            Debug::log(ERR, "Invalid handler in a keybind! (handler {} does not exist)", k->handler);
-            continue;
-        }
-
         if (k->handler == "pass")
             continue;
 
@@ -397,6 +390,17 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
 
         if (k->modmask != MODS)
             continue;
+
+        if (dry_run)
+            return true;
+
+        const auto DISPATCHER = g_pKeybindManager->m_dispatchers.find(k->mouse ? "mouse" : k->handler);
+
+        // Should never happen, as we check in the ConfigManager, but oh well
+        if (DISPATCHER == g_pKeybindManager->m_dispatchers.end()) {
+            Debug::log(ERR, "Invalid handler in a keybind! (handler {} does not exist)", k->handler);
+            continue;
+        }
 
         switch (type) {
             case GestureEventType::COMPLETED:
@@ -422,6 +426,12 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
     }
 
     return found;
+}
+
+// bind is the name of the gesture event.
+// pressed only matters for mouse binds: only start of drag gestures should set it to true
+bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) {
+    return this->findOrRunGestureBind(bind, type, false);
 }
 
 void GestureManager::handleCancelledGesture() {}
@@ -848,4 +858,8 @@ void GestureManager::touchBindDispatcher(std::string args) {
 
 void GestureManager::debugLog(const std::string& msg) {
     Debug::log(LOG, "[hyprgrass] " + msg);
+}
+
+void debug(const std::string& s) {
+    Debug::log(LOG, "[hyprgrass] [debug] {}", s);
 }

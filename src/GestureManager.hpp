@@ -2,6 +2,7 @@
 #include "./gestures/Gestures.hpp"
 #include "ShimTrackpadGestures.hpp"
 #include "VecSet.hpp"
+#include "gestures/DragGesture.hpp"
 #include "src/plugins/PluginAPI.hpp"
 
 #define private public
@@ -86,6 +87,8 @@ class GestureManager : public IGestureManager {
     void stopLongPressTimer() override;
 
     void sendCancelEventsToWindows() override;
+
+    bool findOrRunGestureBind(std::string bind, GestureEventType type, bool dry_run);
 };
 
 inline std::unique_ptr<GestureManager> g_pGestureManager;
