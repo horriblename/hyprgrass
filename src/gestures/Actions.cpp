@@ -1,5 +1,5 @@
 #include "Actions.hpp"
-#include <algorithm>
+#include <glm/geometric.hpp>
 #include <glm/glm.hpp>
 #include <wayfire/touch/touch.hpp>
 
@@ -167,8 +167,8 @@ OnCompleteAction::update_state(const wf::touch::gesture_state_t& state, const wf
     return status;
 }
 
-wf::touch::action_status_t PinchAction::update_state(const wf::touch::gesture_state_t& state,
-                                                     const wf::touch::gesture_event_t& event) {
+wf::touch::action_status_t
+PinchAction::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
     if (event.type != wf::touch::EVENT_TYPE_MOTION) {
         return wf::touch::ACTION_STATUS_RUNNING;
     }
@@ -177,11 +177,28 @@ wf::touch::action_status_t PinchAction::update_state(const wf::touch::gesture_st
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
 
-    const double current_scale = state.get_pinch_scale();
-    const float lo             = std::clamp(1.0 - *this->threshold, 0.0, 1.0);
-    float hi                   = 1.0 + *this->threshold;
-    hi                         = hi < 1.0 ? 1.0 : hi;
-    if (((current_scale < 1.0 && current_scale <= lo)) || (current_scale > 1.0 && current_scale >= hi)) {
+    const wf::touch::point_t center = state.get_center().origin;
+    // can be negative in case of pinch out
+    double delta_towards_center = 0.0;
+    for (const auto& finger : state.fingers) {
+        // how much the finger moved in the direction of the origin center,
+        // a.k.a the scalar projection of finger.delta() on (center - finger.origin) 🤓
+        //     (U dot V) / |V|
+        // where U is the vector of finger.origin -> center.origin, and
+        // V is the vector of finger.origin -> finger.current
+        //
+        // I'm not even 100% sure this is a good metric, libinput just checks that the first two
+        // fingers each moved over the threshold. Could not find android source. Wayfire used "pinch
+        // shrunk/expanded" over X% as a threshold, which honestly did not feel good.
+        //
+        // TODO: cancel if the finger is moving too much perpendicular to the center
+        auto u = center - finger.second.origin;
+        auto v = finger.second.delta();
+        delta_towards_center += glm::dot(u, v) / glm::length(v);
+    }
+    delta_towards_center /= state.fingers.size();
+
+    if (glm::length(delta_towards_center) >= PINCH_INCORRECT_DRAG_TOLERANCE) {
         return wf::touch::ACTION_STATUS_COMPLETED;
     }
 
