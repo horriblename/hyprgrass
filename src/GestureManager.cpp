@@ -204,6 +204,9 @@ GestureManager::~GestureManager() {
     wl_event_source_remove(this->long_press_timer);
 }
 
+bool GestureManager::findCompletedGesture(const CompletedGestureEvent& gev) const {
+    return this->findGestureBind(gev.to_string(), GestureEventType::COMPLETED);
+}
 bool GestureManager::handleCompletedGesture(const CompletedGestureEvent& gev) {
     return this->handleGestureBind(gev.to_string(), GestureEventType::COMPLETED);
 }
@@ -368,6 +371,30 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
     return false;
 }
 
+bool GestureManager::findGestureBind(std::string bind, GestureEventType type) const {
+    Debug::log(LOG, "[hyprgrass] Looking for binds matching: {}", bind);
+
+    auto allBinds   = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
+    const auto MODS = g_pInputManager->getModsFromAllKBs();
+
+    for (const auto& k : allBinds) {
+        if (k->key != bind)
+            continue;
+
+        if (k->handler == "pass")
+            continue;
+
+        if (k->locked != g_pSessionLockManager->isSessionLocked())
+            continue;
+
+        if (k->modmask != MODS)
+            continue;
+
+        return true;
+    }
+    return false;
+}
+
 // bind is the name of the gesture event.
 // pressed only matters for mouse binds: only start of drag gestures should set it to true
 bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) {
@@ -381,14 +408,6 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
         if (k->key != bind)
             continue;
 
-        const auto DISPATCHER = g_pKeybindManager->m_dispatchers.find(k->mouse ? "mouse" : k->handler);
-
-        // Should never happen, as we check in the ConfigManager, but oh well
-        if (DISPATCHER == g_pKeybindManager->m_dispatchers.end()) {
-            Debug::log(ERR, "Invalid handler in a keybind! (handler {} does not exist)", k->handler);
-            continue;
-        }
-
         if (k->handler == "pass")
             continue;
 
@@ -397,6 +416,14 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
 
         if (k->modmask != MODS)
             continue;
+
+        const auto DISPATCHER = g_pKeybindManager->m_dispatchers.find(k->mouse ? "mouse" : k->handler);
+
+        // Should never happen, as we check in the ConfigManager, but oh well
+        if (DISPATCHER == g_pKeybindManager->m_dispatchers.end()) {
+            Debug::log(ERR, "Invalid handler in a keybind! (handler {} does not exist)", k->handler);
+            continue;
+        }
 
         switch (type) {
             case GestureEventType::COMPLETED:

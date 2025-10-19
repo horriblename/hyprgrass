@@ -363,6 +363,17 @@ void IGestureManager::addPinchGesture(const float* sensitivity, const int64_t* t
         };
         if (this->emitDragGesture(gesture)) {
             this->cancelTouchEventsOnAllWindows();
+            return;
+        }
+
+        auto completed = CompletedGestureEvent{
+            .type            = CompletedGestureType::PINCH,
+            .direction       = 0,
+            .finger_count    = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
+            .pinch_direction = dir,
+        };
+        if (this->findCompletedGesture(completed)) {
+            this->cancelTouchEventsOnAllWindows();
         }
     });
     auto release       = std::make_unique<LiftoffAction>();
@@ -383,10 +394,8 @@ void IGestureManager::addPinchGesture(const float* sensitivity, const int64_t* t
                 .pinch_direction = pinch_direction,
             };
 
-            if (this->emitCompletedGesture(event)) {
-                this->cancelTouchEventsOnAllWindows();
-            }
-            return;
+            // already sent cancel event to windows in drag begin
+            this->emitCompletedGesture(event);
         }
 
         auto active = this->activeDragGesture.value();

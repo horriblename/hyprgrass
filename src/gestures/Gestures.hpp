@@ -61,6 +61,10 @@ class IGestureManager {
     GestureDirection find_swipe_edges(wf::touch::point_t point, int edge_margin);
     virtual SMonitorArea getMonitorArea() const = 0;
 
+    // checks if the gesture event has a corresponding handler. longpress skips this
+    // and calls handleCompletedGesture directly because it's CompletedGestureEvent
+    // is emitted at drag begin.
+    virtual bool findCompletedGesture(const CompletedGestureEvent& gev) const = 0;
     // handles gesture events and returns whether or not the event is used.
     virtual bool handleCompletedGesture(const CompletedGestureEvent& gev) = 0;
 

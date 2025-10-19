@@ -43,6 +43,7 @@ class GestureManager : public IGestureManager {
 
   protected:
     SMonitorArea getMonitorArea() const override;
+    bool findCompletedGesture(const CompletedGestureEvent& gev) const override;
     bool handleCompletedGesture(const CompletedGestureEvent& gev) override;
     void handleCancelledGesture() override;
 
@@ -86,6 +87,8 @@ class GestureManager : public IGestureManager {
     void stopLongPressTimer() override;
 
     void sendCancelEventsToWindows() override;
+
+    bool findGestureBind(std::string bind, GestureEventType type) const;
 };
 
 inline std::unique_ptr<GestureManager> g_pGestureManager;

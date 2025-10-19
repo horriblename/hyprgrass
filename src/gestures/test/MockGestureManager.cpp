@@ -3,6 +3,10 @@
 
 #define CONFIG_SENSITIVITY 1.0
 
+bool CMockGestureManager::findCompletedGesture(const CompletedGestureEvent& gev) const {
+    return true;
+}
+
 bool CMockGestureManager::handleCompletedGesture(const CompletedGestureEvent& gev) {
     std::cout << "gesture triggered: " << gev.to_string() << "\n";
     this->triggered = true;
