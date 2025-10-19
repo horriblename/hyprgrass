@@ -182,10 +182,12 @@ void IGestureManager::addMultiFingerGesture(
                 return;
 
             const auto gesture = CompletedGestureEvent{
-                CompletedGestureType::SWIPE, swipe_ptr->target_direction,
-                static_cast<int>(this->m_sGestureState.fingers.size())
+                .type         = CompletedGestureType::SWIPE,
+                .direction    = swipe_ptr->target_direction,
+                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
             };
 
+            // cancel event already sent to windows on 3 finger down
             this->emitCompletedGesture(gesture);
         }
     });
@@ -206,8 +208,11 @@ void IGestureManager::addMultiFingerTap(const float* sensitivity, const int64_t*
     tap_actions.emplace_back(std::move(tap));
 
     auto ack = [this]() {
-        const auto gesture =
-            CompletedGestureEvent{CompletedGestureType::TAP, 0, static_cast<int>(this->m_sGestureState.fingers.size())};
+        const auto gesture = CompletedGestureEvent{
+            .type         = CompletedGestureType::TAP,
+            .direction    = 0,
+            .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
+        };
         if (this->emitCompletedGesture(gesture)) {
             this->cancelTouchEventsOnAllWindows();
         }
@@ -235,7 +240,9 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
             };
 
             const auto gesture1 = CompletedGestureEvent{
-                CompletedGestureType::LONG_PRESS, 0, static_cast<int>(this->m_sGestureState.fingers.size())
+                .type         = CompletedGestureType::LONG_PRESS,
+                .direction    = 0,
+                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
             };
 
             bool handled = this->emitDragGesture(gesture) || this->emitCompletedGesture(gesture1);
@@ -312,7 +319,10 @@ void IGestureManager::addEdgeSwipeGesture(
             }
 
             auto event = CompletedGestureEvent{
-                CompletedGestureType::EDGE_SWIPE, direction, edge_ptr->finger_count, origin_edges
+                .type         = CompletedGestureType::EDGE_SWIPE,
+                .direction    = direction,
+                .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
+                .edge_origin  = origin_edges,
             };
 
             this->emitCompletedGesture(event);
@@ -366,8 +376,11 @@ void IGestureManager::addPinchGesture(const float* sensitivity, const int64_t* t
             auto pinch_direction =
                 this->m_sGestureState.get_pinch_scale() < 1.0 ? PinchDirection::IN : PinchDirection::OUT;
             auto event = CompletedGestureEvent{
-                CompletedGestureType::PINCH, 0, static_cast<int>(this->m_sGestureState.fingers.size()), 0,
-                pinch_direction
+                .type            = CompletedGestureType::PINCH,
+                .direction       = 0,
+                .finger_count    = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
+                .edge_origin     = 0,
+                .pinch_direction = pinch_direction,
             };
 
             if (this->emitCompletedGesture(event)) {

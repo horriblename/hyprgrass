@@ -14,7 +14,7 @@ enum class CompletedGestureType {
 struct CompletedGestureEvent {
     CompletedGestureType type;
     GestureDirection direction;
-    int finger_count;
+    uint32_t finger_count;
 
     // TODO turn this whole struct into a sum type?
     // edge swipe specific
