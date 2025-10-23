@@ -358,16 +358,16 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addDispatcherV2(PHANDLE, "hyprgrass:debug:binds", listInternalBinds);
     HyprlandAPI::addDispatcherV2(PHANDLE, "hyprgrass:debug:hooks", listHooks);
 
-    const auto hlTargetVersion = GIT_COMMIT_HASH;
-    const auto hlVersion       = HyprlandAPI::getHyprlandVersion(PHANDLE);
+    const auto hlTargetVersion = __hyprland_api_get_hash();
+    const auto hlVersion       = __hyprland_api_get_client_hash();
 
-    if (hlVersion.hash != hlTargetVersion) {
+    if (hlVersion != hlTargetVersion) {
         HyprlandAPI::addNotification(
             PHANDLE, "Mismatched Hyprland version! check logs for details", CHyprColor(0.8, 0.7, 0.26, 1.0), 5000
         );
         Debug::log(ERR, "[hyprgrass] version mismatch!");
         Debug::log(ERR, "[hyprgrass] | hyprgrass was built against: {}", hlTargetVersion);
-        Debug::log(ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion.hash);
+        Debug::log(ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion);
     }
 
     static auto P1 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchDown", hkOnTouchDown);
