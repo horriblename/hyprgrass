@@ -1,5 +1,6 @@
 #pragma once
 #include "./gestures/Gestures.hpp"
+#include "ShimTrackpadGestures.hpp"
 #include "VecSet.hpp"
 #include "src/plugins/PluginAPI.hpp"
 
@@ -7,6 +8,7 @@
 #include <hyprland/src/config/ConfigDataValues.hpp>
 #include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
+#include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
 #undef private
 
 enum class GestureEventType {
@@ -55,8 +57,10 @@ class GestureManager : public IGestureManager {
         bool active = false;
         CCssGapData old_gaps_in;
     } resizeOnBorderInfo;
-    bool workspaceSwipeActive = false;
-    HANDLE hookHandled        = nullptr;
+    bool workspaceSwipeActive                = false;
+    HANDLE hookHandled                       = nullptr;
+    CTrackpadGestures* activeTrackpadGesture = nullptr;
+    // used by emulate_touchpad_swipe and trackpadGesture* functions
     wf::touch::point_t emulatedSwipePoint;
 
     bool handleGestureBind(std::string bind, GestureEventType);
@@ -66,8 +70,13 @@ class GestureManager : public IGestureManager {
     wf::touch::point_t wlrTouchEventPositionAsPixels(double x, double y) const;
     // reverse of wlrTouchEventPositionAsPixels
     Vector2D pixelPositionToPercentagePosition(wf::touch::point_t) const;
+    Vector2D pixelToTrackpadDistance(wf::touch::point_t) const;
     bool handleWorkspaceSwipe(const GestureDirection direction);
     void updateWorkspaceSwipe();
+
+    bool trackpadGestureBegin(const DragGestureEvent& gev);
+    void trackpadGestureUpdate(uint32_t time);
+    void trackpadGestureEnd(uint32_t time);
 
     bool handleDragGesture(const DragGestureEvent& gev) override;
     void dragGestureUpdate(const wf::touch::gesture_event_t&) override;

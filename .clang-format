@@ -2,6 +2,7 @@ BasedOnStyle: LLVM
 TabWidth: 4
 IndentWidth: 4
 UseTab: Never
+AlignAfterOpenBracket: BlockIndent
 AlignConsecutiveAssignments: true
 IndentCaseLabels: true
 ColumnLimit: 120

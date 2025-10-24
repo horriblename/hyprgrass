@@ -90,8 +90,10 @@ static HookResult emitOneHook(const SCallbackFNPtr& cb, std::any data, std::vect
     } catch (std::exception& e) {
         // TODO: this works only once...?
         faultyHandles.push_back(cb.handle);
-        Debug::log(ERR, "[hookSystem] Hook from plugin {:x} caused a SIGSEGV, queueing for unloading.",
-                   rc<uintptr_t>(cb.handle));
+        Debug::log(
+            ERR, "[hookSystem] Hook from plugin {:x} caused a SIGSEGV, queueing for unloading.",
+            rc<uintptr_t>(cb.handle)
+        );
     }
 
     return HookResult{.handled = nullptr, .needsDeadCleanup = false};
@@ -231,14 +233,20 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             static auto* const PEVENTVEC = g_pHookSystem->getVecForEvent("hyprgrass:swipeBegin");
 
             HANDLE handler = emitHookEventForOne(
-                PEVENTVEC, std::tuple<std::string, std::uint64_t, Vector2D>{
-                               stringifyDirection(gev.direction), gev.finger_count,
-                               pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)});
+                PEVENTVEC,
+                std::tuple<std::string, std::uint64_t, Vector2D>{
+                    stringifyDirection(gev.direction), gev.finger_count,
+                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)
+                }
+            );
 
             if (handler) {
                 this->hookHandled = handler;
                 return true;
             }
+
+            if (this->trackpadGestureBegin(gev))
+                return true;
 
             if (**WORKSPACE_SWIPE_FINGERS != gev.finger_count) {
                 return false;
@@ -263,7 +271,9 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             HANDLE handler = emitHookEventForOne(
                 PEVENTVEC,
                 std::pair<std::string, Vector2D>(
-                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)));
+                    gev.to_string(), pixelPositionToPercentagePosition(this->m_sGestureState.get_center().origin)
+                )
+            );
 
             if (handler) {
                 this->hookHandled = handler;
@@ -283,6 +293,9 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
 
+            if (this->trackpadGestureBegin(gev))
+                return true;
+
             return false;
         }
 
@@ -300,10 +313,14 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                     pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current) *
                     this->m_lastTouchedMonitor->m_size;
                 if (w && !w->isFullscreen()) {
-                    const CBox real = {w->m_realPosition->value().x, w->m_realPosition->value().y,
-                                       w->m_realSize->value().x, w->m_realSize->value().y};
-                    const CBox grab = {real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA,
-                                       real.width + 2 * BORDER_GRAB_AREA, real.height + 2 * BORDER_GRAB_AREA};
+                    const CBox real = {
+                        w->m_realPosition->value().x, w->m_realPosition->value().y, w->m_realSize->value().x,
+                        w->m_realSize->value().y
+                    };
+                    const CBox grab = {
+                        real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA, real.width + 2 * BORDER_GRAB_AREA,
+                        real.height + 2 * BORDER_GRAB_AREA
+                    };
 
                     bool notInRealWindow = !real.containsPoint(touchPos) || w->isInCurvedCorner(touchPos.x, touchPos.y);
                     bool onTiledGap      = !w->m_isFloating && !w->isFullscreen() && notInRealWindow;
@@ -333,6 +350,10 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                     }
                 }
             }
+
+            if (this->trackpadGestureBegin(gev))
+                return true;
+
             return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
     }
 
@@ -345,7 +366,8 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
     bool found = false;
     Debug::log(LOG, "[hyprgrass] Looking for binds matching: {}", bind);
 
-    auto allBinds = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
+    auto allBinds   = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
+    const auto MODS = g_pInputManager->getModsFromAllKBs();
 
     for (const auto& k : allBinds) {
         if (k->key != bind)
@@ -363,6 +385,9 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
             continue;
 
         if (k->locked != g_pSessionLockManager->isSessionLocked())
+            continue;
+
+        if (k->modmask != MODS)
             continue;
 
         switch (type) {
@@ -402,20 +427,26 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
         return;
     }
 
+    if (this->activeTrackpadGesture) {
+        this->trackpadGestureUpdate(ev.time);
+        return;
+    }
+
     switch (this->getActiveDragGesture()->type) {
         case DragGestureType::SWIPE:
             if (this->hookHandled) {
                 EMIT_HOOK_EVENT_FOR_PLUGIN(
                     "hyprgrass:swipeUpdate", this->hookHandled,
-                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
+                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current)
+                )
             } else if (this->workspaceSwipeActive) {
                 this->updateWorkspaceSwipe();
             } else if (**EMULATE_TOUCHPAD) {
                 const auto currentPoint           = this->m_sGestureState.get_center().current;
                 const auto delta                  = currentPoint - this->emulatedSwipePoint;
                 IPointer::SSwipeUpdateEvent swipe = {
-                    .fingers = static_cast<uint32_t>(this->getActiveDragGesture()->finger_count),
-                    .delta   = Vector2D(delta.x, delta.y)};
+                    .fingers = this->getActiveDragGesture()->finger_count, .delta = Vector2D(delta.x, delta.y)
+                };
                 g_pInputManager->onSwipeUpdate(swipe);
                 this->emulatedSwipePoint = currentPoint;
             };
@@ -430,7 +461,8 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             if (this->hookHandled) {
                 EMIT_HOOK_EVENT_FOR_PLUGIN(
                     "hyprgrass:edgeUpdate", this->hookHandled,
-                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current))
+                    pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current)
+                )
 
                 return;
             }
@@ -446,6 +478,11 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
 
     if (g_pSessionLockManager->isSessionLocked()) {
         this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_END);
+        return;
+    }
+
+    if (this->activeTrackpadGesture) {
+        this->trackpadGestureEnd(gev.time);
         return;
     }
 
@@ -465,8 +502,9 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
         case DragGestureType::LONG_PRESS:
             if (this->resizeOnBorderInfo.active) {
                 g_pKeybindManager->changeMouseBindMode(eMouseBindMode::MBIND_INVALID);
-                g_pConfigManager->parseKeyword("general:gaps_in",
-                                               commaSeparatedCssGaps(this->resizeOnBorderInfo.old_gaps_in));
+                g_pConfigManager->parseKeyword(
+                    "general:gaps_in", commaSeparatedCssGaps(this->resizeOnBorderInfo.old_gaps_in)
+                );
                 this->resizeOnBorderInfo = {};
                 return;
             }
@@ -506,21 +544,82 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
 }
 
 void GestureManager::updateWorkspaceSwipe() {
-    const auto ANIMSTYLE = g_pUnifiedWorkspaceSwipe->m_workspaceBegin->m_renderOffset->getStyle();
-    const bool VERTANIMS = ANIMSTYLE == "slidevert" || ANIMSTYLE.starts_with("slidefadevert");
-
-    static auto const PSWIPEDIST =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
-            ->getDataStaticPtr();
-    const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
-
-    const auto monArea       = this->getMonitorArea();
-    const auto delta_percent = this->m_sGestureState.get_center().delta() / wf::touch::point_t(monArea.w, monArea.h);
-
-    const auto swipe_delta = Vector2D(delta_percent.x * SWIPEDISTANCE, delta_percent.y * SWIPEDISTANCE);
+    const auto ANIMSTYLE   = g_pUnifiedWorkspaceSwipe->m_workspaceBegin->m_renderOffset->getStyle();
+    const bool VERTANIMS   = ANIMSTYLE == "slidevert" || ANIMSTYLE.starts_with("slidefadevert");
+    const auto swipe_delta = this->pixelToTrackpadDistance(this->m_sGestureState.get_center().delta());
 
     g_pUnifiedWorkspaceSwipe->update(VERTANIMS ? -swipe_delta.y : -swipe_delta.x);
     return;
+}
+
+bool GestureManager::trackpadGestureBegin(const DragGestureEvent& gev) {
+    Vector2D delta = this->pixelToTrackpadDistance(this->m_sGestureState.get_center().delta());
+
+    // longpress events do not trigger a handler->m_activeGesture at the beginning,
+    // we look it up ourselves beforehand
+    bool foundLongPress = false;
+    // hyprland has an arbitrary threshold of 5 pixels
+    if (gev.type == DragGestureType::LONG_PRESS && std::abs(delta.x) < 5 && std::abs(delta.y) < 5) {
+        const auto MODS = g_pInputManager->getModsFromAllKBs();
+        for (const auto& g : g_pShimTrackpadGestures->longPress()->m_gestures) {
+            if (g->fingerCount == gev.finger_count && g->modMask == MODS) {
+                foundLongPress = true;
+                break;
+            }
+        }
+    }
+    uint32_t fingers = gev.type == DragGestureType::EDGE_SWIPE ? gev.edge_origin : gev.finger_count;
+
+    IPointer::SSwipeBeginEvent swipeBegin = {
+        .timeMs  = gev.time,
+        .fingers = fingers,
+    };
+    IPointer::SSwipeUpdateEvent swipe = {
+        .timeMs  = gev.time,
+        .fingers = fingers,
+        .delta   = delta,
+    };
+
+    CTrackpadGestures* handler = g_pShimTrackpadGestures->get(gev.type);
+    handler->gestureBegin(swipeBegin);
+    handler->gestureUpdate(swipe);
+    this->emulatedSwipePoint = this->m_sGestureState.get_center().current;
+
+    this->activeTrackpadGesture = foundLongPress || handler->m_activeGesture ? handler : nullptr;
+    return this->activeTrackpadGesture;
+}
+
+void GestureManager::trackpadGestureUpdate(uint32_t time) {
+    if (!this->activeTrackpadGesture)
+        return;
+
+    const auto currentPoint = this->m_sGestureState.get_center().current;
+    const auto deltaPx      = currentPoint - this->emulatedSwipePoint;
+    const Vector2D delta    = pixelToTrackpadDistance(deltaPx);
+
+    DragGestureEvent activeDrag = this->getActiveDragGesture().value();
+    uint32_t fingers =
+        activeDrag.type == DragGestureType::EDGE_SWIPE ? activeDrag.edge_origin : activeDrag.finger_count;
+
+    this->emulatedSwipePoint = currentPoint;
+
+    IPointer::SSwipeUpdateEvent swipe = {
+        .timeMs  = time,
+        .fingers = fingers,
+        .delta   = delta,
+    };
+
+    this->activeTrackpadGesture->gestureUpdate(swipe);
+}
+
+void GestureManager::trackpadGestureEnd(uint32_t time) {
+    IPointer::SSwipeEndEvent swipe = {
+        .timeMs    = time,
+        .cancelled = false,
+    };
+
+    this->activeTrackpadGesture->gestureEnd(swipe);
+    this->activeTrackpadGesture = nullptr;
 }
 
 void GestureManager::updateLongPressTimer(uint32_t current_time, uint32_t delay) {
@@ -574,7 +673,8 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
 
     if (this->m_sGestureState.fingers.size() == 0) {
         this->touchedResources.clear();
-        this->hookHandled = nullptr;
+        this->hookHandled           = nullptr;
+        this->activeTrackpadGesture = nullptr;
     }
 
     if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_touchData.touchFocusSurface) {
@@ -700,6 +800,18 @@ wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, doubl
 Vector2D GestureManager::pixelPositionToPercentagePosition(wf::touch::point_t point) const {
     auto monitorArea = this->getMonitorArea();
     return Vector2D((point.x - monitorArea.x) / monitorArea.w, (point.y - monitorArea.y) / monitorArea.h);
+}
+
+Vector2D GestureManager::pixelToTrackpadDistance(wf::touch::point_t distancePx) const {
+    static auto const PSWIPEDIST =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
+            ->getDataStaticPtr();
+    const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
+
+    const auto monArea       = this->getMonitorArea();
+    const auto delta_percent = distancePx / wf::touch::point_t(monArea.w, monArea.h);
+
+    return Vector2D(delta_percent.x * SWIPEDISTANCE, delta_percent.y * SWIPEDISTANCE);
 }
 
 void GestureManager::touchBindDispatcher(std::string args) {
