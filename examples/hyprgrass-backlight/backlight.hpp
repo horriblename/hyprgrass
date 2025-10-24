@@ -1,7 +1,6 @@
 #pragma once
 
 #include <libudev.h>
-#include <spdlog/spdlog.h>
 
 #include <chrono>
 #include <mutex>

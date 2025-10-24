@@ -1,7 +1,7 @@
 #include "prepare_for_sleep.h"
 
+#include <hyprland/src/debug/Log.hpp>
 #include <gio/gio.h>
-#include <spdlog/spdlog.h>
 
 namespace {
 class PrepareForSleep {
@@ -9,7 +9,7 @@ class PrepareForSleep {
   PrepareForSleep() {
     login1_connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, nullptr, nullptr);
     if (login1_connection == nullptr) {
-      spdlog::warn("Unable to connect to the SYSTEM Bus!...");
+      Debug::log(ERR, "Unable to connect to the SYSTEM Bus!...");
     } else {
       login1_id = g_dbus_connection_signal_subscribe(
           login1_connection, "org.freedesktop.login1", "org.freedesktop.login1.Manager",

@@ -1,7 +1,6 @@
 #include "backlight.hpp"
 
 #include <fmt/core.h>
-#include <spdlog/spdlog.h>
 #include <sys/epoll.h>
 
 #include <cmath>
