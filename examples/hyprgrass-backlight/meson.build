@@ -3,18 +3,13 @@ if get_option('hyprgrass-backlight')
   udev = dependency('libudev')
   spdlog = dependency('spdlog')
 
-  mod_args = []
-  if get_option('login-proxy')
-    mod_args += ['-DHAVE_LOGIN_PROXY']
-  endif
-
   shared_module(
     'hyprgrass-backlight',
     'main.cpp',
     'backlight.cpp',
     'prepare_for_sleep.cpp',
     dependencies: [udev, spdlog, giomm, hyprland_headers, hyprland_deps],
-    cpp_args: mod_args,
+    cpp_args: ['-DHAVE_LOGIN_PROXY'],
     install: true
   )
 endif

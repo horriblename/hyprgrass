@@ -67,6 +67,6 @@ description = "Hyprgrass extension to control brightness of backlight"
 author = "horriblename"
 output = "examples/hyprgrass-backlight/build/examples/hyprgrass-backlight/libhyprgrass-backlight.so"
 build = [
-    "meson setup examples/hyprgrass-backlight/build -Dhyprgrass=false -Dhyprgrass-backlight=true -Dlogin-proxy=true",
+    "meson setup examples/hyprgrass-backlight/build -Dhyprgrass=false -Dhyprgrass-backlight=true",
     "ninja -C examples/hyprgrass-backlight/build",
 ]
