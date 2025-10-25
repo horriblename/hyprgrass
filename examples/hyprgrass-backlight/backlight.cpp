@@ -1,6 +1,6 @@
 #include "backlight.hpp"
 
-#include <fmt/core.h>
+#include <hyprland/src/debug/Log.hpp>
 #include <sys/epoll.h>
 
 #include <cmath>
@@ -18,7 +18,7 @@ class FileDescriptor {
   ~FileDescriptor() {
     if (fd_ != -1) {
       if (close(fd_) != 0) {
-        fmt::print(stderr, "Failed to close fd: {}\n", errno);
+        Debug::log(ERR, "Failed to close fd: {}", errno);
       }
     }
   }
@@ -46,13 +46,13 @@ struct UdevMonitorDeleter {
 
 void check_eq(int rc, int expected, const char *message = "eq, rc was: ") {
   if (rc != expected) {
-    throw std::runtime_error(fmt::format(fmt::runtime(message), rc));
+    throw std::runtime_error(std::format("{}{}", message, rc));
   }
 }
 
 void check_neq(int rc, int bad_rc, const char *message = "neq, rc was: ") {
   if (rc == bad_rc) {
-    throw std::runtime_error(fmt::format(fmt::runtime(message), rc));
+    throw std::runtime_error(std::format("{}{}", message, rc));
   }
 }
 
@@ -60,7 +60,7 @@ void check0(int rc, const char *message = "rc wasn't 0") { check_eq(rc, 0, messa
 
 void check_gte(int rc, int gte, const char *message = "rc was: ") {
   if (rc < gte) {
-    throw std::runtime_error(fmt::format(fmt::runtime(message), rc));
+    throw std::runtime_error(std::format("{}{}", message, rc));
   }
 }
 
