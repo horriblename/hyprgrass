@@ -358,8 +358,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addDispatcherV2(PHANDLE, "hyprgrass:debug:binds", listInternalBinds);
     HyprlandAPI::addDispatcherV2(PHANDLE, "hyprgrass:debug:hooks", listHooks);
 
-    const auto hlTargetVersion = __hyprland_api_get_hash();
-    const auto hlVersion       = __hyprland_api_get_client_hash();
+    const std::string hlTargetVersion = __hyprland_api_get_hash();
+    const std::string hlVersion       = __hyprland_api_get_client_hash();
 
     if (hlVersion != hlTargetVersion) {
         HyprlandAPI::addNotification(
