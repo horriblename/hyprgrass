@@ -1,3 +1,4 @@
 option('tests', type: 'feature', value: 'auto', description: 'Enable unit tests')
 option('hyprgrass', type: 'boolean', value: true, description: 'Build main hyprgrass plugin')
 option('hyprgrass-pulse', type: 'boolean', value: false, description: 'Build hyprgrass-pulseaudio extension')
+option('hyprgrass-backlight', type: 'boolean', value: false, description: 'Build hyprgrass-backlight extension')

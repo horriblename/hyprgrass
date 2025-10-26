@@ -19,3 +19,14 @@ steps = [
     "meson setup examples/hyprgrass-pulse/build -Dhyprgrass=false -Dhyprgrass-pulse=true",
     "ninja -C examples/hyprgrass-pulse/build",
 ]
+
+[hyprgrass-backlight]
+description = "Hyprgras extension to control brightness of backlight"
+author = "horriblename"
+
+[hyprgrass-backlight]
+output = "examples/hyprgrass-backlight/build/examples/hyprgrass-backlight/libhyprgrass-backlight.so"
+steps = [
+    "meson setup examples/hyprgrass-backlight/build -Dhyprgrass=false -Dhyprgrass-backlight=true -Dlogin-proxy=true",
+    "ninja -C examples/hyprgrass-backlight/build",
+]
