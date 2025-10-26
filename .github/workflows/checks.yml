@@ -23,3 +23,8 @@ jobs:
           nix build .#hyprgrass-pulse \
           --option extra-substituters https://hyprland.cachix.org \
           --option extra-trusted-public-keys hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc=
+      - name: build hyprgrass-backlight
+        run: |
+          nix build .#hyprgrass-backlight \
+          --option extra-substituters https://hyprland.cachix.org \
+          --option extra-trusted-public-keys hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc=
