@@ -10,7 +10,6 @@
   tag,
   commit,
   runTests ? false,
-  ...
 }:
 hyprlandPlugins.mkHyprlandPlugin {
   pluginName = "hyprgrass";

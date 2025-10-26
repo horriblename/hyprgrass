@@ -5,23 +5,24 @@
   pkg-config,
   hyprland,
   hyprlandPlugins,
-  libpulseaudio,
+  glibmm,
+  udev,
   tag,
   commit,
 }:
 hyprlandPlugins.mkHyprlandPlugin {
-  pluginName = "hyprgrass-pulse";
+  pluginName = "hyprgrass-backlight";
   version = "${tag}+${commit}";
   src = ./..;
 
   inherit hyprland;
   nativeBuildInputs = [ninja meson pkg-config];
 
-  buildInputs = [libpulseaudio];
+  buildInputs = [glibmm udev];
 
   mesonFlags = [
     "-Dhyprgrass=false"
-    "-Dhyprgrass-pulse=true"
+    "-Dhyprgrass-backlight=true"
     "-Dtests=disabled"
   ];
 
@@ -29,7 +30,7 @@ hyprlandPlugins.mkHyprlandPlugin {
 
   meta = with lib; {
     homepage = "https://github.com/horriblename/hyprgrass";
-    description = "Hyprgrass extension to control audio volume";
+    description = "Hyprgrass extension to control backlight";
     license = licenses.bsd3;
     platforms = platforms.linux;
   };
