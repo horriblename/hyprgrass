@@ -665,6 +665,7 @@ void GestureManager::trackpadGestureUpdate(uint32_t time) {
             .fingers  = fingers,
             .delta    = delta,
             .scale    = this->m_sGestureState.get_pinch_scale(),
+            // FIXME: rotation should be relative to previous update event, not the initial one
             .rotation = this->m_sGestureState.get_rotation_angle(),
         };
 
