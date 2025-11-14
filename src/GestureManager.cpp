@@ -444,12 +444,6 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
                     found = found || !k->nonConsuming;
                 }
         }
-
-        // call the dispatcher
-
-        if (!k->nonConsuming) {
-            found = true;
-        }
     }
 
     return found;
