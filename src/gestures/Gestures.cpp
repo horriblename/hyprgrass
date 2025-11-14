@@ -371,15 +371,15 @@ void IGestureManager::addPinchGesture(const float* sensitivity, const int64_t* t
     auto pinch_begin = std::make_unique<PinchAction>(PINCH_INCORRECT_DRAG_TOLERANCE, sensitivity);
 
     auto pinch_wrapper = std::make_unique<OnCompleteAction>(std::move(pinch_begin), [this](uint32_t time) {
-        PinchDirection dir = this->m_sGestureState.get_pinch_scale() < 1.0 ? PinchDirection::IN : PinchDirection::OUT;
+        GestureDirection dir =
+            this->m_sGestureState.get_pinch_scale() < 1.0 ? GESTURE_DIRECTION_OUT : GESTURE_DIRECTION_IN;
 
         auto gesture = DragGestureEvent{
-            .time            = time,
-            .type            = DragGestureType::PINCH,
-            .direction       = 0,
-            .finger_count    = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
-            .edge_origin     = 0,
-            .pinch_direction = dir,
+            .time         = time,
+            .type         = DragGestureType::PINCH,
+            .direction    = dir,
+            .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
+            .edge_origin  = 0,
         };
         if (this->emitDragGesture(gesture)) {
             this->cancelTouchEventsOnAllWindows();
@@ -387,10 +387,9 @@ void IGestureManager::addPinchGesture(const float* sensitivity, const int64_t* t
         }
 
         auto completed = CompletedGestureEvent{
-            .type            = CompletedGestureType::PINCH,
-            .direction       = 0,
-            .finger_count    = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
-            .pinch_direction = dir,
+            .type         = CompletedGestureType::PINCH,
+            .direction    = dir,
+            .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
         };
         if (this->reserveCompletedGesture(completed)) {
             this->cancelTouchEventsOnAllWindows();
@@ -404,14 +403,12 @@ void IGestureManager::addPinchGesture(const float* sensitivity, const int64_t* t
 
     auto ack = [this]() {
         if (!this->activeDragGesture.has_value()) {
-            auto pinch_direction =
-                this->m_sGestureState.get_pinch_scale() < 1.0 ? PinchDirection::IN : PinchDirection::OUT;
+            auto dir   = this->m_sGestureState.get_pinch_scale() < 1.0 ? GESTURE_DIRECTION_OUT : GESTURE_DIRECTION_IN;
             auto event = CompletedGestureEvent{
-                .type            = CompletedGestureType::PINCH,
-                .direction       = 0,
-                .finger_count    = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
-                .edge_origin     = 0,
-                .pinch_direction = pinch_direction,
+                .type         = CompletedGestureType::PINCH,
+                .direction    = dir,
+                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
+                .edge_origin  = 0,
             };
 
             // already sent cancel event to windows in drag begin

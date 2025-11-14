@@ -110,11 +110,11 @@ GestureDirection toHyprgrassDirection(eTrackpadGestureDirection dir) {
         case TRACKPAD_GESTURE_DIR_HORIZONTAL:
             return GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
         case TRACKPAD_GESTURE_DIR_PINCH:
-            return 0; // TODO
+            return GESTURE_DIRECTION_IN | GESTURE_DIRECTION_OUT;
         case TRACKPAD_GESTURE_DIR_PINCH_OUT:
-            return 0; // TODO
+            return GESTURE_DIRECTION_OUT;
         case TRACKPAD_GESTURE_DIR_PINCH_IN:
-            return 0; // TODO
+            return GESTURE_DIRECTION_IN;
     }
 
     return 0;

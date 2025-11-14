@@ -15,7 +15,6 @@ struct DragGestureEvent {
     uint32_t finger_count;
 
     GestureDirection edge_origin;
-    PinchDirection pinch_direction;
 
     std::string to_string() const;
 };

@@ -28,12 +28,10 @@ enum TouchGestureDirection {
     GESTURE_DIRECTION_RIGHT = (1 << 1),
     GESTURE_DIRECTION_UP    = (1 << 2),
     GESTURE_DIRECTION_DOWN  = (1 << 3),
-};
 
-enum class PinchDirection {
-    IN,
-    OUT,
+    /* Pinch specific */
+    GESTURE_DIRECTION_IN  = (1 << 4),
+    GESTURE_DIRECTION_OUT = (1 << 5),
 };
 
 std::string stringifyDirection(GestureDirection direction);
-std::string stringifyPinchDirection(PinchDirection direction);

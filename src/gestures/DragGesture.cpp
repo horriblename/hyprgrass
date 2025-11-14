@@ -11,7 +11,7 @@ std::string DragGestureEvent::to_string() const {
         case DragGestureType::EDGE_SWIPE:
             return "edge:" + stringifyDirection(this->edge_origin) + ":" + stringifyDirection(this->direction);
         case DragGestureType::PINCH:
-            return "pinch:" + std::to_string(finger_count) + ":" + stringifyPinchDirection(this->pinch_direction);
+            return "pinch:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
     }
 
     return "";
