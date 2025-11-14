@@ -2,6 +2,7 @@
 #include <glm/geometric.hpp>
 #include <glm/glm.hpp>
 #include <wayfire/touch/touch.hpp>
+#include <algorithm>
 
 wf::touch::action_status_t
 CMultiAction::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
@@ -191,14 +192,17 @@ PinchAction::update_state(const wf::touch::gesture_state_t& state, const wf::tou
         // fingers each moved over the threshold. Could not find android source. Wayfire used "pinch
         // shrunk/expanded" over X% as a threshold, which honestly did not feel good.
         //
-        // TODO: cancel if the finger is moving too much perpendicular to the center
+        // TODO: cancel if the finger is moving too much perpendicular to the center (rotate)
         auto u = center - finger.second.origin;
         auto v = finger.second.delta();
-        delta_towards_center += glm::dot(u, v) / glm::length(v);
+        auto len = glm::length(v);
+        if (len != 0.0) {
+            delta_towards_center += glm::dot(u, v) / len;
+        }
     }
-    delta_towards_center /= state.fingers.size();
+    delta_towards_center /= std::max(std::size_t(1), state.fingers.size());
 
-    if (glm::length(delta_towards_center) >= PINCH_INCORRECT_DRAG_TOLERANCE) {
+    if (glm::length(delta_towards_center) >= this->base_threshold / *this->sensitivity) {
         return wf::touch::ACTION_STATUS_COMPLETED;
     }
 
