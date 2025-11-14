@@ -486,19 +486,25 @@ TEST_CASE("Pinch in: full drag") {
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {150, 200}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {200, 140}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {350, 200}},
+
+        // pinch outwards without passing the threshold
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {110, 200}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 90}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {290, 200}},
-        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {140, 190}},
-        // delta_2 = ((200, 180) - (200, 140)) * 0.4 = (0, 16)
-        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 150}},
-        // delta_3 = ((200, 180) - (300, 200)) * 0.4 = (-40, -8)
-        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {260, 190}},
-        ExpectResult{ExpectResultType::DRAG_TRIGGERED},
 
-        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 0, {140, 180}},
+        // pinch in
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {140, 190}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 150}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {260, 190}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 0, {170, 185}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 260, 1, {180, 160}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 260, 2, {250, 190}},
+        ExpectResult{ExpectResultType::DRAG_TRIGGERED},
+
+        // continue drag
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 0, {160, 185}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 1, {150, 160}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 2, {230, 190}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {140, 190}},
     };
     ProcessEvents(gm, {.type = ExpectResultType::DRAG_ENDED}, events);
@@ -518,13 +524,9 @@ TEST_CASE("Pinch out: full drag") {
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {110, 200}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 90}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {290, 200}},
-        // all fingers need to move 20% away from the origin center
-        // calculations are similar to pinch in but flipped sign
-        // delta_1 = (-20, 4)
+
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {60, 210}}, // add one to delta to ensure we pass threshold
-        // delta_2 = (0, -8)
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 120}},
-        // delta_3 = (20, 4)
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {340, 210}},
         ExpectResult{ExpectResultType::DRAG_TRIGGERED},
 
