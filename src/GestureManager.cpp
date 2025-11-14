@@ -365,6 +365,10 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
 
         case DragGestureType::PINCH:
+            if (this->trackpadGestureBegin(gev))
+                return true;
+
+            return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
             break;
     }
 
@@ -504,7 +508,6 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
 
             this->updateWorkspaceSwipe();
         case DragGestureType::PINCH:
-            // currently pinch drag is unused
             break;
     }
 }
@@ -558,8 +561,8 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
             }
             break;
         case DragGestureType::PINCH:
-            // currently pinch drag is unused
-            break;
+            this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_END);
+            return;
     }
 }
 
