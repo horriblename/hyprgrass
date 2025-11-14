@@ -12,8 +12,9 @@
 
 void IGestureManager::updateGestures(const wf::touch::gesture_event_t& ev) {
     if (m_sGestureState.fingers.size() == 1 && ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
-        this->inhibitTouchEvents = false;
-        this->activeDragGesture  = std::nullopt;
+        this->inhibitTouchEvents       = false;
+        this->activeDragGesture        = std::nullopt;
+        this->promisedCompletedGesture = std::nullopt;
     }
     bool should_reset      = m_sGestureState.fingers.size() == 1 && ev.type == wf::touch::EVENT_TYPE_TOUCH_DOWN;
     this->gestureTriggered = false;
@@ -34,7 +35,26 @@ void IGestureManager::cancelTouchEventsOnAllWindows() {
         this->sendCancelEventsToWindows();
     }
 }
+
+bool IGestureManager::reserveCompletedGesture(const CompletedGestureEvent& gev) {
+    if (this->promisedCompletedGesture.has_value()) {
+        return false;
+    }
+
+    bool handled = this->findCompletedGesture(gev);
+    if (handled) {
+        this->promisedCompletedGesture = gev;
+    }
+
+    return handled;
+}
+
 bool IGestureManager::emitCompletedGesture(const CompletedGestureEvent& gev) {
+    if (this->promisedCompletedGesture.has_value()) {
+        if (gev != this->promisedCompletedGesture.value()) {
+            return false;
+        }
+    }
     bool handled = this->handleCompletedGesture(gev);
     if (handled) {
         // FIXME: I'm trying to prevent swipe:1:r from triggering when edge:l:r triggers
@@ -372,7 +392,7 @@ void IGestureManager::addPinchGesture(const float* sensitivity, const int64_t* t
             .finger_count    = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
             .pinch_direction = dir,
         };
-        if (this->findCompletedGesture(completed)) {
+        if (this->reserveCompletedGesture(completed)) {
             this->cancelTouchEventsOnAllWindows();
         }
     });
@@ -396,6 +416,7 @@ void IGestureManager::addPinchGesture(const float* sensitivity, const int64_t* t
 
             // already sent cancel event to windows in drag begin
             this->emitCompletedGesture(event);
+            return;
         }
 
         auto active = this->activeDragGesture.value();

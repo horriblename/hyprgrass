@@ -90,11 +90,14 @@ class IGestureManager {
     bool inhibitTouchEvents;
     bool gestureTriggered; // A drag/completed gesture is triggered
     std::optional<DragGestureEvent> activeDragGesture;
+    std::optional<CompletedGestureEvent> promisedCompletedGesture;
 
     // this function is called when needed to send "cancel touch" events to
     // client windows/surfaces
     virtual void sendCancelEventsToWindows() = 0;
 
+    // try to find a CompletedGesture to later emit
+    bool reserveCompletedGesture(const CompletedGestureEvent& gev);
     bool emitCompletedGesture(const CompletedGestureEvent& gev);
     bool emitDragGesture(const DragGestureEvent& gev);
     bool emitDragGestureEnd(const DragGestureEvent& gev);

@@ -22,4 +22,8 @@ struct CompletedGestureEvent {
     PinchDirection pinch_direction;
 
     std::string to_string() const;
+    inline bool operator==(const CompletedGestureEvent& other) {
+        return type == other.type && direction == other.direction && finger_count == other.finger_count &&
+               edge_origin == other.edge_origin && pinch_direction == other.pinch_direction;
+    }
 };
