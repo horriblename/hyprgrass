@@ -876,3 +876,7 @@ void GestureManager::touchBindDispatcher(std::string args) {
 void GestureManager::debugLog(const std::string& msg) {
     Debug::log(LOG, "[hyprgrass] " + msg);
 }
+
+void hyprgrass_debug(const std::string& s) {
+    Debug::log(LOG, "[hyprgrass] [debug] {}", s);
+}

@@ -3,6 +3,10 @@
 
 #define CONFIG_SENSITIVITY 1.0
 
+void hyprgrass_debug(const std::string& s) {
+    std::cout << "[debug] " << s << "\n";
+}
+
 bool CMockGestureManager::findCompletedGesture(const CompletedGestureEvent& gev) const {
     return true;
 }
