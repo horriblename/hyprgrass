@@ -1,6 +1,7 @@
 #include "Shared.hpp"
 #include <functional>
 #include <memory>
+#include <optional>
 #include <wayfire/touch/touch.hpp>
 
 using UpdateExternalTimerCallback = std::function<void(uint32_t current_timer, uint32_t delay)>;
@@ -152,5 +153,6 @@ class PinchAction : public wf::touch::gesture_action_t {
   private:
     const float base_threshold;
     const float* sensitivity;
-    uint32_t move_tolerance = 1e9;
+    std::optional<float> initial_span = std::nullopt;
+    uint32_t move_tolerance           = 1e9;
 };

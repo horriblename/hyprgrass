@@ -1,8 +1,9 @@
 #include "Actions.hpp"
+#include <cmath>
 #include <glm/geometric.hpp>
 #include <glm/glm.hpp>
+#include <optional>
 #include <wayfire/touch/touch.hpp>
-#include <algorithm>
 
 wf::touch::action_status_t
 CMultiAction::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
@@ -168,9 +169,15 @@ OnCompleteAction::update_state(const wf::touch::gesture_state_t& state, const wf
     return status;
 }
 
+// based on AOSP ScaleGestureDetector (read from onTouchEvent())
+// licensed under Apache License 2.0
+//
+// Core math of span-based pinch detection ported from
+// https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/core/java/android/view/ScaleGestureDetector.java
 wf::touch::action_status_t
 PinchAction::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
     if (event.type != wf::touch::EVENT_TYPE_MOTION) {
+        this->initial_span = std::nullopt;
         return wf::touch::ACTION_STATUS_RUNNING;
     }
 
@@ -178,31 +185,31 @@ PinchAction::update_state(const wf::touch::gesture_state_t& state, const wf::tou
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
 
-    const wf::touch::point_t center = state.get_center().origin;
-    // can be negative in case of pinch out
-    double delta_towards_center = 0.0;
-    for (const auto& finger : state.fingers) {
-        // how much the finger moved in the direction of the origin center,
-        // a.k.a the scalar projection of finger.delta() on (center - finger.origin) 🤓
-        //     (U dot V) / |V|
-        // where U is the vector of finger.origin -> center.origin, and
-        // V is the vector of finger.origin -> finger.current
-        //
-        // I'm not even 100% sure this is a good metric, libinput just checks that the first two
-        // fingers each moved over the threshold. Could not find android source. Wayfire used "pinch
-        // shrunk/expanded" over X% as a threshold, which honestly did not feel good.
-        //
-        // TODO: cancel if the finger is moving too much perpendicular to the center (rotate)
-        auto u = center - finger.second.origin;
-        auto v = finger.second.delta();
-        auto len = glm::length(v);
-        if (len != 0.0) {
-            delta_towards_center += glm::dot(u, v) / len;
-        }
-    }
-    delta_towards_center /= std::max(std::size_t(1), state.fingers.size());
+    const wf::touch::point_t center = state.get_center().current;
 
-    if (glm::length(delta_towards_center) >= this->base_threshold / *this->sensitivity) {
+    // TODO: check center slip
+
+    // Determine average deviation from center
+    const auto div    = state.fingers.size();
+    glm::vec2 dev_sum = {};
+    for (const auto& finger : state.fingers) {
+        dev_sum += glm::abs(finger.second.current - center);
+    }
+    const glm::vec2 dev = {dev_sum.x / div, dev_sum.y / div};
+
+    // Span is the average distance between touch points through the focal point;
+    // i.e. the diameter of the circle with a radius of the average deviation from
+    // the focal point.
+    const float span_x = dev.x * 2;
+    const float span_y = dev.y * 2;
+    const float span   = std::hypot(span_x, span_y);
+
+    if (!this->initial_span) {
+        this->initial_span = span;
+        return wf::touch::ACTION_STATUS_RUNNING;
+    }
+
+    if (std::abs(span - this->initial_span.value()) > this->base_threshold / *this->sensitivity) {
         return wf::touch::ACTION_STATUS_COMPLETED;
     }
 
