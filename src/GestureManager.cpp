@@ -614,19 +614,37 @@ bool GestureManager::trackpadGestureBegin(const DragGestureEvent& gev) {
     }
     uint32_t fingers = gev.type == DragGestureType::EDGE_SWIPE ? gev.edge_origin : gev.finger_count;
 
-    IPointer::SSwipeBeginEvent swipeBegin = {
-        .timeMs  = gev.time,
-        .fingers = fingers,
-    };
-    IPointer::SSwipeUpdateEvent swipe = {
-        .timeMs  = gev.time,
-        .fingers = fingers,
-        .delta   = delta,
-    };
-
     CTrackpadGestures* handler = g_pShimTrackpadGestures->get(gev.type);
-    handler->gestureBegin(swipeBegin);
-    handler->gestureUpdate(swipe);
+    if (gev.type == DragGestureType::PINCH) {
+        IPointer::SPinchBeginEvent pinchBegin = {
+            .timeMs  = gev.time,
+            .fingers = fingers,
+        };
+        IPointer::SPinchUpdateEvent pinch = {
+            .timeMs   = gev.time,
+            .fingers  = fingers,
+            .delta    = delta,
+            .scale    = this->m_sGestureState.get_pinch_scale(),
+            .rotation = this->m_sGestureState.get_rotation_angle(),
+        };
+
+        handler->gestureBegin(pinchBegin);
+        handler->gestureUpdate(pinch);
+    } else {
+        IPointer::SSwipeBeginEvent swipeBegin = {
+            .timeMs  = gev.time,
+            .fingers = fingers,
+        };
+        IPointer::SSwipeUpdateEvent swipe = {
+            .timeMs  = gev.time,
+            .fingers = fingers,
+            .delta   = delta,
+        };
+
+        CTrackpadGestures* handler = g_pShimTrackpadGestures->get(gev.type);
+        handler->gestureBegin(swipeBegin);
+        handler->gestureUpdate(swipe);
+    }
     this->emulatedSwipePoint = this->m_sGestureState.get_center().current;
 
     this->activeTrackpadGesture = foundLongPress || handler->m_activeGesture ? handler : nullptr;
@@ -647,22 +665,42 @@ void GestureManager::trackpadGestureUpdate(uint32_t time) {
 
     this->emulatedSwipePoint = currentPoint;
 
-    IPointer::SSwipeUpdateEvent swipe = {
-        .timeMs  = time,
-        .fingers = fingers,
-        .delta   = delta,
-    };
+    if (activeDrag.type == DragGestureType::PINCH) {
+        IPointer::SPinchUpdateEvent pinch = {
+            .timeMs   = time,
+            .fingers  = fingers,
+            .delta    = delta,
+            .scale    = this->m_sGestureState.get_pinch_scale(),
+            .rotation = this->m_sGestureState.get_rotation_angle(),
+        };
 
-    this->activeTrackpadGesture->gestureUpdate(swipe);
+        this->activeTrackpadGesture->gestureUpdate(pinch);
+    } else {
+        IPointer::SSwipeUpdateEvent swipe = {
+            .timeMs  = time,
+            .fingers = fingers,
+            .delta   = delta,
+        };
+
+        this->activeTrackpadGesture->gestureUpdate(swipe);
+    }
 }
 
 void GestureManager::trackpadGestureEnd(uint32_t time) {
-    IPointer::SSwipeEndEvent swipe = {
-        .timeMs    = time,
-        .cancelled = false,
-    };
-
-    this->activeTrackpadGesture->gestureEnd(swipe);
+    DragGestureEvent activeDrag = this->getActiveDragGesture().value();
+    if (activeDrag.type == DragGestureType::PINCH) {
+        IPointer::SPinchEndEvent swipe = {
+            .timeMs    = time,
+            .cancelled = false,
+        };
+        this->activeTrackpadGesture->gestureEnd(swipe);
+    } else {
+        IPointer::SSwipeEndEvent swipe = {
+            .timeMs    = time,
+            .cancelled = false,
+        };
+        this->activeTrackpadGesture->gestureEnd(swipe);
+    }
     this->activeTrackpadGesture = nullptr;
 }
 
