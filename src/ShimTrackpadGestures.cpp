@@ -80,17 +80,18 @@ std::expected<GestureConfig, std::string> parseGesturePattern(CConstVarList& var
         }
 
         direction = g_pTrackpadGestures->dirForString(vars[2]);
-    } else if (vars[0] == "pinch") {
-        type = DragGestureType::PINCH;
-        auto res = parseFingers(vars[1], fingersOrOrigin);
-        if (!res) {
-            return std::unexpected(res.error());
-        }
-
-        direction = g_pTrackpadGestures->dirForString(vars[2]);
-        if (!isPinch(direction)) {
-            return std::unexpected(std::format("empty or invalid direction for a pinch gesture: {}", vars[2]));
-        }
+        // // pinch disabled for now for being buggy
+        // } else if (vars[0] == "pinch") {
+        //     type = DragGestureType::PINCH;
+        //     auto res = parseFingers(vars[1], fingersOrOrigin);
+        //     if (!res) {
+        //         return std::unexpected(res.error());
+        //     }
+        //
+        //     direction = g_pTrackpadGestures->dirForString(vars[2]);
+        //     if (!isPinch(direction)) {
+        //         return std::unexpected(std::format("empty or invalid direction for a pinch gesture: {}", vars[2]));
+        //     }
     } else {
         return std::unexpected(std::format("invalid gesture event: {}", vars[0]));
     }

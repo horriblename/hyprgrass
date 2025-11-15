@@ -147,14 +147,12 @@ hyprgrass-gesture = <gesture_type>, <gesture_arg>, <direction>, [modifiers, ...]
 
 **Direction** is one of:
 
-| direction                     | Description       |
-| ----------------------------- | ----------------- |
-| `swipe`                       | any swipe         |
-| `horizontal`                  | horizontal swipe  |
-| `vertical`                    | vertical swipe    |
-| `left`, `right`, `up`, `down` | swipe directions  |
-| `pinch`                       | any pinch         |
-| `pinchin`, `pinchout`         | directional pinch |
+| direction                     | Description      |
+| ----------------------------- | ---------------- |
+| `swipe`                       | any swipe        |
+| `horizontal`                  | horizontal swipe |
+| `vertical`                    | vertical swipe   |
+| `left`, `right`, `up`, `down` | swipe directions |
 
 > [!NOTE]
 > Some actions only accept certain directions. E.g. `workspace` does not work
@@ -191,8 +189,6 @@ hyprgrass-gesture = edge, up, down, special
 # Workspace does not work with the "swipe" direction,
 # make sure to put in an accepted direction even for longpress
 hyprgrass-gesture = longpress, 3, horizontal, workspace
-
-hyprgrass-gesture = pinch, 3, pinchin, close
 ```
 
 ## Hyprgrass-pulse
