@@ -5,6 +5,7 @@ enum class DragGestureType {
     SWIPE,
     LONG_PRESS,
     EDGE_SWIPE,
+    PINCH,
 };
 
 struct DragGestureEvent {

@@ -8,17 +8,21 @@ enum class CompletedGestureType {
     EDGE_SWIPE,
     TAP,
     LONG_PRESS,
-    // PINCH,
+    PINCH,
 };
 
 struct CompletedGestureEvent {
     CompletedGestureType type;
     GestureDirection direction;
-    int finger_count;
+    uint32_t finger_count;
 
     // TODO turn this whole struct into a sum type?
     // edge swipe specific
     GestureDirection edge_origin;
 
     std::string to_string() const;
+    inline bool operator==(const CompletedGestureEvent& other) {
+        return type == other.type && direction == other.direction && finger_count == other.finger_count &&
+               edge_origin == other.edge_origin;
+    }
 };

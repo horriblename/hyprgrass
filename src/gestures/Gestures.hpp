@@ -38,10 +38,11 @@ class IGestureManager {
     bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
-    void addMultiFingerGesture(const float* sensitivity, const int64_t* timeout);
+    void addMultiFingerGesture(const float* sensitivity, const int64_t* timeout, const float* pinch_threshold);
     void addMultiFingerTap(const float* sensitivity, const int64_t* timeout);
     void addLongPress(const float* sensitivity, const int64_t* delay);
     void addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout, const long* edge_margin);
+    void addPinchGesture(const float* sensitivity, const int64_t* timeout);
 
     std::optional<DragGestureEvent> getActiveDragGesture() const {
         return activeDragGesture;
@@ -60,6 +61,10 @@ class IGestureManager {
     GestureDirection find_swipe_edges(wf::touch::point_t point, int edge_margin);
     virtual SMonitorArea getMonitorArea() const = 0;
 
+    // checks if the gesture event has a corresponding handler. longpress skips this
+    // and calls handleCompletedGesture directly because it's CompletedGestureEvent
+    // is emitted at drag begin.
+    virtual bool findCompletedGesture(const CompletedGestureEvent& gev) const = 0;
     // handles gesture events and returns whether or not the event is used.
     virtual bool handleCompletedGesture(const CompletedGestureEvent& gev) = 0;
 
@@ -85,11 +90,14 @@ class IGestureManager {
     bool inhibitTouchEvents;
     bool gestureTriggered; // A drag/completed gesture is triggered
     std::optional<DragGestureEvent> activeDragGesture;
+    std::optional<CompletedGestureEvent> promisedCompletedGesture;
 
     // this function is called when needed to send "cancel touch" events to
     // client windows/surfaces
     virtual void sendCancelEventsToWindows() = 0;
 
+    // try to find a CompletedGesture to later emit
+    bool reserveCompletedGesture(const CompletedGestureEvent& gev);
     bool emitCompletedGesture(const CompletedGestureEvent& gev);
     bool emitDragGesture(const DragGestureEvent& gev);
     bool emitDragGestureEnd(const DragGestureEvent& gev);

@@ -1,7 +1,6 @@
 #include "GestureManager.hpp"
 #include "HyprLogger.hpp"
 #include "globals.hpp"
-#include <vector>
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
@@ -15,7 +14,9 @@
 #include <hyprland/src/protocols/core/Compositor.hpp>
 #undef private
 
+#include <algorithm>
 #include <ranges>
+#include <vector>
 
 // constexpr double SWIPE_THRESHOLD = 30.;
 constexpr int RESIZE_BORDER_GAP_INCREMENT = 10;
@@ -180,6 +181,9 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
     static auto const PSENSITIVITY =
         (Hyprlang::FLOAT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")
             ->getDataStaticPtr();
+    static auto const PINCH_THRESHOLD =
+        (Hyprlang::FLOAT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:pinch_threshold")
+            ->getDataStaticPtr();
     static auto const LONG_PRESS_DELAY =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay")
             ->getDataStaticPtr();
@@ -189,8 +193,9 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
 
     this->addEdgeSwipeGesture(*PSENSITIVITY, *LONG_PRESS_DELAY, *EDGE_MARGIN);
     this->addLongPress(*PSENSITIVITY, *LONG_PRESS_DELAY);
-    this->addMultiFingerGesture(*PSENSITIVITY, *LONG_PRESS_DELAY);
+    this->addMultiFingerGesture(*PSENSITIVITY, *LONG_PRESS_DELAY, *PINCH_THRESHOLD);
     this->addMultiFingerTap(*PSENSITIVITY, *LONG_PRESS_DELAY);
+    this->addPinchGesture(*PSENSITIVITY, *LONG_PRESS_DELAY);
 
     this->long_press_timer = wl_event_loop_add_timer(g_pCompositor->m_wlEventLoop, handleLongPressTimer, this);
 }
@@ -199,6 +204,9 @@ GestureManager::~GestureManager() {
     wl_event_source_remove(this->long_press_timer);
 }
 
+bool GestureManager::findCompletedGesture(const CompletedGestureEvent& gev) const {
+    return this->findGestureBind(gev.to_string(), GestureEventType::COMPLETED);
+}
 bool GestureManager::handleCompletedGesture(const CompletedGestureEvent& gev) {
     return this->handleGestureBind(gev.to_string(), GestureEventType::COMPLETED);
 }
@@ -355,8 +363,39 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 return true;
 
             return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
+
+        case DragGestureType::PINCH:
+            if (this->trackpadGestureBegin(gev))
+                return true;
+
+            return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
+            break;
     }
 
+    return false;
+}
+
+bool GestureManager::findGestureBind(std::string bind, GestureEventType type) const {
+    Debug::log(LOG, "[hyprgrass] Looking for binds matching: {}", bind);
+
+    auto allBinds   = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
+    const auto MODS = g_pInputManager->getModsFromAllKBs();
+
+    for (const auto& k : allBinds) {
+        if (k->key != bind)
+            continue;
+
+        if (k->handler == "pass")
+            continue;
+
+        if (k->locked != g_pSessionLockManager->isSessionLocked())
+            continue;
+
+        if (k->modmask != MODS)
+            continue;
+
+        return true;
+    }
     return false;
 }
 
@@ -373,14 +412,6 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
         if (k->key != bind)
             continue;
 
-        const auto DISPATCHER = g_pKeybindManager->m_dispatchers.find(k->mouse ? "mouse" : k->handler);
-
-        // Should never happen, as we check in the ConfigManager, but oh well
-        if (DISPATCHER == g_pKeybindManager->m_dispatchers.end()) {
-            Debug::log(ERR, "Invalid handler in a keybind! (handler {} does not exist)", k->handler);
-            continue;
-        }
-
         if (k->handler == "pass")
             continue;
 
@@ -389,6 +420,14 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
 
         if (k->modmask != MODS)
             continue;
+
+        const auto DISPATCHER = g_pKeybindManager->m_dispatchers.find(k->mouse ? "mouse" : k->handler);
+
+        // Should never happen, as we check in the ConfigManager, but oh well
+        if (DISPATCHER == g_pKeybindManager->m_dispatchers.end()) {
+            Debug::log(ERR, "Invalid handler in a keybind! (handler {} does not exist)", k->handler);
+            continue;
+        }
 
         switch (type) {
             case GestureEventType::COMPLETED:
@@ -404,12 +443,6 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
                     DISPATCHER->second(pressed + k->arg);
                     found = found || !k->nonConsuming;
                 }
-        }
-
-        // call the dispatcher
-
-        if (!k->nonConsuming) {
-            found = true;
         }
     }
 
@@ -468,6 +501,8 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             }
 
             this->updateWorkspaceSwipe();
+        case DragGestureType::PINCH:
+            break;
     }
 }
 
@@ -519,6 +554,9 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
                 g_pUnifiedWorkspaceSwipe->end();
             }
             break;
+        case DragGestureType::PINCH:
+            this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_END);
+            return;
     }
 }
 
@@ -570,19 +608,37 @@ bool GestureManager::trackpadGestureBegin(const DragGestureEvent& gev) {
     }
     uint32_t fingers = gev.type == DragGestureType::EDGE_SWIPE ? gev.edge_origin : gev.finger_count;
 
-    IPointer::SSwipeBeginEvent swipeBegin = {
-        .timeMs  = gev.time,
-        .fingers = fingers,
-    };
-    IPointer::SSwipeUpdateEvent swipe = {
-        .timeMs  = gev.time,
-        .fingers = fingers,
-        .delta   = delta,
-    };
-
     CTrackpadGestures* handler = g_pShimTrackpadGestures->get(gev.type);
-    handler->gestureBegin(swipeBegin);
-    handler->gestureUpdate(swipe);
+    if (gev.type == DragGestureType::PINCH) {
+        IPointer::SPinchBeginEvent pinchBegin = {
+            .timeMs  = gev.time,
+            .fingers = fingers,
+        };
+        IPointer::SPinchUpdateEvent pinch = {
+            .timeMs   = gev.time,
+            .fingers  = fingers,
+            .delta    = delta,
+            .scale    = this->m_sGestureState.get_pinch_scale(),
+            .rotation = this->m_sGestureState.get_rotation_angle(),
+        };
+
+        handler->gestureBegin(pinchBegin);
+        handler->gestureUpdate(pinch);
+    } else {
+        IPointer::SSwipeBeginEvent swipeBegin = {
+            .timeMs  = gev.time,
+            .fingers = fingers,
+        };
+        IPointer::SSwipeUpdateEvent swipe = {
+            .timeMs  = gev.time,
+            .fingers = fingers,
+            .delta   = delta,
+        };
+
+        CTrackpadGestures* handler = g_pShimTrackpadGestures->get(gev.type);
+        handler->gestureBegin(swipeBegin);
+        handler->gestureUpdate(swipe);
+    }
     this->emulatedSwipePoint = this->m_sGestureState.get_center().current;
 
     this->activeTrackpadGesture = foundLongPress || handler->m_activeGesture ? handler : nullptr;
@@ -603,22 +659,43 @@ void GestureManager::trackpadGestureUpdate(uint32_t time) {
 
     this->emulatedSwipePoint = currentPoint;
 
-    IPointer::SSwipeUpdateEvent swipe = {
-        .timeMs  = time,
-        .fingers = fingers,
-        .delta   = delta,
-    };
+    if (activeDrag.type == DragGestureType::PINCH) {
+        IPointer::SPinchUpdateEvent pinch = {
+            .timeMs   = time,
+            .fingers  = fingers,
+            .delta    = delta,
+            .scale    = this->m_sGestureState.get_pinch_scale(),
+            // FIXME: rotation should be relative to previous update event, not the initial one
+            .rotation = this->m_sGestureState.get_rotation_angle(),
+        };
 
-    this->activeTrackpadGesture->gestureUpdate(swipe);
+        this->activeTrackpadGesture->gestureUpdate(pinch);
+    } else {
+        IPointer::SSwipeUpdateEvent swipe = {
+            .timeMs  = time,
+            .fingers = fingers,
+            .delta   = delta,
+        };
+
+        this->activeTrackpadGesture->gestureUpdate(swipe);
+    }
 }
 
 void GestureManager::trackpadGestureEnd(uint32_t time) {
-    IPointer::SSwipeEndEvent swipe = {
-        .timeMs    = time,
-        .cancelled = false,
-    };
-
-    this->activeTrackpadGesture->gestureEnd(swipe);
+    DragGestureEvent activeDrag = this->getActiveDragGesture().value();
+    if (activeDrag.type == DragGestureType::PINCH) {
+        IPointer::SPinchEndEvent swipe = {
+            .timeMs    = time,
+            .cancelled = false,
+        };
+        this->activeTrackpadGesture->gestureEnd(swipe);
+    } else {
+        IPointer::SSwipeEndEvent swipe = {
+            .timeMs    = time,
+            .cancelled = false,
+        };
+        this->activeTrackpadGesture->gestureEnd(swipe);
+    }
     this->activeTrackpadGesture = nullptr;
 }
 
@@ -834,4 +911,8 @@ void GestureManager::touchBindDispatcher(std::string args) {
 
 void GestureManager::debugLog(const std::string& msg) {
     Debug::log(LOG, "[hyprgrass] " + msg);
+}
+
+void hyprgrass_debug(const std::string& s) {
+    Debug::log(LOG, "[hyprgrass] [debug] {}", s);
 }

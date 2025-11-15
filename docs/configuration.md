@@ -82,6 +82,8 @@ where (skip to [examples](#hyprgrass-bind-examples) if this is confusing):
      - `<from_edge>` is from which edge to start from (l/r/u/d)
      - `<direction>` is in which direction to swipe (l/r/u/d/lu/ld/ru/rd)
   4. `longpress:<finger_count>`
+  5. `pinch:<finger_count>:<direction>`
+     - `direction` is either `i` or `o`, for in/out.
 
 #### hyprgrass-bind Examples
 
@@ -106,6 +108,9 @@ plugin {
 
         # tap with 3 fingers
         hyprgrass-bind = , tap:3, exec, foot
+
+        # pinch in with 3 fingers
+        hyprgrass-bind = , pinch:3:i, exec, foot
 
         # longpress can trigger mouse binds:
         hyprgrass-bindm = , longpress:2, movewindow
@@ -142,10 +147,12 @@ hyprgrass-gesture = <gesture_type>, <gesture_arg>, <direction>, [modifiers, ...]
 
 **Direction** is one of:
 
-- `swipe` -> any swipe
-- `horizontal` -> horizontal swipe
-- `vertical` -> vertical swipe
-- `left`, `right`, `up`, `down` -> swipe directions
+| direction                     | Description      |
+| ----------------------------- | ---------------- |
+| `swipe`                       | any swipe        |
+| `horizontal`                  | horizontal swipe |
+| `vertical`                    | vertical swipe   |
+| `left`, `right`, `up`, `down` | swipe directions |
 
 > [!NOTE]
 > Some actions only accept certain directions. E.g. `workspace` does not work

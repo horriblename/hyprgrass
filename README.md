@@ -152,5 +152,9 @@ Miscellanaeious:
 
 ## Acknowledgements
 
-Special thanks to wayfire for the awesome
-[wf-touch](https://github.com/WayfireWM/wf-touch) library!
+- Special thanks to wayfire for the awesome
+  [wf-touch](https://github.com/WayfireWM/wf-touch) library!
+- Some parts are based on AOSP, licensed under
+  [Apache License 2.0](LICENSE.aosp)
+- Example plugins are _heavily_ based on
+  [Waybar](https://github.com/Alexays/Waybar), licensed under MIT License

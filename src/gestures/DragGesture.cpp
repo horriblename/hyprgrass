@@ -1,4 +1,6 @@
 #include "DragGesture.hpp"
+#include "Shared.hpp"
+#include <string>
 
 std::string DragGestureEvent::to_string() const {
     switch (type) {
@@ -8,6 +10,8 @@ std::string DragGestureEvent::to_string() const {
             return "swipe:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
         case DragGestureType::EDGE_SWIPE:
             return "edge:" + stringifyDirection(this->edge_origin) + ":" + stringifyDirection(this->direction);
+        case DragGestureType::PINCH:
+            return "pinch:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
     }
 
     return "";

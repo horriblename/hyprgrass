@@ -18,5 +18,13 @@ std::string stringifyDirection(GestureDirection direction) {
         bind += 'd';
     }
 
+    if (direction & GESTURE_DIRECTION_IN) {
+        bind += 'i';
+    }
+
+    if (direction & GESTURE_DIRECTION_OUT) {
+        bind += 'o';
+    }
+
     return bind;
 }

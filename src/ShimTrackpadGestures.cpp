@@ -80,6 +80,18 @@ std::expected<GestureConfig, std::string> parseGesturePattern(CConstVarList& var
         }
 
         direction = g_pTrackpadGestures->dirForString(vars[2]);
+        // // pinch disabled for now for being buggy
+        // } else if (vars[0] == "pinch") {
+        //     type = DragGestureType::PINCH;
+        //     auto res = parseFingers(vars[1], fingersOrOrigin);
+        //     if (!res) {
+        //         return std::unexpected(res.error());
+        //     }
+        //
+        //     direction = g_pTrackpadGestures->dirForString(vars[2]);
+        //     if (!isPinch(direction)) {
+        //         return std::unexpected(std::format("empty or invalid direction for a pinch gesture: {}", vars[2]));
+        //     }
     } else {
         return std::unexpected(std::format("invalid gesture event: {}", vars[0]));
     }
@@ -110,11 +122,11 @@ GestureDirection toHyprgrassDirection(eTrackpadGestureDirection dir) {
         case TRACKPAD_GESTURE_DIR_HORIZONTAL:
             return GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
         case TRACKPAD_GESTURE_DIR_PINCH:
-            return 0; // TODO
+            return GESTURE_DIRECTION_IN | GESTURE_DIRECTION_OUT;
         case TRACKPAD_GESTURE_DIR_PINCH_OUT:
-            return 0; // TODO
+            return GESTURE_DIRECTION_OUT;
         case TRACKPAD_GESTURE_DIR_PINCH_IN:
-            return 0; // TODO
+            return GESTURE_DIRECTION_IN;
     }
 
     return 0;

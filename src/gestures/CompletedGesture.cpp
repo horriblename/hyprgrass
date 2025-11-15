@@ -1,4 +1,5 @@
 #include "CompletedGesture.hpp"
+#include "Shared.hpp"
 
 std::string CompletedGestureEvent::to_string() const {
     switch (type) {
@@ -11,6 +12,8 @@ std::string CompletedGestureEvent::to_string() const {
             return "tap:" + std::to_string(finger_count);
         case CompletedGestureType::LONG_PRESS:
             return "longpress:" + std::to_string(finger_count);
+        case CompletedGestureType::PINCH:
+            return "pinch:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
     }
 
     return "";

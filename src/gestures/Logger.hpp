@@ -6,3 +6,5 @@ class Logger {
     virtual ~Logger() {}
     virtual void debug(std::string s) = 0;
 };
+
+void hyprgrass_debug(const std::string& s);
