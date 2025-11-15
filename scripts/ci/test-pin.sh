@@ -30,6 +30,7 @@ worktreeDir="pin-build"
 {
 	git worktree add "$worktreeDir" "$hyprgrassCommit"
 	cd "$worktreeDir"
+	git fetch --unshallow
 
 	# NOTE: nix build --override-input does not override input of inputs, i.e. hyprland/aquamarine
 	# will not be updated, hence we need to run `flake update` :<
