@@ -518,22 +518,22 @@ TEST_CASE("Pinch out: full drag") {
     gm.addPinchGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         // origin center is (200, 180)
-        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {100, 200}}, // delta_01 = (-100, 20)
-        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {200, 140}}, // delta_02 = (0, -40)
-        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {300, 200}}, // delta_03 = (100, -20)
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {150, 200}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {200, 140}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {250, 200}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {110, 200}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 90}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {290, 200}},
 
-        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {60, 210}}, // add one to delta to ensure we pass threshold
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {60, 210}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 120}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {340, 210}},
         ExpectResult{ExpectResultType::DRAG_TRIGGERED},
 
-        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 0, {60, 190}},
-        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 1, {200, 120}},
-        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 2, {350, 190}},
-        Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {60, 190}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 0, {30, 250}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 1, {200, 20}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 2, {400, 220}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {50, 200}},
     };
     ProcessEvents(gm, {.type = ExpectResultType::DRAG_ENDED}, events);
 
@@ -546,20 +546,21 @@ TEST_CASE("Pinch out: completed gesture") {
     gm.addPinchGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         // origin center is (200, 180)
-        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {100, 200}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {150, 200}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {200, 140}},
-        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {300, 200}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {250, 200}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {110, 200}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 90}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {290, 200}},
+
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {60, 210}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 120}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {340, 210}},
 
-        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 0, {60, 190}},
-        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 1, {200, 120}},
-        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 2, {350, 190}},
-        Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {60, 190}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 0, {30, 250}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 1, {200, 20}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 2, {400, 220}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {50, 200}},
     };
     ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
 
