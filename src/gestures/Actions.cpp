@@ -37,7 +37,7 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state, const wf::to
     }
 
     for (auto& finger : state.fingers) {
-        if (finger.second.get_incorrect_drag_distance(this->target_direction) > this->get_move_tolerance()) {
+        if (finger.second.get_incorrect_drag_distance(this->target_direction) > base_threshold / *sensitivity) {
             return wf::touch::ACTION_STATUS_CANCELLED;
         }
     }
