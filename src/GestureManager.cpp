@@ -191,6 +191,7 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
     this->addEdgeSwipeGesture(
         SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, *PSENSITIVITY, *LONG_PRESS_DELAY, *EDGE_MARGIN
     );
+    // TODO: should I use SWIPE_INCORRECT_DRAG_TOLERANCE instead?
     this->addLongPress(SWIPE_THRESHOLD, *PSENSITIVITY, *LONG_PRESS_DELAY);
     this->addMultiFingerGesture(SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, *PSENSITIVITY, *LONG_PRESS_DELAY);
     this->addMultiFingerTap(SWIPE_INCORRECT_DRAG_TOLERANCE, *PSENSITIVITY, *LONG_PRESS_DELAY);
