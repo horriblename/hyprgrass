@@ -181,9 +181,6 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
     static auto const PSENSITIVITY =
         (Hyprlang::FLOAT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")
             ->getDataStaticPtr();
-    static auto const PINCH_THRESHOLD =
-        (Hyprlang::FLOAT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:pinch_threshold")
-            ->getDataStaticPtr();
     static auto const LONG_PRESS_DELAY =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay")
             ->getDataStaticPtr();
@@ -191,11 +188,14 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:edge_margin")
             ->getDataStaticPtr();
 
-    this->addEdgeSwipeGesture(*PSENSITIVITY, *LONG_PRESS_DELAY, *EDGE_MARGIN);
-    this->addLongPress(*PSENSITIVITY, *LONG_PRESS_DELAY);
-    this->addMultiFingerGesture(*PSENSITIVITY, *LONG_PRESS_DELAY, *PINCH_THRESHOLD);
-    this->addMultiFingerTap(*PSENSITIVITY, *LONG_PRESS_DELAY);
-    this->addPinchGesture(*PSENSITIVITY, *LONG_PRESS_DELAY);
+    this->addEdgeSwipeGesture(
+        SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, *PSENSITIVITY, *LONG_PRESS_DELAY, *EDGE_MARGIN
+    );
+    // TODO: should I use SWIPE_INCORRECT_DRAG_TOLERANCE instead?
+    this->addLongPress(SWIPE_THRESHOLD, *PSENSITIVITY, *LONG_PRESS_DELAY);
+    this->addMultiFingerGesture(SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, *PSENSITIVITY, *LONG_PRESS_DELAY);
+    this->addMultiFingerTap(SWIPE_INCORRECT_DRAG_TOLERANCE, *PSENSITIVITY, *LONG_PRESS_DELAY);
+    this->addPinchGesture(PINCH_THRESHOLD, *PSENSITIVITY, *LONG_PRESS_DELAY);
 
     this->long_press_timer = wl_event_loop_add_timer(g_pCompositor->m_wlEventLoop, handleLongPressTimer, this);
 }
@@ -661,10 +661,10 @@ void GestureManager::trackpadGestureUpdate(uint32_t time) {
 
     if (activeDrag.type == DragGestureType::PINCH) {
         IPointer::SPinchUpdateEvent pinch = {
-            .timeMs   = time,
-            .fingers  = fingers,
-            .delta    = delta,
-            .scale    = this->m_sGestureState.get_pinch_scale(),
+            .timeMs  = time,
+            .fingers = fingers,
+            .delta   = delta,
+            .scale   = this->m_sGestureState.get_pinch_scale(),
             // FIXME: rotation should be relative to previous update event, not the initial one
             .rotation = this->m_sGestureState.get_rotation_angle(),
         };

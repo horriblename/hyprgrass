@@ -15,12 +15,13 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state, const wf::to
         return wf::touch::ACTION_STATUS_CANCELLED;
     }
 
+    const double finger_slip = base_finger_slip / *sensitivity;
+    const double threshold   = base_threshold / *sensitivity;
     if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN) {
         // cancel if previous fingers moved too much
         this->finger_count = state.fingers.size();
         for (auto& finger : state.fingers) {
-            // TODO multiply tolerance by sensitivity?
-            if (glm::length(finger.second.delta()) > GESTURE_INITIAL_TOLERANCE) {
+            if (glm::length(finger.second.delta()) > finger_slip) {
                 return wf::touch::ACTION_STATUS_CANCELLED;
             }
         }
@@ -28,7 +29,7 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state, const wf::to
         return wf::touch::ACTION_STATUS_RUNNING;
     }
 
-    if ((glm::length(state.get_center().delta()) >= MIN_SWIPE_DISTANCE) && (this->target_direction == 0)) {
+    if (glm::length(state.get_center().delta()) >= threshold && this->target_direction == 0) {
         this->target_direction = state.get_center().get_direction();
     }
 
@@ -37,31 +38,14 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state, const wf::to
     }
 
     for (auto& finger : state.fingers) {
-        if (finger.second.get_incorrect_drag_distance(this->target_direction) > base_threshold / *sensitivity) {
+        if (finger.second.get_incorrect_drag_distance(this->target_direction) > finger_slip) {
             return wf::touch::ACTION_STATUS_CANCELLED;
         }
     }
 
-    if (state.get_center().get_drag_distance(target_direction) >= base_threshold / *sensitivity) {
+    if (state.get_center().get_drag_distance(target_direction) >= threshold) {
         return wf::touch::ACTION_STATUS_COMPLETED;
     }
-    return wf::touch::ACTION_STATUS_RUNNING;
-}
-
-wf::touch::action_status_t
-MultiFingerDownAction::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
-    if (event.time - this->start_time > this->get_duration()) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
-    }
-
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
-    }
-
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN && state.fingers.size() >= SEND_CANCEL_EVENT_FINGER_COUNT) {
-        return wf::touch::ACTION_STATUS_COMPLETED;
-    }
-
     return wf::touch::ACTION_STATUS_RUNNING;
 }
 

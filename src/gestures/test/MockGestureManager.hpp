@@ -10,11 +10,6 @@ constexpr double MONITOR_Y      = 0;
 constexpr double MONITOR_WIDTH  = 1920;
 constexpr double MONITOR_HEIGHT = 1080;
 
-class Tester {
-  public:
-    static void testFindSwipeEdges();
-};
-
 class CMockGestureManager final : public IGestureManager {
   public:
     CMockGestureManager(bool handlesDragEvents)
@@ -78,5 +73,4 @@ class CMockGestureManager final : public IGestureManager {
 
   private:
     void sendCancelEventsToWindows() override;
-    friend Tester;
 };
