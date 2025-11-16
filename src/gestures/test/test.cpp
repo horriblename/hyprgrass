@@ -10,6 +10,8 @@
 constexpr float SENSITIVITY        = 1.0;
 constexpr int64_t LONG_PRESS_DELAY = 400;
 constexpr long int EDGE_MARGIN     = 10;
+// TODO: threshold was originally this value, I should update tests to new value
+constexpr double TEST_PINCH_THRESHOLD = 75;
 
 static void log_start_of_test() {
     std::cout << "=== start of: " << doctest::detail::g_cs->currentTest->m_name << std::endl;
@@ -475,7 +477,7 @@ TEST_CASE("Edge swipe: block touch events") {
 TEST_CASE("Pinch in: full drag") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addPinchGesture(PINCH_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addPinchGesture(TEST_PINCH_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         // origin center is (200, 180)
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {150, 200}},
@@ -510,7 +512,7 @@ TEST_CASE("Pinch in: full drag") {
 TEST_CASE("Pinch out: full drag") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addPinchGesture(PINCH_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addPinchGesture(TEST_PINCH_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         // origin center is (200, 180)
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {150, 200}},
@@ -538,7 +540,7 @@ TEST_CASE("Pinch out: full drag") {
 TEST_CASE("Pinch out: completed gesture") {
     log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addPinchGesture(PINCH_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addPinchGesture(TEST_PINCH_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         // origin center is (200, 180)
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {150, 200}},
