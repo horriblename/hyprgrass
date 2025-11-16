@@ -6,9 +6,11 @@ version_header = configure_file(
   }
 )
 
-if get_option('hyprgrass')
+if get_option('hyprgrass') or get_option('grassroots')
   subdir('gestures')
+endif
 
+if get_option('hyprgrass')
   shared_module('hyprgrass',
     'main.cpp',
     'GestureManager.cpp',

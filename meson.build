@@ -12,8 +12,10 @@ else
   error('Could not configure current C++ compiler (' + cpp_compiler.get_id() + ' ' + cpp_compiler.version() + ') with required C++ standard (C++23)')
 endif
 
+needs_hyprland = get_option('hyprgrass') or get_option('hyprgrass-backlight') or get_option('hyprgrass-pulse')
+
 hyprland_headers = dependency('hyprland', required: false)
-if not hyprland_headers.found()
+if not hyprland_headers.found() and needs_hyprland
   hyprland_src = run_command('printenv', 'HYPRLAND_HEADERS', check: false).stdout().strip()
   if hyprland_src == ''
     error('Hyprland not found via pkg-config and environment variable HYPRLAND_HEADERS not set')
@@ -22,7 +24,7 @@ if not hyprland_headers.found()
   add_global_arguments('-I' + hyprland_src, language: 'cpp')
 endif
 
-if get_option('hyprgrass')
+if get_option('hyprgrass') or get_option('grassroots')
   wftouch = dependency('wftouch', required: false)
 
   if not wftouch.found() and get_option('hyprgrass')
@@ -30,13 +32,15 @@ if get_option('hyprgrass')
   endif
 endif
 
-hyprland_deps = [
-  dependency('pixman-1'),
-  dependency('libinput'),
-  dependency('wayland-server'),
-  dependency('xkbcommon'),
-  dependency('libdrm'),
-]
+if needs_hyprland
+  hyprland_deps = [
+    dependency('pixman-1'),
+    dependency('libinput'),
+    dependency('wayland-server'),
+    dependency('xkbcommon'),
+    dependency('libdrm'),
+  ]
+endif
 
 subdir('examples')
 subdir('src')
