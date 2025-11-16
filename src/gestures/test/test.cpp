@@ -11,6 +11,10 @@ constexpr float SENSITIVITY        = 1.0;
 constexpr int64_t LONG_PRESS_DELAY = GESTURE_BASE_DURATION;
 constexpr long int EDGE_MARGIN     = 10;
 
+static void log_start_of_test() {
+    std::cout << "=== start of: " << doctest::detail::g_cs->currentTest->m_name << std::endl;
+}
+
 void Tester::testFindSwipeEdges() {
     using Test = struct {
         wf::touch::point_t origin;
@@ -128,7 +132,7 @@ TEST_CASE(
     // currently removed but may bring it back
     doctest::should_fail()
 ) {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &SENSITIVITY);
     const std::vector<TouchEvent> events{
@@ -142,7 +146,7 @@ TEST_CASE(
 }
 
 TEST_CASE("Swipe Drag: Start drag upon moving more than the threshold") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
     gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &SENSITIVITY);
     const std::vector<TouchEvent> events{
@@ -156,7 +160,7 @@ TEST_CASE("Swipe Drag: Start drag upon moving more than the threshold") {
 
 TEST_CASE("Swipe Drag: Cancel 3 finger swipe due to moving too much before "
           "adding new finger, but not enough to trigger 3 finger swipe first") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
     gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &SENSITIVITY);
     const std::vector<TouchEvent> events{
@@ -172,7 +176,7 @@ TEST_CASE("Swipe Drag: Cancel 3 finger swipe due to moving too much before "
 
 TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
           "finger") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &SENSITIVITY);
 
@@ -190,7 +194,7 @@ TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
 }
 
 TEST_CASE("Multi-finger Tap") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addMultiFingerTap(&SENSITIVITY, &LONG_PRESS_DELAY);
 
@@ -205,7 +209,7 @@ TEST_CASE("Multi-finger Tap") {
 }
 
 TEST_CASE("Multi-finger Tap: Timeout") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addMultiFingerTap(&SENSITIVITY, &LONG_PRESS_DELAY);
 
@@ -220,7 +224,7 @@ TEST_CASE("Multi-finger Tap: Timeout") {
 }
 
 TEST_CASE("Multi-finger Tap: finger moved too much") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addMultiFingerTap(&SENSITIVITY, &LONG_PRESS_DELAY);
 
@@ -235,7 +239,7 @@ TEST_CASE("Multi-finger Tap: finger moved too much") {
 }
 
 TEST_CASE("Long press: begin drag") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
     gm.addLongPress(&SENSITIVITY, &LONG_PRESS_DELAY);
 
@@ -252,7 +256,7 @@ TEST_CASE("Long press: begin drag") {
 }
 
 TEST_CASE("Long press and drag: drag ends after all fingers lifted") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
     gm.addLongPress(&SENSITIVITY, &LONG_PRESS_DELAY);
 
@@ -274,7 +278,7 @@ TEST_CASE("Long press and drag: drag ends after all fingers lifted") {
 }
 
 TEST_CASE("Long press and drag: touch down does nothing") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
     gm.addLongPress(&SENSITIVITY, &LONG_PRESS_DELAY);
 
@@ -294,7 +298,7 @@ TEST_CASE("Long press and drag: touch down does nothing") {
 }
 
 TEST_CASE("Long press and drag: cancelled due to short hold duration") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
     gm.addLongPress(&SENSITIVITY, &LONG_PRESS_DELAY);
 
@@ -313,7 +317,7 @@ TEST_CASE("Long press and drag: cancelled due to short hold duration") {
 }
 
 TEST_CASE("Long press and drag: cancelled due to too much movement") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
     gm.addLongPress(&SENSITIVITY, &LONG_PRESS_DELAY);
 
@@ -331,7 +335,7 @@ TEST_CASE("Edge Swipe: Complete upon: \n"
           "1. touch down on edge of screen\n"
           "2. swiping more than the threshold, within the time limit, then\n"
           "3. lifting the finger, within the time limit.\n") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
 
@@ -347,7 +351,7 @@ TEST_CASE("Edge Swipe: Complete upon: \n"
 
 // haven't gotten around to checking what's wrong
 TEST_CASE("Edge Swipe: Timeout during swiping phase") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
 
@@ -365,7 +369,7 @@ TEST_CASE("Edge Swipe: Fail check at the end for not starting swipe from an edge
           "3. lift the finger, within the time limit.\n"
           "The starting position of the swipe is checked at the end and should "
           "fail.") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
 
@@ -381,7 +385,7 @@ TEST_CASE("Edge Swipe: Fail check at the end for not starting swipe from an edge
 }
 
 TEST_CASE("Edge Swipe Drag: begin") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
     gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
 
@@ -465,7 +469,7 @@ TEST_CASE("Edge Swipe: margins") {
 }
 
 TEST_CASE("Edge swipe: block touch events") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
     gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
     const std::vector<TouchEvent> events{
@@ -478,7 +482,7 @@ TEST_CASE("Edge swipe: block touch events") {
 }
 
 TEST_CASE("Pinch in: full drag") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
     gm.addPinchGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
@@ -513,7 +517,7 @@ TEST_CASE("Pinch in: full drag") {
 }
 
 TEST_CASE("Pinch out: full drag") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
     gm.addPinchGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
@@ -541,7 +545,7 @@ TEST_CASE("Pinch out: full drag") {
 }
 
 TEST_CASE("Pinch out: completed gesture") {
-    std::cout << "  ==== stdout:" << std::endl;
+    log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
     gm.addPinchGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
