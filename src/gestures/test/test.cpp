@@ -8,7 +8,7 @@
 #include <vector>
 
 constexpr float SENSITIVITY        = 1.0;
-constexpr int64_t LONG_PRESS_DELAY = GESTURE_BASE_DURATION;
+constexpr int64_t LONG_PRESS_DELAY = 400;
 constexpr long int EDGE_MARGIN     = 10;
 
 static void log_start_of_test() {
