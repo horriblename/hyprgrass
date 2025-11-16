@@ -38,10 +38,15 @@ class IGestureManager {
     bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
-    void addMultiFingerGesture(const float* sensitivity, const int64_t* timeout);
-    void addMultiFingerTap(const float* sensitivity, const int64_t* timeout);
-    void addLongPress(const float* sensitivity, const int64_t* delay);
-    void addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout, const long* edge_margin);
+    void addMultiFingerGesture(
+        double base_threshold, double base_finger_slip, const float* sensitivity, const int64_t* timeout
+    );
+    void addMultiFingerTap(double base_finger_slip, const float* sensitivity, const int64_t* timeout);
+    void addLongPress(double base_finger_slip, const float* sensitivity, const int64_t* delay);
+    void addEdgeSwipeGesture(
+        double base_threshold, double base_finger_slip, const float* sensitivity, const int64_t* timeout,
+        const long* edge_margin
+    );
     void addPinchGesture(const float* sensitivity, const int64_t* timeout);
 
     std::optional<DragGestureEvent> getActiveDragGesture() const {

@@ -107,7 +107,7 @@ TEST_CASE(
 ) {
     log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addMultiFingerGesture(SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 120, 1, {500, 300}},
@@ -121,7 +121,7 @@ TEST_CASE(
 TEST_CASE("Swipe Drag: Start drag upon moving more than the threshold") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addMultiFingerGesture(SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
@@ -135,7 +135,7 @@ TEST_CASE("Swipe Drag: Cancel 3 finger swipe due to moving too much before "
           "adding new finger, but not enough to trigger 3 finger swipe first") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addMultiFingerGesture(SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
@@ -151,7 +151,7 @@ TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
           "finger") {
     log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addMultiFingerGesture(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addMultiFingerGesture(SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY);
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
@@ -169,7 +169,7 @@ TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
 TEST_CASE("Multi-finger Tap") {
     log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addMultiFingerTap(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addMultiFingerTap(SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY);
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
@@ -184,7 +184,7 @@ TEST_CASE("Multi-finger Tap") {
 TEST_CASE("Multi-finger Tap: Timeout") {
     log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addMultiFingerTap(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addMultiFingerTap(SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY);
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
@@ -199,7 +199,7 @@ TEST_CASE("Multi-finger Tap: Timeout") {
 TEST_CASE("Multi-finger Tap: finger moved too much") {
     log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addMultiFingerTap(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addMultiFingerTap(SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY);
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
@@ -214,7 +214,7 @@ TEST_CASE("Multi-finger Tap: finger moved too much") {
 TEST_CASE("Long press: begin drag") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addLongPress(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addLongPress(SWIPE_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
@@ -231,7 +231,7 @@ TEST_CASE("Long press: begin drag") {
 TEST_CASE("Long press and drag: drag ends after all fingers lifted") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addLongPress(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addLongPress(SWIPE_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
@@ -253,7 +253,7 @@ TEST_CASE("Long press and drag: drag ends after all fingers lifted") {
 TEST_CASE("Long press and drag: touch down does nothing") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addLongPress(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addLongPress(SWIPE_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
@@ -273,7 +273,7 @@ TEST_CASE("Long press and drag: touch down does nothing") {
 TEST_CASE("Long press and drag: cancelled due to short hold duration") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addLongPress(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addLongPress(SWIPE_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
@@ -292,7 +292,7 @@ TEST_CASE("Long press and drag: cancelled due to short hold duration") {
 TEST_CASE("Long press and drag: cancelled due to too much movement") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addLongPress(&SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addLongPress(SWIPE_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
@@ -310,7 +310,9 @@ TEST_CASE("Edge Swipe: Complete upon: \n"
           "3. lifting the finger, within the time limit.\n") {
     log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
+    gm.addEdgeSwipeGesture(
+        SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN
+    );
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
@@ -326,7 +328,9 @@ TEST_CASE("Edge Swipe: Complete upon: \n"
 TEST_CASE("Edge Swipe: Timeout during swiping phase") {
     log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
+    gm.addEdgeSwipeGesture(
+        SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN
+    );
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
@@ -344,7 +348,9 @@ TEST_CASE("Edge Swipe: Fail check at the end for not starting swipe from an edge
           "fail.") {
     log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
+    gm.addEdgeSwipeGesture(
+        SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN
+    );
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {11, 300}},
@@ -360,7 +366,9 @@ TEST_CASE("Edge Swipe: Fail check at the end for not starting swipe from an edge
 TEST_CASE("Edge Swipe Drag: begin") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
+    gm.addEdgeSwipeGesture(
+        SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN
+    );
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
@@ -373,7 +381,9 @@ TEST_CASE("Edge Swipe Drag: begin") {
 
 TEST_CASE("Edge Swipe Drag: emits drag end event") {
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
+    gm.addEdgeSwipeGesture(
+        SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN
+    );
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}}, Ev{wf::touch::EVENT_TYPE_MOTION, 150, 0, {250, 300}},
@@ -389,7 +399,9 @@ TEST_CASE("Edge Swipe: margins") {
     SUBCASE("custom margin: less than threshold triggers") {
         auto gm     = CMockGestureManager::newDragHandler();
         long margin = 20;
-        gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &margin);
+        gm.addEdgeSwipeGesture(
+            SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY, &margin
+        );
 
         const std::vector<TouchEvent> events{
             Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {19, 300}},
@@ -408,7 +420,9 @@ TEST_CASE("Edge Swipe: margins") {
         auto gm       = CMockGestureManager::newDragHandler();
         gm.mon_offset = {2000, 0};
         long margin   = 20;
-        gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &margin);
+        gm.addEdgeSwipeGesture(
+            SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY, &margin
+        );
 
         const std::vector<TouchEvent> events{
             Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {2019, 300}},
@@ -426,7 +440,9 @@ TEST_CASE("Edge Swipe: margins") {
     SUBCASE("custom margin: more than threshold does not trigger") {
         auto gm     = CMockGestureManager::newDragHandler();
         long margin = 20;
-        gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &margin);
+        gm.addEdgeSwipeGesture(
+            SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY, &margin
+        );
 
         const std::vector<TouchEvent> events{
             Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {21, 300}},
@@ -444,7 +460,9 @@ TEST_CASE("Edge Swipe: margins") {
 TEST_CASE("Edge swipe: block touch events") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addEdgeSwipeGesture(&SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN);
+    gm.addEdgeSwipeGesture(
+        SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN
+    );
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {10, 300}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {455, 300}},

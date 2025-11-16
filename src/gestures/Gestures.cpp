@@ -152,8 +152,10 @@ void IGestureManager::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gest
     this->m_vGestures.emplace_back(std::move(gesture));
 }
 
-void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int64_t* timeout) {
-    auto swipe = std::make_unique<CMultiAction>(SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, timeout);
+void IGestureManager::addMultiFingerGesture(
+    double base_threshold, double base_finger_slip, const float* sensitivity, const int64_t* timeout
+) {
+    auto swipe = std::make_unique<CMultiAction>(base_threshold, base_finger_slip, sensitivity, timeout);
 
     auto swipe_ptr = swipe.get();
 
@@ -205,8 +207,8 @@ void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int6
     this->addTouchGesture(std::make_unique<wf::touch::gesture_t>(std::move(swipe_actions), []() {}, cancel));
 }
 
-void IGestureManager::addMultiFingerTap(const float* sensitivity, const int64_t* timeout) {
-    auto tap = std::make_unique<MultiFingerTap>(SWIPE_THRESHOLD, sensitivity, timeout);
+void IGestureManager::addMultiFingerTap(double base_finger_slip, const float* sensitivity, const int64_t* timeout) {
+    auto tap = std::make_unique<MultiFingerTap>(base_finger_slip, sensitivity, timeout);
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> tap_actions;
     tap_actions.emplace_back(std::move(tap));
@@ -226,10 +228,10 @@ void IGestureManager::addMultiFingerTap(const float* sensitivity, const int64_t*
     this->addTouchGesture(std::make_unique<wf::touch::gesture_t>(std::move(tap_actions), ack, cancel));
 }
 
-void IGestureManager::addLongPress(const float* sensitivity, const int64_t* delay) {
+void IGestureManager::addLongPress(double base_finger_slip, const float* sensitivity, const int64_t* delay) {
     auto long_press_and_emit = std::make_unique<OnCompleteAction>(
         std::make_unique<LongPress>(
-            SWIPE_THRESHOLD, sensitivity, delay,
+            base_finger_slip, sensitivity, delay,
             [this](uint32_t current_time, uint32_t delay) { this->updateLongPressTimer(current_time, delay); }
         ),
         [this](uint32_t time) {
@@ -279,9 +281,10 @@ void IGestureManager::addLongPress(const float* sensitivity, const int64_t* dela
 }
 
 void IGestureManager::addEdgeSwipeGesture(
-    const float* sensitivity, const int64_t* timeout, const long int* edge_margin
+    double base_threshold, double base_finger_slip, const float* sensitivity, const int64_t* timeout,
+    const long int* edge_margin
 ) {
-    auto edge = std::make_unique<CMultiAction>(SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, timeout);
+    auto edge            = std::make_unique<CMultiAction>(base_threshold, base_finger_slip, sensitivity, timeout);
     auto edge_ptr        = edge.get();
     auto edge_drag_begin = std::make_unique<OnCompleteAction>(std::move(edge), [=, this](uint32_t time) {
         auto origin_edges = this->find_swipe_edges(m_sGestureState.get_center().origin, *edge_margin);
