@@ -3,7 +3,7 @@
 #include <string>
 
 // Swipe params
-constexpr static double SWIPE_INCORRECT_DRAG_TOLERANCE = 30;
+constexpr static double SWIPE_INCORRECT_DRAG_TOLERANCE = 100;
 constexpr static double SWIPE_THRESHOLD                = 150;
 
 // Pinch params
