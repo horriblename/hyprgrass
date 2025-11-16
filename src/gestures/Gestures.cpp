@@ -354,8 +354,8 @@ void IGestureManager::addEdgeSwipeGesture(
 }
 
 // TODO: timeouts (also in other gestures)
-void IGestureManager::addPinchGesture(const float* sensitivity, const int64_t* timeout) {
-    auto pinch_begin = std::make_unique<PinchAction>(PINCH_INCORRECT_DRAG_TOLERANCE, sensitivity);
+void IGestureManager::addPinchGesture(double base_threshold, const float* sensitivity, const int64_t* timeout) {
+    auto pinch_begin = std::make_unique<PinchAction>(base_threshold, sensitivity);
 
     auto pinch_wrapper = std::make_unique<OnCompleteAction>(std::move(pinch_begin), [this](uint32_t time) {
         GestureDirection dir =

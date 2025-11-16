@@ -47,7 +47,7 @@ class IGestureManager {
         double base_threshold, double base_finger_slip, const float* sensitivity, const int64_t* timeout,
         const long* edge_margin
     );
-    void addPinchGesture(const float* sensitivity, const int64_t* timeout);
+    void addPinchGesture(double base_threshold, const float* sensitivity, const int64_t* timeout);
 
     std::optional<DragGestureEvent> getActiveDragGesture() const {
         return activeDragGesture;
