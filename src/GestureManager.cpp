@@ -181,9 +181,6 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
     static auto const PSENSITIVITY =
         (Hyprlang::FLOAT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")
             ->getDataStaticPtr();
-    static auto const PINCH_THRESHOLD =
-        (Hyprlang::FLOAT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:pinch_threshold")
-            ->getDataStaticPtr();
     static auto const LONG_PRESS_DELAY =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay")
             ->getDataStaticPtr();

@@ -335,9 +335,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValue(
         PHANDLE, "plugin:touch_gestures:debug:visualize_touch", Hyprlang::CConfigValue((Hyprlang::INT)0)
     );
-    HyprlandAPI::addConfigValue(
-        PHANDLE, "plugin:touch_gestures:pinch_threshold", Hyprlang::CConfigValue((Hyprlang::FLOAT)0.4)
-    );
 
     HyprlandAPI::addConfigKeyword(
         PHANDLE, KEYWORD_HG_BIND, hyrgrassBindKeyword, Hyprlang::SHandlerOptions{.allowFlags = true}
