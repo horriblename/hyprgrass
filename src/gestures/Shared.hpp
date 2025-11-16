@@ -7,7 +7,7 @@ constexpr static double SWIPE_INCORRECT_DRAG_TOLERANCE = 100;
 constexpr static double SWIPE_THRESHOLD                = 150;
 
 // Pinch params
-constexpr static double PINCH_THRESHOLD = 75;
+constexpr static double PINCH_THRESHOLD = 150;
 
 // can be one of @eTouchGestureDirection or a combination of them
 using GestureDirection = uint32_t;
