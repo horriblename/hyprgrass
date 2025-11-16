@@ -142,8 +142,8 @@ TEST_CASE("Swipe Drag: Cancel 3 finger swipe due to moving too much before "
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {401, 290}},
-        Ev{wf::touch::EVENT_TYPE_MOTION, 110, 0, {409, 290}},
-        Ev{wf::touch::EVENT_TYPE_MOTION, 110, 1, {459, 300}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 110, 0, {449, 290}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 110, 1, {399, 300}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 120, 3, {600, 280}},
     };
     ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
