@@ -193,7 +193,7 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
 
     this->addEdgeSwipeGesture(*PSENSITIVITY, *LONG_PRESS_DELAY, *EDGE_MARGIN);
     this->addLongPress(*PSENSITIVITY, *LONG_PRESS_DELAY);
-    this->addMultiFingerGesture(*PSENSITIVITY, *LONG_PRESS_DELAY, *PINCH_THRESHOLD);
+    this->addMultiFingerGesture(*PSENSITIVITY, *LONG_PRESS_DELAY);
     this->addMultiFingerTap(*PSENSITIVITY, *LONG_PRESS_DELAY);
     this->addPinchGesture(*PSENSITIVITY, *LONG_PRESS_DELAY);
 
@@ -661,10 +661,10 @@ void GestureManager::trackpadGestureUpdate(uint32_t time) {
 
     if (activeDrag.type == DragGestureType::PINCH) {
         IPointer::SPinchUpdateEvent pinch = {
-            .timeMs   = time,
-            .fingers  = fingers,
-            .delta    = delta,
-            .scale    = this->m_sGestureState.get_pinch_scale(),
+            .timeMs  = time,
+            .fingers = fingers,
+            .delta   = delta,
+            .scale   = this->m_sGestureState.get_pinch_scale(),
             // FIXME: rotation should be relative to previous update event, not the initial one
             .rotation = this->m_sGestureState.get_rotation_angle(),
         };

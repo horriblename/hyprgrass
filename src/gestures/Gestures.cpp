@@ -3,7 +3,6 @@
 #include "CompletedGesture.hpp"
 #include "DragGesture.hpp"
 #include "Shared.hpp"
-#include <algorithm>
 #include <glm/glm.hpp>
 #include <memory>
 #include <optional>
@@ -153,9 +152,7 @@ void IGestureManager::addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gest
     this->m_vGestures.emplace_back(std::move(gesture));
 }
 
-void IGestureManager::addMultiFingerGesture(
-    const float* sensitivity, const int64_t* timeout, const float* pinch_threshold
-) {
+void IGestureManager::addMultiFingerGesture(const float* sensitivity, const int64_t* timeout) {
     auto multi_down_and_send_cancel =
         std::make_unique<OnCompleteAction>(std::make_unique<MultiFingerDownAction>(), [this](uint32_t) {
             this->cancelTouchEventsOnAllWindows();
@@ -194,13 +191,6 @@ void IGestureManager::addMultiFingerGesture(
         if (this->emitDragGestureEnd(drag)) {
             return;
         } else {
-            double pinch_scale = this->m_sGestureState.get_pinch_scale();
-            double lo          = std::clamp(1.0 - *pinch_threshold, 0.1, 1.0);
-            double hi          = 1.0 + *pinch_threshold;
-            hi                 = hi < 1.0 ? 1.0 : hi;
-            if (pinch_scale < lo || pinch_scale > hi)
-                return;
-
             const auto gesture = CompletedGestureEvent{
                 .type         = CompletedGestureType::SWIPE,
                 .direction    = swipe_ptr->target_direction,

@@ -38,7 +38,7 @@ class IGestureManager {
     bool onTouchMove(const wf::touch::gesture_event_t&);
 
     void addTouchGesture(std::unique_ptr<wf::touch::gesture_t> gesture);
-    void addMultiFingerGesture(const float* sensitivity, const int64_t* timeout, const float* pinch_threshold);
+    void addMultiFingerGesture(const float* sensitivity, const int64_t* timeout);
     void addMultiFingerTap(const float* sensitivity, const int64_t* timeout);
     void addLongPress(const float* sensitivity, const int64_t* delay);
     void addEdgeSwipeGesture(const float* sensitivity, const int64_t* timeout, const long* edge_margin);
