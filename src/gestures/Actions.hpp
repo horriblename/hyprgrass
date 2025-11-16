@@ -75,19 +75,6 @@ class LongPress : public wf::touch::gesture_action_t {
     update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) override;
 };
 
-// Completes upon receiving enough touch down events within a short duration
-class MultiFingerDownAction : public wf::touch::gesture_action_t {
-    // upon completion, calls the given callback.
-    //
-    // Intended to be used to send cancel events to surfaces when enough fingers
-    // touch down in quick succession.
-  public:
-    MultiFingerDownAction() {}
-
-    wf::touch::action_status_t
-    update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) override;
-};
-
 // Completes upon receiving a touch up event and cancels upon receiving a touch
 // down event.
 class LiftoffAction : public wf::touch::gesture_action_t {

@@ -50,23 +50,6 @@ CMultiAction::update_state(const wf::touch::gesture_state_t& state, const wf::to
 }
 
 wf::touch::action_status_t
-MultiFingerDownAction::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
-    if (event.time - this->start_time > this->get_duration()) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
-    }
-
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_UP) {
-        return wf::touch::ACTION_STATUS_CANCELLED;
-    }
-
-    if (event.type == wf::touch::EVENT_TYPE_TOUCH_DOWN && state.fingers.size() >= SEND_CANCEL_EVENT_FINGER_COUNT) {
-        return wf::touch::ACTION_STATUS_COMPLETED;
-    }
-
-    return wf::touch::ACTION_STATUS_RUNNING;
-}
-
-wf::touch::action_status_t
 MultiFingerTap::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
     if (event.time - this->start_time > *this->timeout) {
         return wf::touch::ACTION_STATUS_CANCELLED;
