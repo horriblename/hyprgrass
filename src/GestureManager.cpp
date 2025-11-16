@@ -195,7 +195,7 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
     this->addLongPress(SWIPE_THRESHOLD, *PSENSITIVITY, *LONG_PRESS_DELAY);
     this->addMultiFingerGesture(SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, *PSENSITIVITY, *LONG_PRESS_DELAY);
     this->addMultiFingerTap(SWIPE_INCORRECT_DRAG_TOLERANCE, *PSENSITIVITY, *LONG_PRESS_DELAY);
-    this->addPinchGesture(PINCH_INCORRECT_DRAG_TOLERANCE, *PSENSITIVITY, *LONG_PRESS_DELAY);
+    this->addPinchGesture(PINCH_THRESHOLD, *PSENSITIVITY, *LONG_PRESS_DELAY);
 
     this->long_press_timer = wl_event_loop_add_timer(g_pCompositor->m_wlEventLoop, handleLongPressTimer, this);
 }

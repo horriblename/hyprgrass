@@ -475,7 +475,7 @@ TEST_CASE("Edge swipe: block touch events") {
 TEST_CASE("Pinch in: full drag") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addPinchGesture(PINCH_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addPinchGesture(PINCH_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         // origin center is (200, 180)
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {150, 200}},
@@ -510,7 +510,7 @@ TEST_CASE("Pinch in: full drag") {
 TEST_CASE("Pinch out: full drag") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
-    gm.addPinchGesture(PINCH_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addPinchGesture(PINCH_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         // origin center is (200, 180)
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {150, 200}},
@@ -538,7 +538,7 @@ TEST_CASE("Pinch out: full drag") {
 TEST_CASE("Pinch out: completed gesture") {
     log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
-    gm.addPinchGesture(PINCH_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY);
+    gm.addPinchGesture(PINCH_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
     const std::vector<TouchEvent> events{
         // origin center is (200, 180)
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {150, 200}},
