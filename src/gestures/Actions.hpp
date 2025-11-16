@@ -10,6 +10,9 @@ using UpdateExternalTimerCallback = std::function<void(uint32_t current_timer, u
 class CMultiAction : public wf::touch::gesture_action_t {
   private:
     double base_threshold;
+    // How much *each* finger is allowed to travel in the wrong direction.
+    // Should be smaller than base_threshold.
+    double base_finger_slip;
     const float* sensitivity;
     const int64_t* timeout;
 
@@ -17,8 +20,9 @@ class CMultiAction : public wf::touch::gesture_action_t {
     //   threshold = base_threshold / sensitivity
     // if the threshold needs to be adjusted dynamically, the sensitivity
     // pointer is used
-    CMultiAction(double base_threshold, const float* sensitivity, const int64_t* timeout)
-        : base_threshold(base_threshold), sensitivity(sensitivity), timeout(timeout) {};
+    CMultiAction(double base_threshold, double base_finger_slip, const float* sensitivity, const int64_t* timeout)
+        : base_threshold(base_threshold), base_finger_slip(base_finger_slip), sensitivity(sensitivity),
+          timeout(timeout) {};
 
     GestureDirection target_direction = 0;
     int finger_count                  = 0;
