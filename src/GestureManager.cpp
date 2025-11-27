@@ -4,6 +4,7 @@
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/managers/HookSystemManager.hpp>
@@ -562,9 +563,9 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
 
 bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     const bool VERTANIMS =
-        g_pCompositor->m_lastMonitor->m_activeWorkspace->m_renderOffset->getConfig()->pValues->internalStyle ==
+        Desktop::focusState()->monitor()->m_activeWorkspace->m_renderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        g_pCompositor->m_lastMonitor->m_activeWorkspace->m_renderOffset->getConfig()
+        Desktop::focusState()->monitor()->m_activeWorkspace->m_renderOffset->getConfig()
             ->pValues->internalStyle.starts_with("slidevert");
 
     const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
@@ -735,7 +736,7 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         g_pCompositor->getMonitorFromName(!ev.device->m_boundOutput.empty() ? ev.device->m_boundOutput : "");
 
     this->m_lastTouchedMonitor =
-        this->m_lastTouchedMonitor ? this->m_lastTouchedMonitor : g_pCompositor->m_lastMonitor.lock();
+        this->m_lastTouchedMonitor ? this->m_lastTouchedMonitor : Desktop::focusState()->monitor();
 
     const auto& monitorPos  = this->m_lastTouchedMonitor->m_position;
     const auto& monitorSize = this->m_lastTouchedMonitor->m_size;
