@@ -3,6 +3,7 @@ name = "hyprgrass"
 authors = ["horriblename"]
 commit_pins = [
     # Hyprland commit                          ,  hyprgrass commit
+    ["379ee99c681d45626604ad0253527438960ed374", "bcbe929cca73f273f3a5927298851662c31ef27c"],
     ["e93fbd7c4f991cb8ef03e433ccc4d43587923e15", "091d0e9a9877d08d5d4f51eb71e255b8c78ffd89"],
     ["fe7b748eb668136dd0558b7c8279bfcd7ab4d759", "091d0e9a9877d08d5d4f51eb71e255b8c78ffd89"],
     ["cba1ade848feac44b2eda677503900639581c3f4", "f888dab948219197e2870cfd261b6f87690484a7"], # v0.40.0

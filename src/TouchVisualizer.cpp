@@ -1,5 +1,6 @@
 #include "TouchVisualizer.hpp"
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 
 CBox boxAroundCenter(Vector2D center, double radius) {
@@ -43,7 +44,7 @@ void Visualizer::onRender() {
         return;
     }
 
-    const auto monitor = g_pCompositor->m_lastMonitor.lock();
+    const auto monitor = Desktop::focusState()->monitor();
 
     // HACK: should not damage monitor, however, I don't understand jackshit
     // about damage so here we are.
@@ -60,7 +61,7 @@ void Visualizer::onRender() {
 }
 
 void Visualizer::onTouchDown(ITouch::SDownEvent ev) {
-    auto mon = g_pCompositor->m_lastMonitor.lock();
+    auto mon = Desktop::focusState()->monitor();
     this->finger_positions.emplace(ev.touchID, FingerPos{ev.pos * mon->m_pixelSize + mon->m_position, std::nullopt});
     g_pCompositor->scheduleFrameForMonitor(mon);
 }
@@ -68,11 +69,11 @@ void Visualizer::onTouchDown(ITouch::SDownEvent ev) {
 void Visualizer::onTouchUp(ITouch::SUpEvent ev) {
     this->damageFinger(ev.touchID);
     this->finger_positions.erase(ev.touchID);
-    g_pCompositor->scheduleFrameForMonitor(g_pCompositor->m_lastMonitor.lock());
+    g_pCompositor->scheduleFrameForMonitor(Desktop::focusState()->monitor());
 }
 
 void Visualizer::onTouchMotion(ITouch::SMotionEvent ev) {
-    auto mon                           = g_pCompositor->m_lastMonitor.lock();
+    auto mon                           = Desktop::focusState()->monitor();
     this->finger_positions[ev.touchID] = {ev.pos * mon->m_pixelSize + mon->m_position, std::nullopt};
     g_pCompositor->scheduleFrameForMonitor(mon);
 }
