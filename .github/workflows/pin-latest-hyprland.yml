@@ -2,7 +2,7 @@ name: "Update hyprpm pin on latest Hyprland release"
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * 0" # weekly on Sunday 00:00
+    - cron: "0 0 * * *" # daily at midnight
 jobs:
   pin-latest-hyprland:
     runs-on: ubuntu-latest
