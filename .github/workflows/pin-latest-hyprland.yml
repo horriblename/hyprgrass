@@ -44,9 +44,14 @@ jobs:
               git config user.name "github-actions[bot]"
               git config user.email "github-actions[bot]@users.noreply.github.com"
               
-              # Tag the specific hyprgrass commit
-              git tag "$TAG_NAME" "$HYPRGRASS_COMMIT"
-              git push origin "$TAG_NAME"
+              # Tag the specific hyprgrass commit (if tag doesn't exist)
+              if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+                echo "Tag $TAG_NAME already exists, skipping"
+              else
+                git tag "$TAG_NAME" "$HYPRGRASS_COMMIT"
+                git push origin "$TAG_NAME"
+                echo "Successfully created and pushed tag $TAG_NAME"
+              fi
             else
               echo "Could not extract hyprgrass commit, skipping tag creation"
             fi
