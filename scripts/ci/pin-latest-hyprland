@@ -57,5 +57,7 @@ sed -i "/## DO NOT EDIT THIS LINE: for auto pin script ##/ i\    $commitPin" \
 
 echoerr 'done updating hyprpm.toml'
 
-# Output the Hyprland tag to stdout for the CI workflow
-echo "$hlTag"
+# Output tag and commit info for the CI workflow (one per line)
+# Format: hyprland_tag hyprgrass_commit
+hyprgrassCommit="$(echo "$commitPin" | grep -oE '"[a-f0-9]{40}"' | tail -1 | tr -d '"')"
+echo "$hlTag $hyprgrassCommit"

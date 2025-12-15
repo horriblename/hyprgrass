@@ -26,41 +26,43 @@ jobs:
           set -m   # workaround: I get "fg: no job control" even though I don't use any job control
           git fetch --depth=1 --tags origin main
 
-          # Run pin-latest-hyprland and capture the Hyprland tag
-          HL_TAG=$(./scripts/ci/pin-latest-hyprland origin/main)
-          echo "hl_tag=$HL_TAG" >> $GITHUB_OUTPUT
+          # Run pin-latest-hyprland and capture output
+          PIN_OUTPUT=$(./scripts/ci/pin-latest-hyprland origin/main)
           
-          # If a new pin was added, tag the pinned hyprgrass commit
-          if [ -n "$HL_TAG" ]; then
-            # Extract the hyprgrass commit from the last added line in hyprpm.toml
-            # The pin is added before the "DO NOT EDIT" line
-            # sed explanation: exchange pattern and hold space on each line, print and quit when we hit the marker
-            # This gets us the line before the marker, then we extract the second (hyprgrass) commit hash
-            HYPRGRASS_COMMIT=$(sed -n '/## DO NOT EDIT THIS LINE: for auto pin script ##/{x;p;d;}; x' hyprpm.toml | grep -oE '"[a-f0-9]{40}"' | tail -1 | tr -d '"')
-            
-            if [ -n "$HYPRGRASS_COMMIT" ]; then
-              # Strip 'v' prefix from version if present for consistent tag naming
-              VERSION="${HL_TAG#v}"
-              TAG_NAME="hl-${VERSION}"
-              echo "Tagging hyprgrass commit $HYPRGRASS_COMMIT with $TAG_NAME"
-              
-              # Configure git
-              git config user.name "github-actions[bot]"
-              git config user.email "github-actions[bot]@users.noreply.github.com"
-              
-              # Tag the specific hyprgrass commit (if tag doesn't exist)
-              if [ -n "$(git tag -l "$TAG_NAME")" ]; then
-                echo "Tag $TAG_NAME already exists, skipping"
-              else
-                git tag "$TAG_NAME" "$HYPRGRASS_COMMIT"
-                git push origin "$TAG_NAME"
-                echo "Successfully created and pushed tag $TAG_NAME"
-              fi
-            else
-              echo "Could not extract hyprgrass commit, skipping tag creation"
-            fi
+          # Parse output: "hyprland_tag hyprgrass_commit"
+          if [ -n "$PIN_OUTPUT" ]; then
+            HL_TAG=$(echo "$PIN_OUTPUT" | cut -d' ' -f1)
+            HYPRGRASS_COMMIT=$(echo "$PIN_OUTPUT" | cut -d' ' -f2)
+            echo "hl_tag=$HL_TAG" >> $GITHUB_OUTPUT
+            echo "hyprgrass_commit=$HYPRGRASS_COMMIT" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Tag pinned commit
+        if: steps.update_pins.outputs.hl_tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          
+          HL_TAG="${{ steps.update_pins.outputs.hl_tag }}"
+          HYPRGRASS_COMMIT="${{ steps.update_pins.outputs.hyprgrass_commit }}"
+          
+          # Strip 'v' prefix from version if present for consistent tag naming
+          VERSION="${HL_TAG#v}"
+          TAG_NAME="hl-${VERSION}"
+          echo "Tagging hyprgrass commit $HYPRGRASS_COMMIT with $TAG_NAME"
+          
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Tag the specific hyprgrass commit (if tag doesn't exist)
+          if [ -n "$(git tag -l "$TAG_NAME")" ]; then
+            echo "Tag $TAG_NAME already exists, skipping"
           else
-            echo "No new pin added, skipping tag creation"
+            git tag "$TAG_NAME" "$HYPRGRASS_COMMIT"
+            git push origin "$TAG_NAME"
+            echo "Successfully created and pushed tag $TAG_NAME"
           fi
 
       - name: Create Pull Request
