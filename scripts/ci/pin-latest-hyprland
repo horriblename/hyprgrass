@@ -56,3 +56,6 @@ sed -i "/## DO NOT EDIT THIS LINE: for auto pin script ##/ i\    $commitPin" \
     hyprpm.toml
 
 echoerr 'done updating hyprpm.toml'
+
+# Output the Hyprland tag to stdout for the CI workflow
+echo "$hlTag"

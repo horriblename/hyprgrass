@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history so we can tag any commit
       - uses: cachix/install-nix-action@v30
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
@@ -15,14 +17,42 @@ jobs:
             extra-substituters = https://hyprland.cachix.org
             extra-trusted-public-keys = hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc=
       - name: Update pins
+        id: update_pins
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -eu
           set -m   # workaround: I get "fg: no job control" even though I don't use any job control
           git fetch --depth=1 --tags origin main
 
-          ./scripts/ci/pin-latest-hyprland origin/main
+          # Run pin-latest-hyprland and capture the Hyprland tag
+          HL_TAG=$(./scripts/ci/pin-latest-hyprland origin/main)
+          echo "hl_tag=$HL_TAG" >> $GITHUB_OUTPUT
+          
+          # If a new pin was added, tag the pinned hyprgrass commit
+          if [ -n "$HL_TAG" ]; then
+            # Extract the hyprgrass commit from the last added line in hyprpm.toml
+            # The pin is added before the "DO NOT EDIT" line
+            HYPRGRASS_COMMIT=$(sed -n '/## DO NOT EDIT THIS LINE: for auto pin script ##/{x;p;d;}; x' hyprpm.toml | grep -oE '"[a-f0-9]{40}"' | tail -1 | tr -d '"')
+            
+            if [ -n "$HYPRGRASS_COMMIT" ]; then
+              TAG_NAME="hl-${HL_TAG}"
+              echo "Tagging hyprgrass commit $HYPRGRASS_COMMIT with $TAG_NAME"
+              
+              # Configure git
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              
+              # Tag the specific hyprgrass commit
+              git tag "$TAG_NAME" "$HYPRGRASS_COMMIT"
+              git push origin "$TAG_NAME"
+            else
+              echo "Could not extract hyprgrass commit, skipping tag creation"
+            fi
+          else
+            echo "No new pin added, skipping tag creation"
+          fi
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
