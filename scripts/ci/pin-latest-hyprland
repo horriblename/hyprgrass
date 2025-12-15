@@ -56,3 +56,8 @@ sed -i "/## DO NOT EDIT THIS LINE: for auto pin script ##/ i\    $commitPin" \
     hyprpm.toml
 
 echoerr 'done updating hyprpm.toml'
+
+hgTag="hl-$hlTag"
+echoerr "creating tag ${hgTag} on $HYPRGRASS_REV"
+git tag "$hgTag" "$HYPRGRASS_REV"
+git push origin "$hgTag"
