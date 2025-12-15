@@ -43,6 +43,7 @@ commit_pins = [
     ["127aab815908ecbd3db4d23f127d2e96b79855f9", "faedd0064291c353a204ba568f52b15a3cc1aa85"], # g_pUnifiedWorkspaceSwipe
     ["71a1216abcc7031776630a6d88f105605c4dc1c9", "ad51f4649a1c054d788fb6ce2a2bfcdfac28d524"], # v0.51.1
     ["967c3c7404d4fa00234e29c70df3e263386d2597", "6cdf08a423d8a51b15ca83a1cd3877b225407ab3"], # v0.52.1
+    ["386376400119dd46a767c9f8c8791fd22c7b6e61", "8c57cc1cb13361774ddde67bfc75ab04e9b13f28"], # v0.52.2
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
