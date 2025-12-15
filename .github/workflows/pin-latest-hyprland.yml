@@ -34,10 +34,14 @@ jobs:
           if [ -n "$HL_TAG" ]; then
             # Extract the hyprgrass commit from the last added line in hyprpm.toml
             # The pin is added before the "DO NOT EDIT" line
+            # sed explanation: exchange pattern and hold space on each line, print and quit when we hit the marker
+            # This gets us the line before the marker, then we extract the second (hyprgrass) commit hash
             HYPRGRASS_COMMIT=$(sed -n '/## DO NOT EDIT THIS LINE: for auto pin script ##/{x;p;d;}; x' hyprpm.toml | grep -oE '"[a-f0-9]{40}"' | tail -1 | tr -d '"')
             
             if [ -n "$HYPRGRASS_COMMIT" ]; then
-              TAG_NAME="hl-${HL_TAG}"
+              # Strip 'v' prefix from version if present for consistent tag naming
+              VERSION="${HL_TAG#v}"
+              TAG_NAME="hl-${VERSION}"
               echo "Tagging hyprgrass commit $HYPRGRASS_COMMIT with $TAG_NAME"
               
               # Configure git
@@ -45,7 +49,7 @@ jobs:
               git config user.email "github-actions[bot]@users.noreply.github.com"
               
               # Tag the specific hyprgrass commit (if tag doesn't exist)
-              if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+              if [ -n "$(git tag -l "$TAG_NAME")" ]; then
                 echo "Tag $TAG_NAME already exists, skipping"
               else
                 git tag "$TAG_NAME" "$HYPRGRASS_COMMIT"
