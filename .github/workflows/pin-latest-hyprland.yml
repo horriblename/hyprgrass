@@ -31,10 +31,16 @@ jobs:
           
           # Parse output: "hyprland_tag hyprgrass_commit"
           if [ -n "$PIN_OUTPUT" ]; then
-            HL_TAG=$(echo "$PIN_OUTPUT" | cut -d' ' -f1)
-            HYPRGRASS_COMMIT=$(echo "$PIN_OUTPUT" | cut -d' ' -f2)
-            echo "hl_tag=$HL_TAG" >> $GITHUB_OUTPUT
-            echo "hyprgrass_commit=$HYPRGRASS_COMMIT" >> $GITHUB_OUTPUT
+            # Validate output format (should have 2 space-separated values)
+            WORD_COUNT=$(echo "$PIN_OUTPUT" | wc -w)
+            if [ "$WORD_COUNT" -eq 2 ]; then
+              HL_TAG=$(echo "$PIN_OUTPUT" | cut -d' ' -f1)
+              HYPRGRASS_COMMIT=$(echo "$PIN_OUTPUT" | cut -d' ' -f2)
+              echo "hl_tag=$HL_TAG" >> $GITHUB_OUTPUT
+              echo "hyprgrass_commit=$HYPRGRASS_COMMIT" >> $GITHUB_OUTPUT
+            else
+              echo "Warning: Unexpected output format from pin-latest-hyprland: '$PIN_OUTPUT'"
+            fi
           fi
 
       - name: Tag pinned commit
