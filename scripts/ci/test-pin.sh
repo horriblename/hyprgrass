@@ -29,6 +29,7 @@ worktreeDir="pin-build"
 
 {
 	git worktree add "$worktreeDir" "$hyprgrassCommit"
+	trap "git worktree remove --force '$worktreeDir'" EXIT INT HUP TERM
 	cd "$worktreeDir"
 	git fetch --unshallow
 
@@ -38,7 +39,6 @@ worktreeDir="pin-build"
 	nix build --no-link '.#hyprgrassWithTests'
 
 	cd ..
-	git worktree remove --force "$worktreeDir"
 } >&2 # avoid cluttering stdout
 
 echo "[\"${hyprlandCommit}\", \"${hyprgrassCommit}\"], # ${hyprlandRev}"
