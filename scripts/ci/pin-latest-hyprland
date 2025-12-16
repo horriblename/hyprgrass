@@ -41,13 +41,15 @@ echoerr "found latest Hyprland release: $hlTag"
 hlCommit="$(getHyprlandCommitFromRev "$hlTag")"
 echoerr "-> commit: $hlCommit"
 
+hgCommit="$(git rev-parse "$HYPRGRASS_REV")"
+
 if findHyprpmPin "$hlCommit"; then
     echoerr "pin for tag $hlTag already found in hyprpm.toml"
     exit 0
 fi
 
 echoerr "building and testing..."
-commitPin="$("$SCRIPT_DIR/test-pin.sh" "$hlTag" "$HYPRGRASS_REV")"
+commitPin="$("$SCRIPT_DIR/test-pin.sh" "$hlTag" "$hgCommit")"
 
 echoerr "pin tests passed: $commitPin"
 echoerr 'updating hyprpm.toml'
@@ -59,5 +61,4 @@ echoerr 'done updating hyprpm.toml'
 
 # Output tag and commit info for the CI workflow (one per line)
 # Format: hyprland_tag hyprgrass_commit
-hyprgrassCommit="$(echo "$commitPin" | grep -oE '"[a-f0-9]{40,64}"' | tail -1 | tr -d '"')"
-echo "$hlTag $hyprgrassCommit"
+echo "$hlTag $hgCommit"
