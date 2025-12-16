@@ -66,7 +66,7 @@ jobs:
           if [ -n "$(git tag -l "$TAG_NAME")" ]; then
             echo "Tag $TAG_NAME already exists, skipping"
           else
-            git tag "$TAG_NAME" "$HYPRGRASS_COMMIT"
+            git tag "$TAG_NAME" "$HYPRGRASS_COMMIT" --message "Hyprland-${HL_TAG}"
             git push origin "$TAG_NAME"
             echo "Successfully created and pushed tag $TAG_NAME"
           fi
