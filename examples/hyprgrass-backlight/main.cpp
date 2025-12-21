@@ -9,7 +9,7 @@
 #include <hyprgraphics/color/Color.hpp>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
-#include <hyprland/src/debug/Log.hpp>
+#include <hyprland/src/debug/log/Logger.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/version.h>
@@ -147,9 +147,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     if (hlVersion.hash != hlTargetVersion) {
         HyprlandAPI::addNotification(PHANDLE, "Mismatched Hyprland version! check logs for details",
                                      CHyprColor(s_pluginColor, 1.0), 5000);
-        Debug::log(ERR, "[hyprgrass] version mismatch!");
-        Debug::log(ERR, "[hyprgrass] | hyprgrass was built against: {}", hlTargetVersion);
-        Debug::log(ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion.hash);
+        Log::logger->log(Log::ERR, "[hyprgrass] version mismatch!");
+        Log::logger->log(Log::ERR, "[hyprgrass] | hyprgrass was built against: {}", hlTargetVersion);
+        Log::logger->log(Log::ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion.hash);
     }
 
     g_pGlobalState  = std::make_unique<GlobalState>();
@@ -161,7 +161,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     static auto P3 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "hyprgrass:edgeEnd", onEdgeEnd);
 
     if (!P1 || !P2 || !P3) {
-        Debug::log(LOG, "[hyprgrass backlight] something went wrong: could not register hooks");
+        Log::logger->log(Log::DEBUG, "[hyprgrass backlight] something went wrong: could not register hooks");
     }
 
     HyprlandAPI::reloadConfig();

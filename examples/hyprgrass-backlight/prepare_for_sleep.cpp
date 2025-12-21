@@ -1,6 +1,6 @@
 #include "prepare_for_sleep.h"
 
-#include <hyprland/src/debug/Log.hpp>
+#include <hyprland/src/debug/log/Logger.hpp>
 #include <gio/gio.h>
 
 namespace {
@@ -9,7 +9,7 @@ class PrepareForSleep {
   PrepareForSleep() {
     login1_connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, nullptr, nullptr);
     if (login1_connection == nullptr) {
-      Debug::log(ERR, "Unable to connect to the SYSTEM Bus!...");
+      Log::logger->log(Log::ERR, "Unable to connect to the SYSTEM Bus!...");
     } else {
       login1_id = g_dbus_connection_signal_subscribe(
           login1_connection, "org.freedesktop.login1", "org.freedesktop.login1.Manager",
