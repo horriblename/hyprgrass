@@ -92,8 +92,8 @@ static HookResult emitOneHook(const SCallbackFNPtr& cb, std::any data, std::vect
     } catch (std::exception& e) {
         // TODO: this works only once...?
         faultyHandles.push_back(cb.handle);
-        Debug::log(
-            ERR, "[hookSystem] Hook from plugin {:x} caused a SIGSEGV, queueing for unloading.",
+        Log::logger->log(
+            Log::ERR, "[hookSystem] Hook from plugin {:x} caused a SIGSEGV, queueing for unloading.",
             rc<uintptr_t>(cb.handle)
         );
     }
@@ -233,7 +233,7 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             ->getDataStaticPtr();
     static auto PGAPSINDATA = CConfigValue<Hyprlang::CUSTOMTYPE>("general:gaps_in");
 
-    Debug::log(LOG, "[hyprgrass] Drag gesture begin: {}", gev.to_string());
+    Log::logger->log(Log::DEBUG, "[hyprgrass] Drag gesture begin: {}", gev.to_string());
 
     auto const workspace_swipe_edge_str = std::string{*WORKSPACE_SWIPE_EDGE};
 
@@ -377,7 +377,7 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 }
 
 bool GestureManager::findGestureBind(std::string bind, GestureEventType type) const {
-    Debug::log(LOG, "[hyprgrass] Looking for binds matching: {}", bind);
+    Log::logger->log(Log::DEBUG, "[hyprgrass] Looking for binds matching: {}", bind);
 
     auto allBinds   = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
     const auto MODS = g_pInputManager->getModsFromAllKBs();
@@ -404,7 +404,7 @@ bool GestureManager::findGestureBind(std::string bind, GestureEventType type) co
 // pressed only matters for mouse binds: only start of drag gestures should set it to true
 bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) {
     bool found = false;
-    Debug::log(LOG, "[hyprgrass] Looking for binds matching: {}", bind);
+    Log::logger->log(Log::DEBUG, "[hyprgrass] Looking for binds matching: {}", bind);
 
     auto allBinds   = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
     const auto MODS = g_pInputManager->getModsFromAllKBs();
@@ -426,20 +426,20 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
 
         // Should never happen, as we check in the ConfigManager, but oh well
         if (DISPATCHER == g_pKeybindManager->m_dispatchers.end()) {
-            Debug::log(ERR, "Invalid handler in a keybind! (handler {} does not exist)", k->handler);
+            Log::logger->log(Log::ERR, "Invalid handler in a keybind! (handler {} does not exist)", k->handler);
             continue;
         }
 
         switch (type) {
             case GestureEventType::COMPLETED:
                 if (k->handler != "mouse") {
-                    Debug::log(LOG, "[hyprgrass] calling dispatcher ({})", bind);
+                    Log::logger->log(Log::DEBUG, "[hyprgrass] calling dispatcher ({})", bind);
                     DISPATCHER->second(k->arg);
                     found = found || !k->nonConsuming;
                 }
             default:
                 if (k->handler == "mouse") {
-                    Debug::log(LOG, "[hyprgrass] calling mouse dispatcher ({})", bind);
+                    Log::logger->log(Log::DEBUG, "[hyprgrass] calling mouse dispatcher ({})", bind);
                     char pressed = type == GestureEventType::DRAG_BEGIN ? '1' : '0';
                     DISPATCHER->second(pressed + k->arg);
                     found = found || !k->nonConsuming;
@@ -522,7 +522,7 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
         return;
     }
 
-    Debug::log(LOG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
+    Log::logger->log(Log::DEBUG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
     switch (gev.type) {
         case DragGestureType::SWIPE:
             if (this->hookHandled) {
@@ -895,7 +895,7 @@ Vector2D GestureManager::pixelToTrackpadDistance(wf::touch::point_t distancePx) 
 void GestureManager::touchBindDispatcher(std::string args) {
     auto argsSplit = splitString(args, ',', 4);
     if (argsSplit.size() < 4) {
-        Debug::log(ERR, "touchBind called with not enough args: {}", args);
+        Log::logger->log(Log::ERR, "touchBind called with not enough args: {}", args);
         return;
     }
     const auto _modifier      = trim(argsSplit[0]);
@@ -911,9 +911,9 @@ void GestureManager::touchBindDispatcher(std::string args) {
 }
 
 void GestureManager::debugLog(const std::string& msg) {
-    Debug::log(LOG, "[hyprgrass] " + msg);
+    Log::logger->log(Log::DEBUG, "[hyprgrass] " + msg);
 }
 
 void hyprgrass_debug(const std::string& s) {
-    Debug::log(LOG, "[hyprgrass] [debug] {}", s);
+    Log::logger->log(Log::DEBUG, "[hyprgrass] [debug] {}", s);
 }
