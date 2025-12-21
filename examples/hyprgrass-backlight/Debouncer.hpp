@@ -1,5 +1,5 @@
 
-#include "src/debug/Log.hpp"
+#include "src/debug/log/Logger.hpp"
 #include <functional>
 #include <wayland-server-core.h>
 #include <wayland-server.h>
@@ -26,7 +26,7 @@ class Debouncer {
         if (timer_source_) {
             wl_event_source_timer_update(timer_source_, delay_ms_);
         } else {
-            Debug::log(ERR, "could not create wl timer source");
+            Log::logger->log(Log::ERR, "could not create wl timer source");
         }
     }
 

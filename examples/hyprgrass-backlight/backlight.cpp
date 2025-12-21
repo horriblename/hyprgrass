@@ -1,6 +1,6 @@
 #include "backlight.hpp"
 
-#include <hyprland/src/debug/Log.hpp>
+#include <hyprland/src/debug/log/Logger.hpp>
 #include <sys/epoll.h>
 
 #include <cmath>
@@ -18,7 +18,7 @@ class FileDescriptor {
   ~FileDescriptor() {
     if (fd_ != -1) {
       if (close(fd_) != 0) {
-        Debug::log(ERR, "Failed to close fd: {}", errno);
+        Log::logger->log(Log::ERR, "Failed to close fd: {}", errno);
       }
     }
   }
