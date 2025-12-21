@@ -1,6 +1,6 @@
 #include "pulse.hpp"
 #include "pulse/thread-mainloop.h"
-#include "src/debug/Log.hpp"
+#include "src/debug/log/Logger.hpp"
 
 #include <pulse/def.h>
 #include <pulse/error.h>
@@ -53,7 +53,7 @@ void AudioBackend::connectContext() {
     }
     pa_context_set_state_callback(context_, contextStateCb, this);
     if (pa_context_connect(context_, nullptr, PA_CONTEXT_NOFAIL, nullptr) < 0) {
-        Debug::log(ERR, "pa_context_connect() failed: {}", pa_strerror(pa_context_errno(context_)));
+        Log::logger->log(Log::ERR, "pa_context_connect() failed: {}", pa_strerror(pa_context_errno(context_)));
     }
 }
 
@@ -132,7 +132,7 @@ void AudioBackend::sinkInfoCb(pa_context* /*context*/, const pa_sink_info* i, in
 
     auto running = i->state == PA_SINK_RUNNING;
     auto idle    = i->state == PA_SINK_IDLE;
-    Debug::log(TRACE, "Sink name {} Running:[{}] Idle:[{}]", i->name, running, idle);
+    Log::logger->log(Log::TRACE, "Sink name {} Running:[{}] Idle:[{}]", i->name, running, idle);
 
     auto* backend = static_cast<AudioBackend*>(data);
 
