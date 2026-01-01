@@ -3,7 +3,6 @@
   meson,
   ninja,
   pkg-config,
-  hyprland,
   hyprlandPlugins,
   libpulseaudio,
   tag,
@@ -14,7 +13,6 @@ hyprlandPlugins.mkHyprlandPlugin {
   version = "${tag}+${commit}";
   src = ./..;
 
-  inherit hyprland;
   nativeBuildInputs = [ninja meson pkg-config];
 
   buildInputs = [libpulseaudio];
