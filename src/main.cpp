@@ -95,6 +95,20 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
     int startDataIdx = 3;
     uint32_t modMask = 0;
     float deltaScale = 1.F;
+    bool disableInhibit = false;
+
+
+    const int prefix_size = std::size(KEYWORD_HG_GESTURE);
+    for (const auto arg : std::string(LHS).substr(prefix_size)) {
+        switch (arg) {
+            case 'p':
+                disableInhibit = true;
+                break;
+            default:
+                result.setError("hyprgrass-gesture: invalid flag");
+                return result;
+        }
+    }
 
     while (true) {
 
@@ -127,43 +141,43 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
             makeUnique<CDispatcherTrackpadGesture>(
                 std::string{data[startDataIdx + 1]}, data.join(",", startDataIdx + 2)
             ),
-            pattern.fingers, pattern.direction, modMask, deltaScale
+            pattern.fingers, pattern.direction, modMask, deltaScale, disableInhibit
         );
     else if (data[startDataIdx] == "workspace")
         resultFromGesture = handler->addGesture(
-            makeUnique<CWorkspaceSwipeGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale
+            makeUnique<CWorkspaceSwipeGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale, disableInhibit
         );
     else if (data[startDataIdx] == "resize")
         // this handler halves the deltaScale
         resultFromGesture = handler->addGesture(
-            makeUnique<CResizeTrackpadGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale * 2
+            makeUnique<CResizeTrackpadGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale * 2, disableInhibit
         );
     else if (data[startDataIdx] == "move")
         // this handler halves the deltaScale
         resultFromGesture = handler->addGesture(
-            makeUnique<CMoveTrackpadGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale * 2
+            makeUnique<CMoveTrackpadGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale * 2, disableInhibit
         );
     else if (data[startDataIdx] == "special")
         resultFromGesture = handler->addGesture(
             makeUnique<CSpecialWorkspaceGesture>(std::string{data[startDataIdx + 1]}), pattern.fingers,
-            pattern.direction, modMask, deltaScale
+            pattern.direction, modMask, deltaScale, disableInhibit
         );
     else if (data[startDataIdx] == "close")
         resultFromGesture = handler->addGesture(
-            makeUnique<CCloseTrackpadGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale
+            makeUnique<CCloseTrackpadGesture>(), pattern.fingers, pattern.direction, modMask, deltaScale, disableInhibit
         );
     else if (data[startDataIdx] == "float")
         resultFromGesture = handler->addGesture(
             makeUnique<CFloatTrackpadGesture>(std::string{data[startDataIdx + 1]}), pattern.fingers, pattern.direction,
-            modMask, deltaScale
+            modMask, deltaScale, disableInhibit
         );
     else if (data[startDataIdx] == "fullscreen")
         resultFromGesture = handler->addGesture(
             makeUnique<CFullscreenTrackpadGesture>(std::string{data[startDataIdx + 1]}), pattern.fingers,
-            pattern.direction, modMask, deltaScale
+            pattern.direction, modMask, deltaScale, disableInhibit
         );
     else if (data[startDataIdx] == "unset")
-        resultFromGesture = handler->removeGesture(pattern.fingers, pattern.direction, modMask, deltaScale);
+        resultFromGesture = handler->removeGesture(pattern.fingers, pattern.direction, modMask, deltaScale, disableInhibit);
     else {
         result.setError(std::format("Invalid gesture: {}", data[startDataIdx]).c_str());
         return result;
@@ -339,7 +353,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigKeyword(
         PHANDLE, KEYWORD_HG_BIND, hyrgrassBindKeyword, Hyprlang::SHandlerOptions{.allowFlags = true}
     );
-    HyprlandAPI::addConfigKeyword(PHANDLE, KEYWORD_HG_GESTURE, hyprgrassGestureKeyword, Hyprlang::SHandlerOptions{});
+    HyprlandAPI::addConfigKeyword(PHANDLE, KEYWORD_HG_GESTURE, hyprgrassGestureKeyword, Hyprlang::SHandlerOptions{true});
     static auto P0 = HyprlandAPI::registerCallbackDynamic(
         PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) { onPreConfigReload(); }
     );

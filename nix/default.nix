@@ -3,7 +3,6 @@
   cmake,
   meson,
   ninja,
-  hyprland,
   hyprlandPlugins,
   wf-touch,
   doctest,
@@ -16,7 +15,6 @@ hyprlandPlugins.mkHyprlandPlugin {
   version = "${tag}+${commit}";
   src = ./..;
 
-  inherit hyprland;
   nativeBuildInputs = [cmake ninja meson] ++ lib.optional runTests doctest;
 
   buildInputs = [wf-touch doctest];
