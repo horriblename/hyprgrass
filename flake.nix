@@ -50,12 +50,11 @@
     };
 
     devShells = withPkgsFor (system: pkgs: let
-      mkHyprgrassShell = withExtras: shellHook:
+      mkHyprgrassShell = withExtras:
         pkgs.mkShell.override {inherit (pkgs.hyprland) stdenv;} {
           shellHook = ''
             meson setup build -Dbuildtype=debug -Dhyprgrass-pulse=true -Dhyprgrass-backlight=true --reconfigure
             sed -e 's/c++23/c++2b/g' ./build/compile_commands.json > ./compile_commands.json
-            ${shellHook}
           '';
           name = "hyprgrass-shell";
           nativeBuildInputs = with pkgs; [meson pkg-config ninja];
@@ -66,18 +65,8 @@
           ];
         };
     in {
-      default = mkHyprgrassShell false "";
-      withExtras = mkHyprgrassShell true "";
-      clangd = mkHyprgrassShell false ''
-        cat <<EOF > .clangd
-        # AUTOMATICALLY GENERATED
-        CompileFlags:
-            Add:
-              - "-I${pkgs.llvmPackages.libcxx.dev}/include/c++/v1"
-              - "-I${toString pkgs.gcc.cc}/lib/gcc/x86_64-unknown-linux-gnu/${pkgs.gcc.version}/include/"
-              - "-D__cpp_concepts=202002L"
-        EOF
-      '';
+      default = mkHyprgrassShell false;
+      withExtras = mkHyprgrassShell true;
     });
 
     formatter = withPkgsFor (_: pkgs: pkgs.alejandra);
