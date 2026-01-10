@@ -47,6 +47,7 @@ commit_pins = [
     ["6175ecd4c4ba817c4620f66a75e1e11da7c7a8ca", "54ef915f34611701ccc0b3d11a63c9cc56b99cc4"], # Logger changes
     ["ea444c35bb23b6e34505ab6753e069de7801cc25", "569e28f30b5e68ddb0da65248259b8fe2c1ff9a0"], # v0.53.0
     ["f8464866ebacb8d17b37bab77c4ff9b1c1a34371", "b09a8450ea8207ab5cb3e2ea075390b95534cd2b"], # gesture inhibit
+    ["ab1d80f3d6aebd57a0971b53a1993b1c1dfe0b09", "569e28f30b5e68ddb0da65248259b8fe2c1ff9a0"], # v0.53.1
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
