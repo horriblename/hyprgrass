@@ -166,7 +166,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         Log::logger->log(Log::DEBUG, "[hyprgrass backlight] something went wrong: could not register hooks");
     }
     */
-    HyprlandAPI::addNotification(PHANDLE, "hyprgrass-backlight no longer works with the new hook system", CHyprColor(s_pluginColor, 1.0), 5000);
+    HyprlandAPI::addNotification(PHANDLE, "hyprgrass-backlight is currently broken with the new hook system", CHyprColor(s_pluginColor, 1.0), 5000);
 
     HyprlandAPI::reloadConfig();
 
