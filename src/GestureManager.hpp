@@ -2,7 +2,6 @@
 #include "./gestures/Gestures.hpp"
 #include "ShimTrackpadGestures.hpp"
 #include "VecSet.hpp"
-#include "src/plugins/PluginAPI.hpp"
 
 #define private public
 #include <hyprland/src/config/ConfigDataValues.hpp>
@@ -59,7 +58,6 @@ class GestureManager : public IGestureManager {
         CCssGapData old_gaps_in;
     } resizeOnBorderInfo;
     bool workspaceSwipeActive                = false;
-    HANDLE hookHandled                       = nullptr;
     CTrackpadGestures* activeTrackpadGesture = nullptr;
     // used by emulate_touchpad_swipe and trackpadGesture* functions
     wf::touch::point_t emulatedSwipePoint;

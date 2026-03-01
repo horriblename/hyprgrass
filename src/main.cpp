@@ -1,15 +1,13 @@
 #include "GestureManager.hpp"
 #include "TouchVisualizer.hpp"
 #include "globals.hpp"
-#include "src/SharedDefs.hpp"
-#include "src/managers/HookSystemManager.hpp"
 #include "version.hpp"
 
-#include <any>
 #define private public
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/debug/log/Logger.hpp>
+#include <hyprland/src/event/EventBus.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
@@ -22,6 +20,7 @@
 #include <hyprland/src/managers/input/trackpad/gestures/SpecialWorkspaceGesture.hpp>
 #include <hyprland/src/managers/input/trackpad/gestures/WorkspaceSwipeGesture.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/SharedDefs.hpp>
 #include <hyprland/src/version.h>
 
 #include <hyprlang.hpp>
@@ -41,9 +40,7 @@ inline std::unique_ptr<Visualizer> g_pVisualizer;
 
 static bool g_unloading = false;
 
-void hkOnTouchDown(void* _, SCallbackInfo& cbinfo, std::any e) {
-    auto ev = std::any_cast<ITouch::SDownEvent>(e);
-
+void hkOnTouchDown(ITouch::SDownEvent ev, Event::SCallbackInfo& cbinfo) {
     static auto const VISUALIZE =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
             ->getDataStaticPtr();
@@ -53,9 +50,7 @@ void hkOnTouchDown(void* _, SCallbackInfo& cbinfo, std::any e) {
     cbinfo.cancelled = g_pGestureManager->onTouchDown(ev);
 }
 
-void hkOnTouchUp(void* _, SCallbackInfo& cbinfo, std::any e) {
-    auto ev = std::any_cast<ITouch::SUpEvent>(e);
-
+void hkOnTouchUp(ITouch::SUpEvent ev, Event::SCallbackInfo& cbinfo) {
     static auto const VISUALIZE =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
             ->getDataStaticPtr();
@@ -65,9 +60,7 @@ void hkOnTouchUp(void* _, SCallbackInfo& cbinfo, std::any e) {
     cbinfo.cancelled = g_pGestureManager->onTouchUp(ev);
 }
 
-void hkOnTouchMove(void* _, SCallbackInfo& cbinfo, std::any e) {
-    auto ev = std::any_cast<ITouch::SMotionEvent>(e);
-
+void hkOnTouchMove(ITouch::SMotionEvent ev, Event::SCallbackInfo& cbinfo) {
     static auto const VISUALIZE =
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
             ->getDataStaticPtr();
@@ -242,26 +235,6 @@ SDispatchResult listInternalBinds(std::string) {
     return SDispatchResult{.success = true};
 }
 
-SDispatchResult listHooks(std::string event) {
-    Log::logger->log(Log::DEBUG, "[hyprgrass] Listing hooks:");
-
-    if (event != "") {
-        const auto* vec = g_pHookSystem->getVecForEvent(event);
-        Log::logger->log(Log::DEBUG, "[hyprgrass] listeners of {}: {}", event, vec->size());
-        return SDispatchResult{.success = true};
-    }
-
-    const auto* vec = g_pHookSystem->getVecForEvent("hyprgrass:edgeBegin");
-    Log::logger->log(Log::DEBUG, "[hyprgrass] | edgeBegin listeners: {}", vec->size());
-
-    vec = g_pHookSystem->getVecForEvent("hyprgrass:edgeUpdate");
-    Log::logger->log(Log::DEBUG, "[hyprgrass] | edgeUpdate listeners: {}", vec->size());
-
-    vec = g_pHookSystem->getVecForEvent("hyprgrass:edgeEnd");
-    Log::logger->log(Log::DEBUG, "[hyprgrass] | edgeEnd listeners: {}", vec->size());
-    return SDispatchResult{.success = true};
-}
-
 Hyprlang::CParseResult hyrgrassBindKeyword(const char* K, const char* V) {
     std::string v = V;
     auto vars     = CVarList(v, 4);
@@ -354,9 +327,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         PHANDLE, KEYWORD_HG_BIND, hyrgrassBindKeyword, Hyprlang::SHandlerOptions{.allowFlags = true}
     );
     HyprlandAPI::addConfigKeyword(PHANDLE, KEYWORD_HG_GESTURE, hyprgrassGestureKeyword, Hyprlang::SHandlerOptions{true});
-    static auto P0 = HyprlandAPI::registerCallbackDynamic(
-        PHANDLE, "preConfigReload", [&](void* self, SCallbackInfo& info, std::any data) { onPreConfigReload(); }
-    );
+    static auto P0 = Event::bus()->m_events.config.preReload.listen([&] { onPreConfigReload(); });
 
     HyprlandAPI::addDispatcherV2(PHANDLE, "touchBind", [&](std::string args) {
         HyprlandAPI::addNotification(
@@ -370,7 +341,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     });
 
     HyprlandAPI::addDispatcherV2(PHANDLE, "hyprgrass:debug:binds", listInternalBinds);
-    HyprlandAPI::addDispatcherV2(PHANDLE, "hyprgrass:debug:hooks", listHooks);
 
     const std::string hlTargetVersion = __hyprland_api_get_hash();
     const std::string hlVersion       = __hyprland_api_get_client_hash();
@@ -384,12 +354,10 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         Log::logger->log(Log::ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion);
     }
 
-    static auto P1 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchDown", hkOnTouchDown);
-    static auto P2 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchUp", hkOnTouchUp);
-    static auto P3 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "touchMove", hkOnTouchMove);
-    static auto P4 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "render", [](void*, SCallbackInfo, std::any arg) {
-        onRenderStage(std::any_cast<eRenderStage>(arg));
-    });
+    static auto P1 = Event::bus()->m_events.input.touch.down.listen(hkOnTouchDown);
+    static auto P2 = Event::bus()->m_events.input.touch.up.listen(hkOnTouchUp);
+    static auto P3 = Event::bus()->m_events.input.touch.motion.listen(hkOnTouchMove);
+    static auto P4 = Event::bus()->m_events.render.stage.listen(onRenderStage);
 
     HyprlandAPI::reloadConfig();
 
