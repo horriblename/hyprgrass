@@ -50,6 +50,7 @@ commit_pins = [
     ["ab1d80f3d6aebd57a0971b53a1993b1c1dfe0b09", "569e28f30b5e68ddb0da65248259b8fe2c1ff9a0"], # v0.53.1
     ["dd220efe7b1e292415bd0ea7161f63df9c95bfd3", "569e28f30b5e68ddb0da65248259b8fe2c1ff9a0"], # v0.53.3
     ["b88813c7efa4b7b0c5fe01471c5fa5b67a61dc7e", "9704a03b9225be592f5a841a46c051fc5edf245b"], # HookSystem refactor
+    ["0002f148c9a4fe421a9d33c0faa5528cdc411e62", "80c83c451de83fe2a31a12d4baf2d6c856bb438d"], # v0.54.0
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
