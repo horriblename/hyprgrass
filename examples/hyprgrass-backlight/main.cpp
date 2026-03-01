@@ -2,13 +2,13 @@
 #include "Debouncer.hpp"
 #include "globals.hpp"
 #include "backlight.hpp"
-#include "src/SharedDefs.hpp"
 
 #include <any>
 #include <cstdlib>
 #include <hyprgraphics/color/Color.hpp>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/event/EventBus.hpp>
 #include <hyprland/src/debug/log/Logger.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
@@ -34,7 +34,7 @@ std::unique_ptr<GlobalState> g_pGlobalState;
 constexpr int ORIGIN_CHAR_INDEX    = 5;
 constexpr int DIRECTION_CHAR_INDEX = 7;
 
-void onEdgeBegin(void*, SCallbackInfo& cbinfo, std::any args) {
+void onEdgeBegin(void*, Event::SCallbackInfo& cbinfo, std::any args) {
     auto ev = std::any_cast<std::pair<std::string, Vector2D>>(args);
 
     static auto const SWIPE_EDGE =
@@ -81,14 +81,14 @@ void onEdgeBegin(void*, SCallbackInfo& cbinfo, std::any args) {
     cbinfo.cancelled = true;
 }
 
-void onEdgeUpdate(void*, SCallbackInfo& cbinfo, std::any args) {
+void onEdgeUpdate(void*, Event::SCallbackInfo& cbinfo, std::any args) {
     auto pos = std::any_cast<Vector2D>(args);
 
     g_pGlobalState->latest_pos = pos;
     g_pDebouncer->start();
 }
 
-void onEdgeEnd(void*, SCallbackInfo& cbinfo, std::any args) {
+void onEdgeEnd(void*, Event::SCallbackInfo& cbinfo, std::any args) {
     g_pDebouncer->disarm();
 }
 
@@ -156,6 +156,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     g_pBackend = std::make_shared<BacklightBackend>();
     g_pDebouncer    = std::make_unique<Debouncer>(g_pCompositor->m_wlEventLoop, 16, onDebounceTrigger);
 
+    // FIXME: figure out custom events for new hook system
+    /*
     static auto P1 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "hyprgrass:edgeBegin", onEdgeBegin);
     static auto P2 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "hyprgrass:edgeUpdate", onEdgeUpdate);
     static auto P3 = HyprlandAPI::registerCallbackDynamic(PHANDLE, "hyprgrass:edgeEnd", onEdgeEnd);
@@ -163,6 +165,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     if (!P1 || !P2 || !P3) {
         Log::logger->log(Log::DEBUG, "[hyprgrass backlight] something went wrong: could not register hooks");
     }
+    */
+    HyprlandAPI::addNotification(PHANDLE, "hyprgrass-backlight is currently broken with the new hook system", CHyprColor(s_pluginColor, 1.0), 5000);
 
     HyprlandAPI::reloadConfig();
 
