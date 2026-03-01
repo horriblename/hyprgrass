@@ -49,7 +49,7 @@ commit_pins = [
     ["f8464866ebacb8d17b37bab77c4ff9b1c1a34371", "b09a8450ea8207ab5cb3e2ea075390b95534cd2b"], # gesture inhibit
     ["ab1d80f3d6aebd57a0971b53a1993b1c1dfe0b09", "569e28f30b5e68ddb0da65248259b8fe2c1ff9a0"], # v0.53.1
     ["dd220efe7b1e292415bd0ea7161f63df9c95bfd3", "569e28f30b5e68ddb0da65248259b8fe2c1ff9a0"], # v0.53.3
-    ["b88813c7efa4b7b0c5fe01471c5fa5b67a61dc7e", "67fc488f95d4ef30feb3c082c5014f08260f0228"], # HookSystem refactor
+    ["b88813c7efa4b7b0c5fe01471c5fa5b67a61dc7e", "9704a03b9225be592f5a841a46c051fc5edf245b"], # HookSystem refactor
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
