@@ -1,4 +1,5 @@
 #include "gestures/DragGesture.hpp"
+#include "src/managers/input/trackpad/GestureTypes.hpp"
 #include <string>
 
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -55,6 +56,9 @@ struct ShimTrackpadGestures {
 
     // maybe making a function returning std::array would be better? idk
     CTrackpadGestures gestures[4];
+
+    static bool isPinch(eTrackpadGestureDirection dir);
+    static bool isSingleDirection(eTrackpadGestureDirection dir);
 };
 
 inline std::unique_ptr<ShimTrackpadGestures> g_pShimTrackpadGestures;

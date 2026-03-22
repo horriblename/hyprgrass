@@ -120,10 +120,11 @@ class PinchAction : public wf::touch::gesture_action_t {
     /**
      * Create a new pinch action.
      *
-     * @param threshold The threshold to be exceeded.
-     * Example: if the threshold is 0.2,
-     * - you need to pinch in to 80% of the initial size (1.0 - 0.2 = 0.8)
-     * - you need to pinch out to 120% of the initial size (1.0 + 0.2)
+     * Thresholds are based on the concept of spans.
+     *
+     * Span is the average distance between touch points through the focal point;
+     * i.e. the diameter of the circle with a radius of the average deviation from
+     * the focal point.
      */
     PinchAction(float base_threshold, const float* sensitivity)
         : base_threshold(base_threshold), sensitivity(sensitivity) {}
