@@ -32,18 +32,21 @@ static bool g_unloading = false;
 static UP<BacklightBackend> g_pBackend;
 
 void onDebounceTrigger() {
+    static auto const PSWIPEDIST =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
+            ->getDataStaticPtr();
+
     if (g_pGlobalState->accumulated_delta == 0.0) {
         return;
     }
 
     // TODO: make configurable
-    const double MAX_RANGE       = 0.7; // how much percent of the screen to swipe to get from volume 0 to 100
     const int MAX_BRIGHTNESS_PCT = 100;
 
-    float delta       = g_pGlobalState->accumulated_delta;
-    ChangeType change = delta > 0.0 ? ChangeType::Increase : ChangeType::Decrease;
+    float delta       = std::abs(g_pGlobalState->accumulated_delta);
+    ChangeType change = g_pGlobalState->accumulated_delta > 0.0 ? ChangeType::Increase : ChangeType::Decrease;
 
-    double steps = MAX_BRIGHTNESS_PCT * (delta / MAX_RANGE);
+    double steps = MAX_BRIGHTNESS_PCT * (delta / **PSWIPEDIST);
 
     if (!(ChangeType::Decrease == change && g_pBackend->get_scaled_brightness("") - steps <= 1)) {
         g_pBackend->set_brightness("", change, steps);
