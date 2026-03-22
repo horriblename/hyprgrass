@@ -5,6 +5,7 @@
 #include "version.hpp"
 #include <charconv>
 #include <expected>
+#include <stdexcept>
 #include <system_error>
 
 #define private public
@@ -182,8 +183,23 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
     else if (data[startDataIdx] == "emulate_touchpad") {
         const auto fingersStr = data[startDataIdx + 1];
         uint32_t fingers      = 0;
-        auto [ptr, err]       = std::from_chars(fingersStr.data(), fingersStr.data() + fingersStr.size(), fingers);
-        eTrackpadGestureDirection dir = g_pTrackpadGestures->dirForString(data[startDataIdx + 2]);
+
+        if (fingersStr == "") {
+            fingers = pattern.fingers;
+        } else {
+            try {
+                fingers = std::stoul(std::string(fingersStr));
+            } catch (std::invalid_argument) {
+                result.setError(
+                    std::format("Argument for emulate_touchpad expects a number, got: {}", fingersStr).c_str()
+                );
+                return result;
+            }
+        }
+
+        eTrackpadGestureDirection dir = data[startDataIdx + 2] == ""
+                                            ? pattern.direction
+                                            : g_pTrackpadGestures->dirForString(data[startDataIdx + 2]);
         if (ShimTrackpadGestures::isPinch(pattern.direction) != ShimTrackpadGestures::isPinch(dir)) {
             if (ShimTrackpadGestures::isPinch(dir)) {
                 result.setError("emulate_touchpad: pinch gestures need to be bound to pinch touch direction");
@@ -195,15 +211,10 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
             return result;
         }
 
-        if (err == std::errc{} && ptr == fingersStr.data() + fingersStr.size()) {
-            resultFromGesture = std::expected(handler->addGesture(
-                makeUnique<EmulateTouchpadGesture>(fingers, dir), pattern.fingers, pattern.direction, modMask,
-                deltaScale, disableInhibit
-            ));
-        } else {
-            result.setError(std::format("Argument for emulate_touchpad expects a number, got: {}", fingersStr).c_str());
-            return result;
-        }
+        resultFromGesture = std::expected(handler->addGesture(
+            makeUnique<EmulateTouchpadGesture>(fingers, dir), pattern.fingers, pattern.direction, modMask, deltaScale,
+            disableInhibit
+        ));
     } else {
         result.setError(std::format("Invalid gesture: {}", data[startDataIdx]).c_str());
         return result;

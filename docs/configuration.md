@@ -184,19 +184,24 @@ emulate_touchpad
 
 #### `emulate_touchpad` action
 
-This action emulates touchpad gestures. It takes two arguements:
+This action emulates touchpad gestures. It takes two optional arguements:
 
 ```hyprlang
 fingers, direction
 ```
 
 Both arguments are as described in
-[Hyprland wiki](https://wiki.hypr.land/Configuring/Gestures/#available-gestures)
+[Hyprland wiki](https://wiki.hypr.land/Configuring/Gestures/#available-gestures).
+If omitted, the same finger count and/or direction for the touch gesture you
+bind to is used.
 
 Example:
 
 ```hyprland
 hyprgrass-gesture = swipe, 3, down, emulate_touchpad, 4, up
+
+# this is the same as ...emulate_touchpad, 3, down
+hyprgrass-gesture = swipe, 3, down, emulate_touchpad
 ```
 
 #### hyprgrass-gesture Examples
