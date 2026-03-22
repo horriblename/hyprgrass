@@ -41,10 +41,9 @@ class EmulateTouchpadGesture : public ITrackpadGesture {
             return;
         }
 
-        uint32_t time = e.swipe ? e.swipe->timeMs : e.pinch->timeMs;
         if (ShimTrackpadGestures::isPinch(this->direction)) {
             IPointer::SPinchUpdateEvent pinch = {
-                .timeMs  = time,
+                .timeMs  = e.pinch->timeMs,
                 .fingers = this->fingers,
                 .delta   = e.pinch->delta,
             };
@@ -52,7 +51,7 @@ class EmulateTouchpadGesture : public ITrackpadGesture {
         } else {
             IPointer::SSwipeUpdateEvent swipe = {
                 .timeMs  = e.swipe->timeMs,
-                .fingers = e.swipe->fingers,
+                .fingers = this->fingers,
                 .delta   = e.swipe->delta,
             };
             g_pInputManager->onSwipeUpdate(swipe);
