@@ -1,3 +1,4 @@
+#include "src/helpers/memory/Memory.hpp"
 #include "src/managers/input/trackpad/gestures/ITrackpadGesture.hpp"
 #include <hyprutils/math/Vector2D.hpp>
 
@@ -13,7 +14,6 @@ class BacklightGesture : public ITrackpadGesture {
 };
 
 struct GlobalState {
-    Vector2D last_triggered_pos = {0, 0};
-    Vector2D accumulated_delta  = {0, 0};
+    float accumulated_delta = 0.0;
 };
-inline std::unique_ptr<GlobalState> g_pGlobalState;
+inline UP<GlobalState> g_pGlobalState;

@@ -55,4 +55,4 @@ class Debouncer {
     struct wl_event_source* timer_source_;
 };
 
-inline std::unique_ptr<Debouncer> g_pDebouncer;
+inline UP<Debouncer> g_pDebouncer;

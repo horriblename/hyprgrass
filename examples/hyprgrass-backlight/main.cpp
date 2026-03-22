@@ -19,8 +19,8 @@
 #include <hyprlang.hpp>
 #include <hyprutils/math/Vector2D.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
+#include <hyprutils/memory/UniquePtr.hpp>
 #include <hyprutils/string/ConstVarList.hpp>
-#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -29,35 +29,19 @@ const std::string GESTURE_KEYWORD        = "backlight-gesture";
 
 static bool g_unloading = false;
 
-std::shared_ptr<BacklightBackend> g_pBackend;
-
-static bool boolXor(bool a, bool b) {
-    return a != b;
-}
+static UP<BacklightBackend> g_pBackend;
 
 void onDebounceTrigger() {
-    static auto const SWIPE_EDGE =
-        (Hyprlang::STRING const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:hyprgrass-backlight:edge")
-            ->getDataStaticPtr();
-
-    if (g_pGlobalState->accumulated_delta == g_pGlobalState->last_triggered_pos) {
+    if (g_pGlobalState->accumulated_delta == 0.0) {
         return;
     }
-
-    const char configEdge = *SWIPE_EDGE[0];
 
     // TODO: make configurable
     const double MAX_RANGE       = 0.7; // how much percent of the screen to swipe to get from volume 0 to 100
     const int MAX_BRIGHTNESS_PCT = 100;
 
-    bool const vert_swipe = configEdge == 'l' || configEdge == 'r';
-    const double last_triggered =
-        vert_swipe ? g_pGlobalState->last_triggered_pos.y : g_pGlobalState->last_triggered_pos.x;
-
-    const double latest = vert_swipe ? g_pGlobalState->accumulated_delta.y : g_pGlobalState->accumulated_delta.x;
-
-    double delta      = std::abs(latest - last_triggered);
-    ChangeType change = boolXor(vert_swipe, latest >= last_triggered) ? ChangeType::Increase : ChangeType::Decrease;
+    float delta       = g_pGlobalState->accumulated_delta;
+    ChangeType change = delta > 0.0 ? ChangeType::Increase : ChangeType::Decrease;
 
     double steps = MAX_BRIGHTNESS_PCT * (delta / MAX_RANGE);
 
@@ -67,7 +51,7 @@ void onDebounceTrigger() {
         g_pBackend->set_scaled_brightness("", 1);
     }
 
-    g_pGlobalState->last_triggered_pos = g_pGlobalState->accumulated_delta;
+    g_pGlobalState->accumulated_delta = 0.0;
 }
 
 static Hyprlang::CParseResult gestureKeyword(const char* LHS, const char* RHS) {
@@ -129,13 +113,18 @@ static Hyprlang::CParseResult gestureKeyword(const char* LHS, const char* RHS) {
         break;
     }
 
-    std::expected<void, std::string> resultFromParse;
+    std::expected<void, std::string> resultFromGesture;
 
-    if (data[startDataIdx] == "dispatcher")
-        resultFromParse = g_pTrackpadGestures->addGesture(
-            makeUnique<BacklightGesture>(std::string{data[startDataIdx + 1]}, data.join(",", startDataIdx + 2)),
-            fingers, direction, modMask, deltaScale, disableInhibit
+    if (data[startDataIdx] == "backlight")
+        resultFromGesture = g_pTrackpadGestures->addGesture(
+            makeUnique<BacklightGesture>(), fingers, direction, modMask, deltaScale, disableInhibit
         );
+    else if (data[startDataIdx] == "unset")
+        resultFromGesture = g_pTrackpadGestures->removeGesture(fingers, direction, modMask, deltaScale, disableInhibit);
+    else {
+        result.setError(std::format("Invalid gesture: {}", data[startDataIdx]).c_str());
+        return result;
+    }
 
     return result;
 }
@@ -148,10 +137,6 @@ APICALL EXPORT std::string PLUGIN_API_VERSION() {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
-    HyprlandAPI::addConfigValue(
-        PHANDLE, "plugin:hyprgrass-backlight:edge", Hyprlang::CConfigValue((Hyprlang::STRING) "r")
-    );
-
     const auto hlTargetVersion = GIT_COMMIT_HASH;
     const auto hlVersion       = HyprlandAPI::getHyprlandVersion(PHANDLE);
 
@@ -159,22 +144,19 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         HyprlandAPI::addNotification(
             PHANDLE, "Mismatched Hyprland version! check logs for details", CHyprColor(s_pluginColor, 1.0), 5000
         );
-        Log::logger->log(Log::ERR, "[hyprgrass] version mismatch!");
-        Log::logger->log(Log::ERR, "[hyprgrass] | hyprgrass was built against: {}", hlTargetVersion);
-        Log::logger->log(Log::ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion.hash);
+        Log::logger->log(Log::ERR, "[hyprgrass-backlight] version mismatch!");
+        Log::logger->log(Log::ERR, "[hyprgrass-backlight] | hyprgrass was built against: {}", hlTargetVersion);
+        Log::logger->log(Log::ERR, "[hyprgrass-backlight] | actual hyprland version: {}", hlVersion.hash);
     }
 
+    g_pGlobalState = makeUnique<GlobalState>();
+    g_pBackend     = makeUnique<BacklightBackend>();
+    g_pDebouncer   = makeUnique<Debouncer>(g_pCompositor->m_wlEventLoop, 16, onDebounceTrigger);
+
+    g_pGlobalState->accumulated_delta = 1.0;
+
     HyprlandAPI::addConfigKeyword(
-        PHANDLE, GESTURE_KEYWORD, gestureKeyword, Hyprlang::SHandlerOptions{.allowFlags = false}
-    );
-
-    g_pGlobalState = std::make_unique<GlobalState>();
-    g_pBackend     = std::make_shared<BacklightBackend>();
-    g_pDebouncer   = std::make_unique<Debouncer>(g_pCompositor->m_wlEventLoop, 16, onDebounceTrigger);
-
-    HyprlandAPI::addNotification(
-        PHANDLE, "hyprgrass-backlight is currently broken with the new hook system", CHyprColor(s_pluginColor, 1.0),
-        5000
+        PHANDLE, GESTURE_KEYWORD, gestureKeyword, Hyprlang::SHandlerOptions{.allowFlags = true}
     );
 
     HyprlandAPI::reloadConfig();
