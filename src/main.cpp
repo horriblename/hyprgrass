@@ -1,4 +1,4 @@
-#include "EmulateTouchpadAction.hpp"
+#include "EmulateTouchpadGesture.hpp"
 #include "GestureManager.hpp"
 #include "TouchVisualizer.hpp"
 #include "globals.hpp"
@@ -180,10 +180,10 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
         resultFromGesture =
             handler->removeGesture(pattern.fingers, pattern.direction, modMask, deltaScale, disableInhibit);
     else if (data[startDataIdx] == "emulate_touchpad") {
-        const auto fingersStr = data[startDataIdx + 3];
+        const auto fingersStr = data[startDataIdx + 1];
         uint32_t fingers      = 0;
         auto [ptr, err]       = std::from_chars(fingersStr.data(), fingersStr.data() + fingersStr.size(), fingers);
-        eTrackpadGestureDirection dir = g_pTrackpadGestures->dirForString(data[1]);
+        eTrackpadGestureDirection dir = g_pTrackpadGestures->dirForString(data[startDataIdx + 2]);
         if (ShimTrackpadGestures::isPinch(pattern.direction) != ShimTrackpadGestures::isPinch(dir)) {
             if (ShimTrackpadGestures::isPinch(dir)) {
                 result.setError("emulate_touchpad: pinch gestures need to be bound to pinch touch direction");
