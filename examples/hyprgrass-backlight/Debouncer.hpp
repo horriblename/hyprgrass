@@ -54,3 +54,5 @@ class Debouncer {
     Callback callback_;
     struct wl_event_source* timer_source_;
 };
+
+inline std::unique_ptr<Debouncer> g_pDebouncer;
