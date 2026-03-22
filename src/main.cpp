@@ -184,22 +184,14 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
         const auto fingersStr = data[startDataIdx + 1];
         uint32_t fingers      = 0;
 
-        if (fingersStr == "") {
-            fingers = pattern.fingers;
-        } else {
-            try {
-                fingers = std::stoul(std::string(fingersStr));
-            } catch (std::invalid_argument) {
-                result.setError(
-                    std::format("Argument for emulate_touchpad expects a number, got: {}", fingersStr).c_str()
-                );
-                return result;
-            }
+        try {
+            fingers = std::stoul(std::string(fingersStr));
+        } catch (std::invalid_argument) {
+            result.setError(std::format("Argument for emulate_touchpad expects a number, got: {}", fingersStr).c_str());
+            return result;
         }
 
-        eTrackpadGestureDirection dir = data[startDataIdx + 2] == ""
-                                            ? pattern.direction
-                                            : g_pTrackpadGestures->dirForString(data[startDataIdx + 2]);
+        eTrackpadGestureDirection dir = g_pTrackpadGestures->dirForString(data[startDataIdx + 2]);
         if (ShimTrackpadGestures::isPinch(pattern.direction) != ShimTrackpadGestures::isPinch(dir)) {
             if (ShimTrackpadGestures::isPinch(dir)) {
                 result.setError("emulate_touchpad: pinch gestures need to be bound to pinch touch direction");
