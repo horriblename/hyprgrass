@@ -168,6 +168,7 @@ The following **actions** are currently supported (see
 for details):
 
 ```text
+# inherited from Hyprland
 dispatcher
 workspace
 move
@@ -176,6 +177,26 @@ special
 close
 fullscreen
 float
+
+# exclusive for Hyprgrass, see below
+emulate_touchpad
+```
+
+#### `emulate_touchpad` action
+
+This action emulates touchpad gestures. It takes two arguements:
+
+```hyprlang
+fingers, direction
+```
+
+Both arguments are as described in
+[Hyprland wiki](https://wiki.hypr.land/Configuring/Gestures/#available-gestures)
+
+Example:
+
+```hyprland
+hyprgrass-gesture = swipe, 3, down, emulate_touchpad, 4, up
 ```
 
 #### hyprgrass-gesture Examples
