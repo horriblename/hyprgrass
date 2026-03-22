@@ -1,6 +1,5 @@
 #include "Gesture.hpp"
 #include "Debouncer.hpp"
-#include "src/debug/log/Logger.hpp"
 
 static bool isVert(eTrackpadGestureDirection dir) {
     switch (dir) {
@@ -15,13 +14,13 @@ static bool isVert(eTrackpadGestureDirection dir) {
 
 void BacklightGesture::begin(const STrackpadGestureBegin& e) {
     const bool vert = isVert(e.direction);
-    g_pGlobalState->accumulated_delta += vert ? e.swipe->delta.y : e.swipe->delta.x;
+    g_pGlobalState->accumulated_delta += vert ? -e.swipe->delta.y : e.swipe->delta.x;
     g_pDebouncer->start();
 }
 
 void BacklightGesture::update(const STrackpadGestureUpdate& e) {
     const bool vert = isVert(e.direction);
-    g_pGlobalState->accumulated_delta += vert ? e.swipe->delta.y : e.swipe->delta.x;
+    g_pGlobalState->accumulated_delta += vert ? -e.swipe->delta.y : e.swipe->delta.x;
     g_pDebouncer->start();
 }
 
