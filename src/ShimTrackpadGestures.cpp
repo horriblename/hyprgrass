@@ -1,4 +1,5 @@
 #include "ShimTrackpadGestures.hpp"
+#include "gestures/DragGesture.hpp"
 #include <charconv>
 
 static std::expected<void, std::string> parseFingers(const std::string_view& s, size_t& fingers) {
@@ -13,7 +14,7 @@ static std::expected<void, std::string> parseFingers(const std::string_view& s, 
     return {};
 }
 
-static bool isSingleDirection(eTrackpadGestureDirection dir) {
+bool ShimTrackpadGestures::isSingleDirection(eTrackpadGestureDirection dir) {
     switch (dir) {
         case TRACKPAD_GESTURE_DIR_LEFT:
         case TRACKPAD_GESTURE_DIR_RIGHT:
@@ -25,7 +26,7 @@ static bool isSingleDirection(eTrackpadGestureDirection dir) {
     }
 }
 
-static bool isPinch(eTrackpadGestureDirection dir) {
+bool ShimTrackpadGestures::isPinch(eTrackpadGestureDirection dir) {
     switch (dir) {
         case TRACKPAD_GESTURE_DIR_PINCH:
         case TRACKPAD_GESTURE_DIR_PINCH_IN:
@@ -54,13 +55,13 @@ std::expected<GestureConfig, std::string> parseGesturePattern(CConstVarList& var
         }
 
         direction = g_pTrackpadGestures->dirForString(vars[2]);
-        if (isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE) {
+        if (ShimTrackpadGestures::isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE) {
             return std::unexpected(std::format("invalid direction for a swipe gesture: {}", vars[2]));
         }
     } else if (vars[0] == "edge") {
         type        = DragGestureType::EDGE_SWIPE;
         auto origin = g_pTrackpadGestures->dirForString(vars[1]);
-        if (!isSingleDirection(origin)) {
+        if (!ShimTrackpadGestures::isSingleDirection(origin)) {
             return std::unexpected(
                 std::format("invalid ORIGIN for an edge gesture, expected a single direction, got {}", vars[1])
             );
@@ -69,7 +70,7 @@ std::expected<GestureConfig, std::string> parseGesturePattern(CConstVarList& var
         fingersOrOrigin = toHyprgrassDirection(origin);
 
         direction = g_pTrackpadGestures->dirForString(vars[2]);
-        if (isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE) {
+        if (ShimTrackpadGestures::isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE) {
             return std::unexpected(std::format("invalid direction for an edge gesture: {}", vars[2]));
         }
     } else if (vars[0] == "longpress") {
