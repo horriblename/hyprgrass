@@ -3,10 +3,8 @@
 #include "TouchVisualizer.hpp"
 #include "globals.hpp"
 #include "version.hpp"
-#include <charconv>
 #include <expected>
 #include <stdexcept>
-#include <system_error>
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
@@ -47,32 +45,14 @@ inline std::unique_ptr<Visualizer> g_pVisualizer;
 static bool g_unloading = false;
 
 void hkOnTouchDown(ITouch::SDownEvent ev, Event::SCallbackInfo& cbinfo) {
-    static auto const VISUALIZE =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
-            ->getDataStaticPtr();
-
-    if (**VISUALIZE)
-        g_pVisualizer->onTouchDown(ev);
     cbinfo.cancelled = g_pGestureManager->onTouchDown(ev);
 }
 
 void hkOnTouchUp(ITouch::SUpEvent ev, Event::SCallbackInfo& cbinfo) {
-    static auto const VISUALIZE =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
-            ->getDataStaticPtr();
-
-    if (**VISUALIZE)
-        g_pVisualizer->onTouchUp(ev);
     cbinfo.cancelled = g_pGestureManager->onTouchUp(ev);
 }
 
 void hkOnTouchMove(ITouch::SMotionEvent ev, Event::SCallbackInfo& cbinfo) {
-    static auto const VISUALIZE =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
-            ->getDataStaticPtr();
-
-    if (**VISUALIZE)
-        g_pVisualizer->onTouchMotion(ev);
     cbinfo.cancelled = g_pGestureManager->onTouchMove(ev);
 }
 
@@ -228,16 +208,6 @@ static void onPreConfigReload() {
         for (auto& g : g_pShimTrackpadGestures->gestures) {
             g.clearGestures();
         }
-    }
-}
-
-void onRenderStage(eRenderStage stage) {
-    static auto const VISUALIZE =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:debug:visualize_touch")
-            ->getDataStaticPtr();
-
-    if (stage == RENDER_LAST_MOMENT && **VISUALIZE) {
-        g_pVisualizer->onRender();
     }
 }
 
@@ -399,13 +369,11 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     static auto P1 = Event::bus()->m_events.input.touch.down.listen(hkOnTouchDown);
     static auto P2 = Event::bus()->m_events.input.touch.up.listen(hkOnTouchUp);
     static auto P3 = Event::bus()->m_events.input.touch.motion.listen(hkOnTouchMove);
-    static auto P4 = Event::bus()->m_events.render.stage.listen(onRenderStage);
 
     HyprlandAPI::reloadConfig();
 
     g_pGestureManager       = std::make_unique<GestureManager>();
     g_pShimTrackpadGestures = std::make_unique<ShimTrackpadGestures>();
-    g_pVisualizer           = std::make_unique<Visualizer>();
 
     return {"hyprgrass", "Touchscreen gestures", "horriblename", HYPRGRASS_VERSION};
 }
