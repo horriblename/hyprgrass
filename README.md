@@ -55,31 +55,6 @@ goes wrong (e.g. update needed)
 see [hyprland wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/#hyprpm) for
 more info
 
-### Install via Hyprload
-
-(hyprload is deprecated, please use hyprpm instead)
-
-1. install all [dependencies](#dependencies)
-2. install hyprload by following the instructions
-   [here](https://github.com/Duckonaut/hyprload#Installing)
-3. put this in `~/.config/hypr/hyprload.toml`:
-
-   ```toml
-   plugins = [
-       "horriblename/hyprgrass",
-   ]
-   ```
-
-4. run this command:
-
-   ```bash
-   # install the plugins
-   hyprctl dispatch hyprload install
-
-   # load plugins
-   hyprctl dispatch hyprload load
-   ```
-
 ### Manual compilation
 
 ```bash
