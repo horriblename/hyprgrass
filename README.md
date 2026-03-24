@@ -64,7 +64,7 @@ me identify issues when reporting crashes.
 git clone https://github.com/horriblename/hyprgrass
 cd hyprgrass
 
-meson setup -Dbuildtype=debug
+meson setup build -Dbuildtype=debug
 meson compile -Cbuild
 
 hyprctl plugin load ./build/src/libhyprgrass.so
