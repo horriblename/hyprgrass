@@ -55,6 +55,26 @@ goes wrong (e.g. update needed)
 see [hyprland wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/#hyprpm) for
 more info
 
+### Debug builds
+
+Debug builds provide a more detailed stack trace during crashes, which can help
+me identify issues when reporting crashes.
+
+For hyprpm:
+
+```bash
+hyprpm disable hyprgrass
+hyprpm enable hyprgrass-debug
+```
+
+For nix, replace your hyprgrass package with:
+
+```nix
+inputs.hyprgrass.packages.${system}.hyprgrass.overrideAttrs {
+    mesonBuildType = "debug";
+}
+```
+
 ### Manual compilation
 
 ```bash
@@ -64,6 +84,7 @@ ninja -C build
 
 On the `meson setup` step you can pass these options:
 
+- `-Dbuildtype=debug` for debug builds
 - `-Dhyprgrass-pulse=true` to enable building hyprgrass-pulse
 
 ### Install via nix
