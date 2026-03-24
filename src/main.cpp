@@ -221,9 +221,13 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
 }
 
 static void onPreConfigReload() {
-    g_pGestureManager->internalBinds.clear();
-    for (auto& g : g_pShimTrackpadGestures->gestures) {
-        g.clearGestures();
+    if (g_pGestureManager)
+        g_pGestureManager->internalBinds.clear();
+
+    if (g_pShimTrackpadGestures) {
+        for (auto& g : g_pShimTrackpadGestures->gestures) {
+            g.clearGestures();
+        }
     }
 }
 
