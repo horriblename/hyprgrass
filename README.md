@@ -70,6 +70,8 @@ meson compile -Cbuild
 hyprctl plugin load ./build/src/libhyprgrass.so
 ```
 
+Attach your crash logs (in `~/.cache/hypr/hyprlandCrashReport{pid}.txt`) when you report a crash.
+
 ### Manual compilation
 
 ```bash
