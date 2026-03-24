@@ -55,30 +55,20 @@ goes wrong (e.g. update needed)
 see [hyprland wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/#hyprpm) for
 more info
 
-### Install via Hyprload
+### Debug builds
 
-(hyprload is deprecated, please use hyprpm instead)
+Debug builds provide a more detailed stack trace during crashes, which can help
+me identify issues when reporting crashes.
 
-1. install all [dependencies](#dependencies)
-2. install hyprload by following the instructions
-   [here](https://github.com/Duckonaut/hyprload#Installing)
-3. put this in `~/.config/hypr/hyprload.toml`:
+```bash
+git clone https://github.com/horriblename/hyprgrass
+cd hyprgrass
 
-   ```toml
-   plugins = [
-       "horriblename/hyprgrass",
-   ]
-   ```
+meson setup -Dbuildtype=debug
+meson compile -Cbuild
 
-4. run this command:
-
-   ```bash
-   # install the plugins
-   hyprctl dispatch hyprload install
-
-   # load plugins
-   hyprctl dispatch hyprload load
-   ```
+hyprctl plugin load ./build/src/libhyprgrass.so
+```
 
 ### Manual compilation
 
@@ -89,6 +79,7 @@ ninja -C build
 
 On the `meson setup` step you can pass these options:
 
+- `-Dbuildtype=debug` for debug builds
 - `-Dhyprgrass-pulse=true` to enable building hyprgrass-pulse
 
 ### Install via nix
