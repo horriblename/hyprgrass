@@ -13,9 +13,10 @@ assignees: ""
 - For compile errors, run `hyprpm update -f -v --no-shallow` or for
   nix/home-manager/nixos-rebuild: add the `-L` flag.
 
-- For runtime crashes, enable logging with
-  `hyprctl keyword debug:disable_logs false` then send the crash report in
-  `.cache/hyprland/hyprlandCrashReport{pid}.txt`
+- For runtime crashes,
+  1. build in [debug mode](/README.md#debug-builds)
+  2. enable logging with `hyprctl keyword debug:disable_logs false`
+  3. send the crash report in `.cache/hyprland/hyprlandCrashReport{pid}.txt`
 
 - For other runtime bugs, if you see something useful in logs after enabling
   them, also attach it

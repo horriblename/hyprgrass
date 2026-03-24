@@ -60,19 +60,14 @@ more info
 Debug builds provide a more detailed stack trace during crashes, which can help
 me identify issues when reporting crashes.
 
-For hyprpm:
-
 ```bash
-hyprpm disable hyprgrass
-hyprpm enable hyprgrass-debug
-```
+git clone https://github.com/horriblename/hyprgrass
+cd hyprgrass
 
-For nix, replace your hyprgrass package with:
+meson setup -Dbuildtype=debug
+meson compile -Cbuild
 
-```nix
-inputs.hyprgrass.packages.${system}.hyprgrass.overrideAttrs {
-    mesonBuildType = "debug";
-}
+hyprctl plugin load ./build/src/libhyprgrass.so
 ```
 
 ### Manual compilation
