@@ -67,7 +67,8 @@ cd hyprgrass
 meson setup build -Dbuildtype=debug
 meson compile -Cbuild
 
-hyprctl plugin load ./build/src/libhyprgrass.so
+# note that relative paths won't work
+hyprctl plugin load "$PWD/build/src/libhyprgrass.so"
 ```
 
 Attach your crash logs (in `~/.cache/hypr/hyprlandCrashReport{pid}.txt`) when you report a crash.
