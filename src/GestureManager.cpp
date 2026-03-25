@@ -4,9 +4,9 @@
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
-#include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/UnifiedWorkspaceSwipeGesture.hpp>
@@ -404,7 +404,9 @@ bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
     const bool VERTANIMS =
         Desktop::focusState()->monitor()->m_activeWorkspace->m_renderOffset->getConfig()->pValues->internalStyle ==
             "slidevert" ||
-        Desktop::focusState()->monitor()->m_activeWorkspace->m_renderOffset->getConfig()
+        Desktop::focusState()
+            ->monitor()
+            ->m_activeWorkspace->m_renderOffset->getConfig()
             ->pValues->internalStyle.starts_with("slidevert");
 
     const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
@@ -571,11 +573,15 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
             ->getDataStaticPtr();
 
-    this->m_lastTouchedMonitor =
-        g_pCompositor->getMonitorFromName(!ev.device->m_boundOutput.empty() ? ev.device->m_boundOutput : "");
+    auto monitor = g_pCompositor->getMonitorFromName(!ev.device->m_boundOutput.empty() ? ev.device->m_boundOutput : "");
+    monitor      = monitor ? monitor : Desktop::focusState()->monitor();
 
-    this->m_lastTouchedMonitor =
-        this->m_lastTouchedMonitor ? this->m_lastTouchedMonitor : Desktop::focusState()->monitor();
+    if (!monitor) {
+        Log::logger->log(Log::ERR, "[hyprgrass] onTouchDown: could not find a monitor???");
+        return false;
+    }
+
+    this->m_lastTouchedMonitor = monitor;
 
     const auto& monitorPos  = this->m_lastTouchedMonitor->m_position;
     const auto& monitorSize = this->m_lastTouchedMonitor->m_size;
@@ -675,6 +681,11 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
 }
 
 bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
+    if (!this->m_lastTouchedMonitor) {
+        Log::logger->log(Log::ERR, "[hyprgrass] onTouchMove: where the fuck is my monitor");
+        return false;
+    }
+
     auto pos = wlrTouchEventPositionAsPixels(ev.pos.x, ev.pos.y);
 
     const wf::touch::gesture_event_t gesture_event = {
