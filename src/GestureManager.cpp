@@ -338,6 +338,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
                 g_pInputManager->onSwipeUpdate(swipe);
                 this->emulatedSwipePoint = currentPoint;
             };
+            return;
 
         case DragGestureType::LONG_PRESS: {
             const auto pos = this->m_sGestureState.get_center().current;
