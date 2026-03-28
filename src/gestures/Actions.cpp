@@ -146,8 +146,8 @@ wf::touch::action_status_t
 OnCompleteAction::update_state(const wf::touch::gesture_state_t& state, const wf::touch::gesture_event_t& event) {
     auto status = this->action->update_state(state, event);
 
-    if (status == wf::touch::ACTION_STATUS_COMPLETED) {
-        this->callback(event.time);
+    if (status == wf::touch::ACTION_STATUS_COMPLETED || status == wf::touch::ACTION_STATUS_CANCELLED) {
+        this->callback(event.time, status == wf::touch::ACTION_STATUS_CANCELLED);
     }
 
     return status;

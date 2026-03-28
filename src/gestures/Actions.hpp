@@ -96,7 +96,7 @@ class LiftAll : public wf::touch::gesture_action_t {
 
 // This action is used to call a function right after another action is completed
 class OnCompleteAction : public wf::touch::gesture_action_t {
-    using Callback = std::function<void(uint32_t)>;
+    using Callback = std::function<void(uint32_t time, bool cancelled)>;
 
   private:
     std::unique_ptr<wf::touch::gesture_action_t> action;
