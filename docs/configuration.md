@@ -28,13 +28,6 @@ plugin {
 
   # in pixels, the distance from the edge that is considered an edge
   edge_margin = 10
-
-  # emulates touchpad swipes when swiping in a direction that does not trigger
-  # workspace swipe. ONLY triggers when finger count is equal to 
-  # workspace_swipe_fingers.
-  #
-  # might be removed in the future in favor of event hooks
-  emulate_touchpad_swipe = false
  }
 }
 ```

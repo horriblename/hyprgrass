@@ -372,6 +372,19 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     HyprlandAPI::reloadConfig();
 
+    const auto EMULATE_TOUCHPAD =
+        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:emulate_touchpad_swipe")
+            ->getDataStaticPtr();
+
+    if (**EMULATE_TOUCHPAD) {
+        HyprlandAPI::addNotification(
+            PHANDLE,
+            "[hyprgrass] plugin:touch_gestures:emulate_touchpad_swipe,\n"
+            "use `hyprgrass-gesture = swipe, <fingers>, <direction>, emulate_touchpad, <fingers>, <direction>`",
+            CHyprColor(0.8, 0.2, 0.2, 1.0), 5000
+        );
+    }
+
     g_pGestureManager       = std::make_unique<GestureManager>();
     g_pShimTrackpadGestures = std::make_unique<ShimTrackpadGestures>();
 
