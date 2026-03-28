@@ -159,44 +159,46 @@ void IGestureManager::addMultiFingerGesture(
 
     auto swipe_ptr = swipe.get();
 
-    auto swipe_and_emit = std::make_unique<OnCompleteAction>(std::move(swipe), [=, this](uint32_t time) {
-        if (this->activeDragGesture.has_value()) {
-            return;
-        }
+    auto swipe_and_emit =
+        std::make_unique<OnCompleteAction>(std::move(swipe), [=, this](uint32_t time, bool cancelled) {
+            if (cancelled || this->activeDragGesture.has_value()) {
+                return;
+            }
 
-        const auto gesture = DragGestureEvent{
-            .time         = time,
-            .type         = DragGestureType::SWIPE,
-            .direction    = swipe_ptr->target_direction,
-            .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
-        };
-
-        if (this->emitDragGesture(gesture)) {
-            this->cancelTouchEventsOnAllWindows();
-        }
-    });
-
-    auto swipe_liftoff   = std::make_unique<LiftoffAction>();
-    auto liftoff_and_ack = std::make_unique<OnCompleteAction>(std::move(swipe_liftoff), [=, this](uint32_t time) {
-        const auto drag = DragGestureEvent{
-            .time         = time,
-            .type         = DragGestureType::SWIPE,
-            .direction    = 0,
-            .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
-        };
-        if (this->emitDragGestureEnd(drag)) {
-            return;
-        } else {
-            const auto gesture = CompletedGestureEvent{
-                .type         = CompletedGestureType::SWIPE,
+            const auto gesture = DragGestureEvent{
+                .time         = time,
+                .type         = DragGestureType::SWIPE,
                 .direction    = swipe_ptr->target_direction,
-                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
+                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
             };
 
-            // cancel event already sent to windows on 3 finger down
-            this->emitCompletedGesture(gesture);
-        }
-    });
+            if (this->emitDragGesture(gesture)) {
+                this->cancelTouchEventsOnAllWindows();
+            }
+        });
+
+    auto swipe_liftoff = std::make_unique<LiftoffAction>();
+    auto liftoff_and_ack =
+        std::make_unique<OnCompleteAction>(std::move(swipe_liftoff), [=, this](uint32_t time, bool _) {
+            const auto drag = DragGestureEvent{
+                .time         = time,
+                .type         = DragGestureType::SWIPE,
+                .direction    = 0,
+                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
+            };
+            if (this->emitDragGestureEnd(drag)) {
+                return;
+            } else {
+                const auto gesture = CompletedGestureEvent{
+                    .type         = CompletedGestureType::SWIPE,
+                    .direction    = swipe_ptr->target_direction,
+                    .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
+                };
+
+                // cancel event already sent to windows on 3 finger down
+                this->emitCompletedGesture(gesture);
+            }
+        });
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
     swipe_actions.emplace_back(std::move(swipe_and_emit));
@@ -234,8 +236,8 @@ void IGestureManager::addLongPress(double base_finger_slip, const float* sensiti
             base_finger_slip, sensitivity, delay,
             [this](uint32_t current_time, uint32_t delay) { this->updateLongPressTimer(current_time, delay); }
         ),
-        [this](uint32_t time) {
-            if (this->activeDragGesture.has_value()) {
+        [this](uint32_t time, bool cancelled) {
+            if (cancelled || this->activeDragGesture.has_value()) {
                 return;
             }
             const auto gesture = DragGestureEvent{
@@ -259,14 +261,15 @@ void IGestureManager::addLongPress(double base_finger_slip, const float* sensiti
         }
     );
 
-    auto lift_all_and_ack = std::make_unique<OnCompleteAction>(std::make_unique<LiftAll>(), [this](uint32_t time) {
-        if (this->activeDragGesture.has_value()) {
-            DragGestureEvent gev = {this->activeDragGesture.value()};
-            gev.time             = time;
-            this->emitDragGestureEnd(gev);
-            return;
-        };
-    });
+    auto lift_all_and_ack =
+        std::make_unique<OnCompleteAction>(std::make_unique<LiftAll>(), [this](uint32_t time, bool _) {
+            if (this->activeDragGesture.has_value()) {
+                DragGestureEvent gev = {this->activeDragGesture.value()};
+                gev.time             = time;
+                this->emitDragGestureEnd(gev);
+                return;
+            };
+        });
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> long_press_actions;
     long_press_actions.emplace_back(std::move(long_press_and_emit));
@@ -284,29 +287,33 @@ void IGestureManager::addEdgeSwipeGesture(
     double base_threshold, double base_finger_slip, const float* sensitivity, const int64_t* timeout,
     const long int* edge_margin
 ) {
-    auto edge            = std::make_unique<CMultiAction>(base_threshold, base_finger_slip, sensitivity, timeout);
-    auto edge_ptr        = edge.get();
-    auto edge_drag_begin = std::make_unique<OnCompleteAction>(std::move(edge), [=, this](uint32_t time) {
-        auto origin_edges = this->find_swipe_edges(m_sGestureState.get_center().origin, *edge_margin);
+    auto edge     = std::make_unique<CMultiAction>(base_threshold, base_finger_slip, sensitivity, timeout);
+    auto edge_ptr = edge.get();
+    auto edge_drag_begin =
+        std::make_unique<OnCompleteAction>(std::move(edge), [=, this](uint32_t time, bool cancelled) {
+            if (cancelled)
+                return;
 
-        if (origin_edges == 0) {
-            return;
-        }
-        auto direction = edge_ptr->target_direction;
-        auto gesture   = DragGestureEvent{
-              .time         = time,
-              .type         = DragGestureType::EDGE_SWIPE,
-              .direction    = direction,
-              .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
-              .edge_origin  = origin_edges
-        };
-        if (this->emitDragGesture(gesture)) {
-            this->cancelTouchEventsOnAllWindows();
-        }
-    });
+            auto origin_edges = this->find_swipe_edges(m_sGestureState.get_center().origin, *edge_margin);
+
+            if (origin_edges == 0) {
+                return;
+            }
+            auto direction = edge_ptr->target_direction;
+            auto gesture   = DragGestureEvent{
+                  .time         = time,
+                  .type         = DragGestureType::EDGE_SWIPE,
+                  .direction    = direction,
+                  .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
+                  .edge_origin  = origin_edges
+            };
+            if (this->emitDragGesture(gesture)) {
+                this->cancelTouchEventsOnAllWindows();
+            }
+        });
     auto release_and_ack = std::make_unique<OnCompleteAction>(
         std::make_unique<wf::touch::touch_action_t>(1, false),
-        [edge_ptr, edge_margin, this](uint32_t time) {
+        [edge_ptr, edge_margin, this](uint32_t time, bool _) {
             auto origin_edges = find_swipe_edges(m_sGestureState.get_center().origin, *edge_margin);
             auto direction    = edge_ptr->target_direction;
             auto dragEvent    = DragGestureEvent{
@@ -357,32 +364,36 @@ void IGestureManager::addEdgeSwipeGesture(
 void IGestureManager::addPinchGesture(double base_threshold, const float* sensitivity, const int64_t* timeout) {
     auto pinch_begin = std::make_unique<PinchAction>(base_threshold, sensitivity);
 
-    auto pinch_wrapper = std::make_unique<OnCompleteAction>(std::move(pinch_begin), [this](uint32_t time) {
-        GestureDirection dir =
-            this->m_sGestureState.get_pinch_scale() < 1.0 ? GESTURE_DIRECTION_OUT : GESTURE_DIRECTION_IN;
+    auto pinch_wrapper =
+        std::make_unique<OnCompleteAction>(std::move(pinch_begin), [this](uint32_t time, bool cancelled) {
+            if (cancelled)
+                return;
 
-        auto gesture = DragGestureEvent{
-            .time         = time,
-            .type         = DragGestureType::PINCH,
-            .direction    = dir,
-            .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
-            .edge_origin  = 0,
-        };
-        if (this->emitDragGesture(gesture)) {
-            this->cancelTouchEventsOnAllWindows();
-            return;
-        }
+            GestureDirection dir =
+                this->m_sGestureState.get_pinch_scale() < 1.0 ? GESTURE_DIRECTION_OUT : GESTURE_DIRECTION_IN;
 
-        auto completed = CompletedGestureEvent{
-            .type         = CompletedGestureType::PINCH,
-            .direction    = dir,
-            .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
-        };
-        if (this->reserveCompletedGesture(completed)) {
-            this->cancelTouchEventsOnAllWindows();
-        }
-    });
-    auto release       = std::make_unique<LiftoffAction>();
+            auto gesture = DragGestureEvent{
+                .time         = time,
+                .type         = DragGestureType::PINCH,
+                .direction    = dir,
+                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
+                .edge_origin  = 0,
+            };
+            if (this->emitDragGesture(gesture)) {
+                this->cancelTouchEventsOnAllWindows();
+                return;
+            }
+
+            auto completed = CompletedGestureEvent{
+                .type         = CompletedGestureType::PINCH,
+                .direction    = dir,
+                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
+            };
+            if (this->reserveCompletedGesture(completed)) {
+                this->cancelTouchEventsOnAllWindows();
+            }
+        });
+    auto release = std::make_unique<LiftoffAction>();
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> pinch_actions;
     pinch_actions.emplace_back(std::move(pinch_wrapper));
