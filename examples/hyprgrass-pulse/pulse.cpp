@@ -71,8 +71,10 @@ void AudioBackend::contextStateCb(pa_context* c, void* data) {
                 static_cast<enum pa_subscription_mask>(
                     static_cast<int>(PA_SUBSCRIPTION_MASK_SERVER) | static_cast<int>(PA_SUBSCRIPTION_MASK_SINK) |
                     static_cast<int>(PA_SUBSCRIPTION_MASK_SINK_INPUT) | static_cast<int>(PA_SUBSCRIPTION_MASK_SOURCE) |
-                    static_cast<int>(PA_SUBSCRIPTION_MASK_SOURCE_OUTPUT)),
-                nullptr, nullptr);
+                    static_cast<int>(PA_SUBSCRIPTION_MASK_SOURCE_OUTPUT)
+                ),
+                nullptr, nullptr
+            );
             break;
         case PA_CONTEXT_FAILED:
             // When pulseaudio server restarts, the connection is "failed". Try to reconnect.
