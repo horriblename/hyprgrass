@@ -12,7 +12,11 @@ Use the `pulse-gesture` keyword. Flags are the same as Hyprland `gesture`. Only
 `volume` action is available.
 
 ```hyprlang
+# binds to a touchpad gesture
 pulse-gesture = 3, vertical, volume
+
+# also bind to a hyprgrass gesture
+hyprgrass-gesture = 3, vertical, emulate_touchpad, 3, vertical
 ```
 
 [`gestures:workspace_swipe_distance`](wiki.hypr.land/Configuring/Variables/#gestures)

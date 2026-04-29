@@ -12,7 +12,11 @@ Use the `backlight-gesture` keyword. Flags are the same as Hyprland `gesture`.
 Only `backlight` action is available.
 
 ```hyprlang
+# binds to a touchpad gesture
 backlight-gesture = 3, vertical, backlight
+
+# also bind to a hyprgrass gesture
+hyprgrass-gesture = 3, vertical, emulate_touchpad, 3, vertical
 ```
 
 [`gestures:workspace_swipe_distance`](wiki.hypr.land/Configuring/Variables/#gestures)
