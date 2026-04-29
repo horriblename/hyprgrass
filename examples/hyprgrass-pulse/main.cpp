@@ -58,7 +58,7 @@ static Hyprlang::CParseResult gestureKeyword(const char* LHS, const char* RHS) {
     if (g_unloading)
         return result;
 
-    CConstVarList data(RHS);
+    Hyprutils::String::CConstVarList data(RHS);
 
     uint32_t fingers;
     try {
@@ -90,17 +90,17 @@ static Hyprlang::CParseResult gestureKeyword(const char* LHS, const char* RHS) {
     while (true) {
 
         if (data[startDataIdx].starts_with("mod:")) {
-            modMask = g_pKeybindManager->stringToModMask(std::string{data[startDataIdx].substr(4)});
+            modMask = g_pKeybindManager->stringToModMask(std::string(data[startDataIdx].substr(4)));
             startDataIdx++;
             continue;
         } else if (data[startDataIdx].starts_with("scale:")) {
             try {
-                deltaScale = std::clamp(std::stof(std::string{data[startDataIdx].substr(6)}), 0.1F, 10.F);
+                deltaScale = std::clamp(std::stof(std::string(data[startDataIdx].substr(6))), 0.1F, 10.F);
                 startDataIdx++;
                 continue;
             } catch (...) {
                 result.setError(
-                    std::format("Invalid delta scale: {}", std::string{data[startDataIdx].substr(6)}).c_str()
+                    std::format("Invalid delta scale: {}", std::string(data[startDataIdx].substr(6))).c_str()
                 );
                 return result;
             }

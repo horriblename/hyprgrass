@@ -117,7 +117,9 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
 
     if (data[startDataIdx] == "dispatcher")
         resultFromGesture = handler->addGesture(
-            makeUnique<CDispatcherTrackpadGesture>(std::string(data[startDataIdx + 1]), data.join(",", startDataIdx + 2)),
+            makeUnique<CDispatcherTrackpadGesture>(
+                std::string(data[startDataIdx + 1]), data.join(",", startDataIdx + 2)
+            ),
             pattern.fingers, pattern.direction, modMask, deltaScale, disableInhibit
         );
     else if (data[startDataIdx] == "workspace")
