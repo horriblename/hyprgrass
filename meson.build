@@ -36,6 +36,7 @@ hyprland_deps = [
   dependency('wayland-server'),
   dependency('xkbcommon'),
   dependency('libdrm'),
+  dependency('lua')
 ]
 
 subdir('examples')
