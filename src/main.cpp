@@ -258,6 +258,9 @@ int newBind(lua_State* L) {
     bind.handler = "__lua";
     bind.arg     = std::to_string(ref);
 
+    bind.mouse  = luaTableGetBool(L, 1, "mouse");
+    bind.locked = luaTableGetBool(L, 1, "locked");
+
     g_pGestureManager->internalBinds.emplace_back(makeShared<SKeybind>(bind));
 
     return 0;
