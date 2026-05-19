@@ -3,7 +3,6 @@
 #include "TouchVisualizer.hpp"
 #include "globals.hpp"
 #include "version.hpp"
-#include <any>
 #include <expected>
 #include <stdexcept>
 
@@ -11,8 +10,10 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/SharedDefs.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/config/lua/bindings/LuaBindingsInternal.hpp>
 #include <hyprland/src/debug/log/Logger.hpp>
 #include <hyprland/src/event/EventBus.hpp>
+#include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
@@ -31,10 +32,16 @@
 #include <hyprutils/memory/SharedPtr.hpp>
 #include <hyprutils/memory/UniquePtr.hpp>
 #include <hyprutils/string/ConstVarList.hpp>
+#include <hyprutils/utils/ScopeGuard.hpp>
 #undef private
 
 #include <memory>
 #include <string>
+
+extern "C" {
+#include <lua.h>
+// #include <luaxlib.h>
+}
 
 const CHyprColor s_pluginColor       = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
 const CHyprColor error_color         = {204. / 255.0, 2. / 255.0, 2. / 255.0, 1.0};
@@ -201,6 +208,68 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
     return result;
 }
 
+static bool luaTableGetBool(lua_State* L, int idx, std::string_view key) {
+    lua_getfield(L, idx, key.data());
+    const bool v = lua_toboolean(L, -1);
+    lua_pop(L, 1);
+    return v;
+}
+
+int newBind(lua_State* L) {
+    if (!lua_istable(L, 1))
+        return Config::Lua::Bindings::Internal::configError(
+            L, "bind: expected a table { mod, gesture, dispatcher, args }"
+        );
+
+    SKeybind bind{};
+
+    // Parse the table structure
+    {
+        Hyprutils::Utils::CScopeGuard x([L] { lua_pop(L, 1); });
+
+        lua_getfield(L, 1, "mod");
+        if (!lua_isstring(L, -1))
+            return Config::Lua::Bindings::Internal::configError(L, "bind: mod must be a string");
+
+        const char* modStr = lua_tostring(L, -1);
+        bind.modmask       = g_pKeybindManager->stringToModMask(modStr);
+    }
+
+    {
+        Hyprutils::Utils::CScopeGuard x([L] { lua_pop(L, 1); });
+
+        lua_getfield(L, 1, "gesture");
+        if (!lua_isstring(L, -1))
+            return Config::Lua::Bindings::Internal::configError(L, "bind: gesture must be a string");
+
+        bind.key = lua_tostring(L, -1);
+        // TODO: idk what this is
+        bind.displayKey = bind.key;
+    }
+
+    lua_getfield(L, 1, "action");
+    if (!Config::Lua::Bindings::Internal::pushDispatcherFunction(L, 2)) {
+        return Config::Lua::Bindings::Internal::configError(
+            L, "hl.plugin.hyprgrass.bind: action must be a dispatcher (e.g. hl.dsp.window.close()) or a lua function"
+        );
+    }
+
+    int ref      = luaL_ref(L, LUA_REGISTRYINDEX);
+    bind.handler = "__lua";
+    bind.arg     = std::to_string(ref);
+
+    g_pGestureManager->internalBinds.emplace_back(makeShared<SKeybind>(bind));
+
+    return 0;
+}
+
+int newGesture(lua_State* L) {
+    if (!lua_istable(L, 1))
+        return Config::Lua::Bindings::Internal::configError(L, "gesture");
+
+    // TODO
+}
+
 static void onPreConfigReload() {
     if (g_pGestureManager)
         g_pGestureManager->internalBinds.clear();
@@ -334,12 +403,18 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         PHANDLE, "plugin:touch_gestures:debug:visualize_touch", Hyprlang::CConfigValue((Hyprlang::INT)0)
     );
 
-    HyprlandAPI::addConfigKeyword(
-        PHANDLE, KEYWORD_HG_BIND, hyrgrassBindKeyword, Hyprlang::SHandlerOptions{.allowFlags = true}
-    );
-    HyprlandAPI::addConfigKeyword(
-        PHANDLE, KEYWORD_HG_GESTURE, hyprgrassGestureKeyword, Hyprlang::SHandlerOptions{true}
-    );
+    if (Config::mgr()->type() == Config::CONFIG_LEGACY) {
+        HyprlandAPI::addConfigKeyword(
+            PHANDLE, KEYWORD_HG_BIND, hyrgrassBindKeyword, Hyprlang::SHandlerOptions{.allowFlags = true}
+        );
+        HyprlandAPI::addConfigKeyword(
+            PHANDLE, KEYWORD_HG_GESTURE, hyprgrassGestureKeyword, Hyprlang::SHandlerOptions{true}
+        );
+    } else {
+        HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "bind", newBind);
+        HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "gesture", newGesture);
+    }
+
     static auto P0 = Event::bus()->m_events.config.preReload.listen([&] { onPreConfigReload(); });
 
     HyprlandAPI::addDispatcherV2(PHANDLE, "touchBind", [&](std::string args) {
