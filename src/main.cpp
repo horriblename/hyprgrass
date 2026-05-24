@@ -391,6 +391,10 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         g_config = makeUnique<Cfg>("hyprgrass");
         HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "bind", newBind);
         HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "gesture", newGesture);
+        HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "debug_binds", [](lua_State*) {
+            listInternalBinds("");
+            return 0;
+        });
     }
 
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->workspaceSwipeFingers);
