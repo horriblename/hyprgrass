@@ -174,7 +174,7 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
 
         try {
             fingers = std::stoul(std::string(fingersStr));
-        } catch (std::invalid_argument) {
+        } catch (std::invalid_argument&) {
             result.setError(std::format("Argument for emulate_touchpad expects a number, got: {}", fingersStr).c_str());
             return result;
         }
