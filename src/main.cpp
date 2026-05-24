@@ -271,6 +271,7 @@ int newGesture(lua_State* L) {
         return Config::Lua::Bindings::Internal::configError(L, "gesture");
 
     // TODO
+    return 0;
 }
 
 static void onPreConfigReload() {
@@ -378,35 +379,8 @@ APICALL EXPORT std::string PLUGIN_API_VERSION() {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
-    HyprlandAPI::addConfigValue(
-        PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers", Hyprlang::CConfigValue((Hyprlang::INT)3)
-    );
-    HyprlandAPI::addConfigValue(
-        PHANDLE, "plugin:touch_gestures:workspace_swipe_edge", Hyprlang::CConfigValue((Hyprlang::STRING) "d")
-    );
-    HyprlandAPI::addConfigValue(
-        PHANDLE, "plugin:touch_gestures:sensitivity", Hyprlang::CConfigValue((Hyprlang::FLOAT)1.0)
-    );
-    HyprlandAPI::addConfigValue(
-        PHANDLE, "plugin:touch_gestures:long_press_delay", Hyprlang::CConfigValue((Hyprlang::INT)400)
-    );
-    HyprlandAPI::addConfigValue(
-        PHANDLE, "plugin:touch_gestures:edge_margin", Hyprlang::CConfigValue((Hyprlang::INT)10)
-    );
-    HyprlandAPI::addConfigValue(
-        PHANDLE, "plugin:touch_gestures:experimental:send_cancel", Hyprlang::CConfigValue((Hyprlang::INT)1)
-    );
-    HyprlandAPI::addConfigValue(
-        PHANDLE, "plugin:touch_gestures:resize_on_border_long_press", Hyprlang::CConfigValue((Hyprlang::INT)1)
-    );
-    HyprlandAPI::addConfigValue(
-        PHANDLE, "plugin:touch_gestures:emulate_touchpad_swipe", Hyprlang::CConfigValue((Hyprlang::INT)0)
-    );
-    HyprlandAPI::addConfigValue(
-        PHANDLE, "plugin:touch_gestures:debug:visualize_touch", Hyprlang::CConfigValue((Hyprlang::INT)0)
-    );
-
     if (Config::mgr()->type() == Config::CONFIG_LEGACY) {
+        g_config = makeUnique<Cfg>("touch_gestures");
         HyprlandAPI::addConfigKeyword(
             PHANDLE, KEYWORD_HG_BIND, hyrgrassBindKeyword, Hyprlang::SHandlerOptions{.allowFlags = true}
         );
@@ -414,9 +388,18 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
             PHANDLE, KEYWORD_HG_GESTURE, hyprgrassGestureKeyword, Hyprlang::SHandlerOptions{true}
         );
     } else {
+        g_config = makeUnique<Cfg>("hyprgrass");
         HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "bind", newBind);
         HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "gesture", newGesture);
     }
+
+    HyprlandAPI::addConfigValueV2(PHANDLE, g_config->workspaceSwipeFingers);
+    HyprlandAPI::addConfigValueV2(PHANDLE, g_config->longPressDelay);
+    HyprlandAPI::addConfigValueV2(PHANDLE, g_config->edgeMargin);
+    HyprlandAPI::addConfigValueV2(PHANDLE, g_config->workspaceSwipeEdge);
+    HyprlandAPI::addConfigValueV2(PHANDLE, g_config->sensitivity);
+    HyprlandAPI::addConfigValueV2(PHANDLE, g_config->sendCancel);
+    HyprlandAPI::addConfigValueV2(PHANDLE, g_config->resizeOnBorder);
 
     static auto P0 = Event::bus()->m_events.config.preReload.listen([&] { onPreConfigReload(); });
 
