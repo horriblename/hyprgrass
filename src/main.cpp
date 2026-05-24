@@ -228,11 +228,13 @@ int newBind(lua_State* L) {
         Hyprutils::Utils::CScopeGuard x([L] { lua_pop(L, 1); });
 
         lua_getfield(L, 1, "mod");
-        if (!lua_isstring(L, -1))
-            return Config::Lua::Bindings::Internal::configError(L, "bind: mod must be a string");
+        if (!lua_isnil(L, -1)) {
+            if (!lua_isstring(L, -1))
+                return Config::Lua::Bindings::Internal::configError(L, "bind: mod must be a string");
 
-        const char* modStr = lua_tostring(L, -1);
-        bind.modmask       = g_pKeybindManager->stringToModMask(modStr);
+            const char* modStr = lua_tostring(L, -1);
+            bind.modmask       = g_pKeybindManager->stringToModMask(modStr);
+        }
     }
 
     {
