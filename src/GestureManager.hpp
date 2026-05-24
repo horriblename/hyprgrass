@@ -111,7 +111,7 @@ class GestureManager : public IGestureManager {
     } resizeOnBorderInfo;
     bool workspaceSwipeActive                = false;
     CTrackpadGestures* activeTrackpadGesture = nullptr;
-    // used by emulate_touchpad_swipe and trackpadGesture* functions
+    // used by trackpadGesture* functions
     wf::touch::point_t emulatedSwipePoint;
 
     bool handleGestureBind(std::string bind, GestureEventType);

@@ -121,14 +121,6 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             if (this->handleWorkspaceSwipe(gev.direction))
                 return true;
 
-            // TODO: replace emulate_touchpad
-            // if (!EMULATE_TOUCHPAD->value()) {
-            //   this->workspaceSwipeActive       = false; // reset just in case
-            //   this->emulatedSwipePoint         = this->m_sGestureState.get_center().current;
-            //   IPointer::SSwipeBeginEvent swipe = {.fingers = static_cast<uint32_t>(m_sGestureState.fingers.size())};
-            //   g_pInputManager->onSwipeBegin(swipe);
-            //   return true;
-            // }
             return false;
         }
 
@@ -311,7 +303,6 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
             if (this->workspaceSwipeActive) {
                 this->updateWorkspaceSwipe();
             }
-            // TODO: replace emulate_touchpad
             return;
 
         case DragGestureType::LONG_PRESS: {
@@ -345,7 +336,6 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
                 g_pUnifiedWorkspaceSwipe->end();
                 this->workspaceSwipeActive = false;
             }
-            // TODO: replace emulate_touchpad
             return;
         case DragGestureType::LONG_PRESS:
             if (this->resizeOnBorderInfo.active) {
