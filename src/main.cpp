@@ -322,25 +322,31 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
 
         fingersOrOrigin = luaTableGetInt(L, index, "fingers");
         if (fingersOrOrigin <= 0)
-            return std::unexpected("swipe: fingers must be a positive integer");
+            return std::unexpected("kind=swipe: fingers must be a positive integer");
 
         const char* dirStr = luaTableGetString(L, index, "direction");
-        direction          = g_pTrackpadGestures->dirForString(dirStr);
+        if (!dirStr)
+            return std::unexpected("kind=swipe: direction must be a valid direction string");
+        direction = g_pTrackpadGestures->dirForString(dirStr);
         if (ShimTrackpadGestures::isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE)
             return std::unexpected(std::format("invalid direction for a swipe gesture: {}", dirStr));
     } else if (kind == "edge") {
         type = DragGestureType::EDGE_SWIPE;
 
         const char* originStr = luaTableGetString(L, index, "origin");
-        auto origin           = g_pTrackpadGestures->dirForString(originStr);
+        if (!originStr)
+            return std::unexpected("kind=edge: origin must be a valid direction string");
+        auto origin = g_pTrackpadGestures->dirForString(originStr);
         if (!ShimTrackpadGestures::isSingleDirection(origin))
             return std::unexpected(
                 std::format("invalid ORIGIN for an edge gesture, expected a single direction, got {}", originStr)
             );
         fingersOrOrigin = toHyprgrassDirection(origin);
 
-        std::string dirStr = luaTableGetString(L, index, "direction");
-        direction          = g_pTrackpadGestures->dirForString(dirStr);
+        const char* dirStr = luaTableGetString(L, index, "direction");
+        if (!dirStr)
+            return std::unexpected("kind=edge: direction must be a valid direction string");
+        direction = g_pTrackpadGestures->dirForString(dirStr);
         if (ShimTrackpadGestures::isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE)
             return std::unexpected(std::format("invalid direction for an edge gesture: {}", dirStr));
     } else if (kind == "longpress") {
@@ -349,10 +355,6 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
         fingersOrOrigin = luaTableGetInt(L, index, "fingers");
         if (fingersOrOrigin == 0)
             return std::unexpected("longpress: fingers must be a positive integer");
-
-        std::string dirStr = luaTableGetString(L, index, "direction");
-        if (!dirStr.empty())
-            direction = g_pTrackpadGestures->dirForString(dirStr);
     } else {
         return std::unexpected(std::format("invalid gesture kind: {}", kind));
     }
