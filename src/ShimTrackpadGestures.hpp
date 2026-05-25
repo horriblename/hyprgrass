@@ -1,6 +1,7 @@
 #include "gestures/DragGesture.hpp"
 #include "src/managers/input/trackpad/GestureTypes.hpp"
 #include <any>
+#include <cstdint>
 #include <string>
 
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -11,10 +12,19 @@
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
 #undef private
 
+constexpr size_t MOD_MASK_SHIFT = 8;
+constexpr size_t FINGERS_MASK   = 0xFF; // lowest 8 bits
+
 struct GestureConfig {
     DragGestureType type;
     eTrackpadGestureDirection direction;
-    size_t fingers;
+    size_t fingersOrOrigin;
+    // bit mask of eKeyboardModifiers
+    uint32_t modMask = 0;
+
+    inline size_t fingers() const {
+        return fingersOrOrigin;
+    }
 };
 
 std::expected<GestureConfig, std::string> parseGesturePattern(Hyprutils::String::CConstVarList& vars);

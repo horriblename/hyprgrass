@@ -98,9 +98,9 @@ std::expected<GestureConfig, std::string> parseGesturePattern(Hyprutils::String:
     }
 
     return GestureConfig{
-        .type      = type,
-        .direction = direction,
-        .fingers   = static_cast<size_t>(fingersOrOrigin),
+        .type            = type,
+        .direction       = direction,
+        .fingersOrOrigin = static_cast<size_t>(fingersOrOrigin),
     };
 }
 
