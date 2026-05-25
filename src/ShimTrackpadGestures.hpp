@@ -1,6 +1,7 @@
 #include "gestures/DragGesture.hpp"
 #include "src/managers/input/trackpad/GestureTypes.hpp"
 #include <any>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -25,6 +26,8 @@ struct GestureConfig {
     inline size_t fingers() const {
         return fingersOrOrigin;
     }
+
+    static eTrackpadGestureDirection originFromFingers(size_t);
 };
 
 std::expected<GestureConfig, std::string> parseGesturePattern(Hyprutils::String::CConstVarList& vars);
@@ -40,34 +43,29 @@ struct ShimTrackpadGestures {
     }
 
     inline CTrackpadGestures* swipe() {
-        return &gestures[0];
+        return &gestures[size_t(DragGestureType::SWIPE)];
     }
     inline CTrackpadGestures* edge() {
-        return &gestures[1];
+        return &gestures[size_t(DragGestureType::EDGE_SWIPE)];
     }
     inline CTrackpadGestures* longPress() {
-        return &gestures[2];
+        return &gestures[size_t(DragGestureType::LONG_PRESS)];
     }
     inline CTrackpadGestures* pinch() {
-        return &gestures[3];
+        return &gestures[size_t(DragGestureType::PINCH)];
     }
 
     inline CTrackpadGestures* get(DragGestureType type) {
-        switch (type) {
-            case DragGestureType::SWIPE:
-                return this->swipe();
-            case DragGestureType::LONG_PRESS:
-                return this->longPress();
-            case DragGestureType::EDGE_SWIPE:
-                return this->edge();
-            case DragGestureType::PINCH:
-                return this->pinch();
-        }
+        if (0 <= size_t(type) && size_t(type) < sizeof(gestures) / sizeof(CTrackpadGestures))
+            return &gestures[size_t(type)];
+
         return nullptr;
     }
 
     // maybe making a function returning std::array would be better? idk
     CTrackpadGestures gestures[4];
+
+    void listGestures();
 
     static bool isPinch(eTrackpadGestureDirection dir);
     static bool isSingleDirection(eTrackpadGestureDirection dir);

@@ -613,6 +613,10 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
             listInternalBinds("");
             return 0;
         });
+        HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "debug_gestures", [](lua_State*) {
+            g_pShimTrackpadGestures->listGestures();
+            return 0;
+        });
     }
 
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->workspaceSwipeFingers);

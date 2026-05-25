@@ -1,6 +1,10 @@
 #include "ShimTrackpadGestures.hpp"
+#include "debug/log/Logger.hpp"
 #include "gestures/DragGesture.hpp"
-#include <charconv>
+#include "gestures/Shared.hpp"
+#include "managers/input/trackpad/GestureTypes.hpp"
+#include "managers/input/trackpad/TrackpadGestures.hpp"
+#include <string>
 
 static std::expected<void, std::string> parseFingers(const std::string_view& s, size_t& fingers) {
     auto result = std::from_chars(s.data(), s.data() + s.size(), fingers);
@@ -131,4 +135,51 @@ GestureDirection toHyprgrassDirection(eTrackpadGestureDirection dir) {
     }
 
     return 0;
+}
+
+static void printGesture(DragGestureType type, const CTrackpadGestures::SGestureData& gesture) {
+    switch (type) {
+        case DragGestureType::SWIPE: {
+            std::string direction = stringifyDirection(toHyprgrassDirection(gesture.direction));
+            Log::logger->log(
+                Log::DEBUG, "| gesture: swipe, fingers: {}, direction: {}", gesture.fingerCount, direction
+            );
+            break;
+        }
+        case DragGestureType::LONG_PRESS:
+            Log::logger->log(Log::DEBUG, "| gesture: long_press, fingers: {}", gesture.fingerCount);
+            break;
+        case DragGestureType::EDGE_SWIPE: {
+            std::string origin    = stringifyDirection(gesture.fingerCount);
+            std::string direction = stringifyDirection(toHyprgrassDirection(gesture.direction));
+            Log::logger->log(Log::DEBUG, "| gesture: edge, origin: {}, direction: {}", origin, direction);
+            break;
+        }
+        case DragGestureType::PINCH:
+            Log::logger->log(Log::DEBUG, "| gesture: long_press, fingers: {}", gesture.fingerCount);
+            break;
+    }
+
+    // TODO: pretty print this
+    Log::logger->log(Log::DEBUG, "| mod mask: {}", gesture.modMask);
+    Log::logger->log(Log::DEBUG, "| scale: {}", gesture.deltaScale);
+    Log::logger->log(Log::DEBUG, "| disable inhibit: {}", gesture.disableInhibit);
+    Log::logger->log(Log::DEBUG, "|");
+}
+
+void ShimTrackpadGestures::listGestures() {
+    Log::logger->log(Log::DEBUG, "[hyprgrass] listing gestures:");
+
+    const auto types = std::array{
+        DragGestureType::SWIPE,
+        DragGestureType::LONG_PRESS,
+        DragGestureType::EDGE_SWIPE,
+        DragGestureType::PINCH,
+    };
+
+    for (const DragGestureType type : types) {
+        for (const auto& gesture : this->get(type)->m_gestures) {
+            printGesture(type, *gesture);
+        }
+    }
 }
