@@ -478,6 +478,11 @@ int newGesture(lua_State* L) {
                 makeUnique<CScrollMoveTrackpadGesture>(), gesture.fingers(), gesture.direction, modMask, deltaScale,
                 disableInhibit
             );
+        } else if (action == "emulate_touchpad") {
+            result = std::expected(handler->addGesture(
+                makeUnique<EmulateTouchpadGesture>(gesture.fingers(), gesture.direction), gesture.fingers(),
+                gesture.direction, modMask, deltaScale, disableInhibit
+            ));
         } else if (action == "unset") {
             result = handler->removeGesture(gesture.fingers(), gesture.direction, modMask, deltaScale, disableInhibit);
         } else
