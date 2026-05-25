@@ -1,5 +1,6 @@
 #include "GestureManager.hpp"
 #include "HyprLogger.hpp"
+#include "config/shared/actions/ConfigActions.hpp"
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
@@ -258,7 +259,9 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
         if (k->modmask != MODS)
             continue;
 
-        const auto DISPATCHER = g_pKeybindManager->m_dispatchers.find(k->mouse ? "mouse" : k->handler);
+        // only legacy config uses "mouse" dispatcher
+        bool useMouseDispatcher = k->mouse && Config::mgr()->type() == Config::CONFIG_LEGACY;
+        const auto DISPATCHER   = g_pKeybindManager->m_dispatchers.find(useMouseDispatcher ? "mouse" : k->handler);
 
         // Should never happen, as we check in the ConfigManager, but oh well
         if (DISPATCHER == g_pKeybindManager->m_dispatchers.end()) {
@@ -268,16 +271,27 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
 
         switch (type) {
             case GestureEventType::COMPLETED:
-                if (k->handler != "mouse") {
+                // mouse dispatchers only trigger on drag begin/end
+                if (!k->mouse) {
                     Log::logger->log(Log::DEBUG, "[hyprgrass] calling dispatcher ({})", bind);
                     DISPATCHER->second(k->arg);
                     found = found || !k->nonConsuming;
                 }
             default:
-                if (k->handler == "mouse") {
+                if (useMouseDispatcher) {
                     Log::logger->log(Log::DEBUG, "[hyprgrass] calling mouse dispatcher ({})", bind);
                     char pressed = type == GestureEventType::DRAG_BEGIN ? '1' : '0';
                     DISPATCHER->second(pressed + k->arg);
+                    found = found || !k->nonConsuming;
+                } else {
+                    bool pressed = type == GestureEventType::DRAG_BEGIN;
+                    // yes this is how the lua dispatcher detects key press state
+                    Config::Actions::state()->m_passPressed = sc<int>(pressed);
+
+                    DISPATCHER->second(k->arg);
+
+                    Config::Actions::state()->m_passPressed = -1;
+
                     found = found || !k->nonConsuming;
                 }
         }
