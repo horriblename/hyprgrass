@@ -1,6 +1,9 @@
 #include "GestureManager.hpp"
 #include "HyprLogger.hpp"
+#include "config/lua/ConfigManager.hpp"
 #include "config/shared/actions/ConfigActions.hpp"
+#include "config/shared/complex/ComplexDataTypes.hpp"
+#include "config/supplementary/propRefresher/PropRefresher.hpp"
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
@@ -23,7 +26,7 @@
 // constexpr double SWIPE_THRESHOLD = 30.;
 constexpr int RESIZE_BORDER_GAP_INCREMENT = 10;
 
-std::string trim(const std::string& str) {
+static std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(' ');
     if (std::string::npos == first) {
         return str;
@@ -32,7 +35,7 @@ std::string trim(const std::string& str) {
     return str.substr(first, (last - first + 1));
 }
 
-std::vector<std::string> splitString(const std::string& s, char delimiter, int numSubstrings) {
+static std::vector<std::string> splitString(const std::string& s, char delimiter, int numSubstrings) {
     std::vector<std::string> substrings;
     auto split_view = std::ranges::views::split(s, delimiter);
     auto iter       = split_view.begin();
@@ -56,16 +59,40 @@ std::vector<std::string> splitString(const std::string& s, char delimiter, int n
     return substrings;
 }
 
-int handleLongPressTimer(void* data) {
+static int handleLongPressTimer(void* data) {
     const auto gesture_manager = (GestureManager*)data;
     gesture_manager->onLongPressTimeout(gesture_manager->long_press_next_trigger_time);
 
     return 0;
 }
 
-std::string commaSeparatedCssGaps(Config::CCssGapData data) {
+static std::string commaSeparatedCssGaps(const Config::CCssGapData& data) {
     return std::to_string(data.m_top) + "," + std::to_string(data.m_right) + "," + std::to_string(data.m_bottom) + "," +
            std::to_string(data.m_left);
+}
+
+static void updateGapsIn(const Config::CCssGapData& newGapsIn) {
+    static auto PGAPSINDATA = CConfigValue<Config::IComplexConfigValue>("general:gaps_in");
+
+    if (Config::mgr()->type() == Config::CONFIG_LEGACY) {
+        Config::Legacy::mgr()->parseKeyword("general:gaps_in", commaSeparatedCssGaps(newGapsIn));
+    } else {
+        auto luaMgr = dynamicPointerCast<Config::Lua::CConfigManager>(WP<Config::IConfigManager>(Config::mgr()));
+
+        const auto it = luaMgr->m_configValues.find("general.gaps_in");
+        if (it == luaMgr->m_configValues.end()) {
+            Log::logger->log(Log::ERR, "[hyprgrass] lua config 'general.gaps_in' not found");
+            return;
+        }
+
+        auto* gapsInPtr = dynamic_cast<Config::CCssGapData*>(PGAPSINDATA.ptr());
+        // idk why `*gapsInPtr = newGapsIn` doesn't work
+        gapsInPtr->m_bottom = newGapsIn.m_bottom;
+        gapsInPtr->m_top    = newGapsIn.m_top;
+        gapsInPtr->m_left   = newGapsIn.m_left;
+        gapsInPtr->m_right  = newGapsIn.m_right;
+        Config::Supplementary::refresher()->scheduleRefresh(it->second->refreshBits());
+    }
 }
 
 GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>()) {
@@ -180,18 +207,18 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                         };
                         g_pKeybindManager->resizeWithBorder(e);
 
-                        auto* PGAPSIN            = static_cast<Config::CCssGapData*>(PGAPSINDATA.ptr());
+                        auto oldGapsIn           = *static_cast<Config::CCssGapData*>(PGAPSINDATA.ptr());
                         this->resizeOnBorderInfo = {
                             .active      = true,
-                            .old_gaps_in = *PGAPSIN,
+                            .old_gaps_in = oldGapsIn,
                         };
 
-                        Config::CCssGapData newGapsIn = *PGAPSIN;
+                        Config::CCssGapData newGapsIn = oldGapsIn;
                         newGapsIn.m_top += RESIZE_BORDER_GAP_INCREMENT;
                         newGapsIn.m_right += RESIZE_BORDER_GAP_INCREMENT;
                         newGapsIn.m_bottom += RESIZE_BORDER_GAP_INCREMENT;
                         newGapsIn.m_left += RESIZE_BORDER_GAP_INCREMENT;
-                        Config::Legacy::mgr()->parseKeyword("general:gaps_in", commaSeparatedCssGaps(newGapsIn));
+                        updateGapsIn(newGapsIn);
                         return true;
                     }
                 }
@@ -354,9 +381,7 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
         case DragGestureType::LONG_PRESS:
             if (this->resizeOnBorderInfo.active) {
                 g_pKeybindManager->changeMouseBindMode(eMouseBindMode::MBIND_INVALID);
-                Config::Legacy::mgr()->parseKeyword(
-                    "general:gaps_in", commaSeparatedCssGaps(this->resizeOnBorderInfo.old_gaps_in)
-                );
+                updateGapsIn(this->resizeOnBorderInfo.old_gaps_in);
                 this->resizeOnBorderInfo = {};
                 return;
             }
