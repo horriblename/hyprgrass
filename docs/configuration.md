@@ -5,30 +5,21 @@
 ```lua
 hl.config({
     plugin = {
-        hyprgrass {
+        hyprgrass = {
             -- The default sensitivity is probably too low on tablet screens,
             -- I recommend turning it up to 4.0
             sensitivity = 1.0,
 
-            -- must be >= 3
-            workspace_swipe_fingers = 3
-
-            -- switching workspaces by swiping from an edge, this is separate from workspace_swipe_fingers
-            -- and can be used at the same time
-            -- possible values: l, r, u, or d
-            -- to disable it set it to anything else
-            workspace_swipe_edge = d
-
             -- in milliseconds
-            long_press_delay = 400
+            long_press_delay = 400,
 
             -- resize windows by long-pressing on window borders and gaps.
             -- If general:resize_on_border is enabled, general:extend_border_grab_area is
             -- used for floating windows
-            resize_on_border_long_press = true
+            resize_on_border_long_press = true,
 
             -- in pixels, the distance from the edge that is considered an edge
-            edge_margin = 10
+            edge_margin = 10,
         }
     }
 })
@@ -41,8 +32,10 @@ it easier to switch workspaces:
 
 ```lua
 hl.config({
-  workspace_swipe = true
-  workspace_swipe_cancel_ratio = 0.15
+  gestures = {
+    workspace_swipe_touch = true,
+    workspace_swipe_cancel_ratio = 0.15,
+  },
 })
 ```
 
@@ -94,7 +87,7 @@ hl.plugin.hyprgrass.bind {
 ### `hyprgrass-gesture`
 
 `hyprgrass-gesture` supports the builtin actions of Hyprland's
-[gestures](https://wiki.hypr.land/Configuring/Gestures/).
+[gestures](https://wiki.hypr.land/Configuring/Advanced-and-Cool/Gestures/).
 
 #### hyrgrass-gesture Syntax
 
@@ -146,11 +139,12 @@ hl.plugin.hyprgrass.gesture {
 ```
 
 The following **actions** are currently supported (see
-[Hyprland wiki](https://wiki.hypr.land/Configuring/Gestures/#available-gestures)
+[Hyprland wiki](https://wiki.hypr.land/Configuring/Advanced-and-Cool/Gestures/#Actions)
 for details):
 
 ```text
 # inherited from Hyprland
+<lua function>
 workspace
 move
 resize
@@ -172,8 +166,7 @@ emulate_fingers, emulate_direction
 ```
 
 Both arguments are as described in
-[Hyprland wiki](https://wiki.hypr.land/Configuring/Gestures/#available-gestures).
-
+[Hyprland wiki](https://wiki.hypr.land/Configuring/Advanced-and-Cool/Gestures/#Directions)
 Example:
 
 ```lua
@@ -190,6 +183,9 @@ hl.plugin.gesture {
     emulate_fingers = 3,
     emulate_direction = "down",
 }
+```
+
+```hyprlang
 hyprgrass-gesture = swipe, 3, down, emulate_touchpad, 3, down
 ```
 
@@ -209,6 +205,9 @@ hl.plugin.hyprgrass.gesture {
 
 -- Workspace does not work with the "swipe" direction,
 -- make sure to put in an accepted direction even for longpress
+```
+
+```hyprlang
 hyprgrass-gesture = longpress, 3, horizontal, workspace
 ```
 

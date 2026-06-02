@@ -21,7 +21,7 @@ A few things to keep in mind for your migration to Lua:
    -- workspace_swipe_edge
    hl.plugin.hyprgrass.gesture({
        gesture = {kind = "edge", origin = "down", direction = "horizontal"},
-       action = workspace,
+       action = "workspace",
    })
    ```
 
