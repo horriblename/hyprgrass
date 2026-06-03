@@ -603,6 +603,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
     if (Config::mgr()->type() == Config::CONFIG_LEGACY) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
         g_config = makeUnique<Cfg>("touch_gestures");
         HyprlandAPI::addConfigKeyword(
             PHANDLE, KEYWORD_HG_BIND, hyrgrassBindKeyword, Hyprlang::SHandlerOptions{.allowFlags = true}
@@ -610,6 +612,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         HyprlandAPI::addConfigKeyword(
             PHANDLE, KEYWORD_HG_GESTURE, hyprgrassGestureKeyword, Hyprlang::SHandlerOptions{true}
         );
+#pragma GCC diagnostic pop
     } else {
         g_config = makeUnique<Cfg>("hyprgrass");
         HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "bind", newBind);
