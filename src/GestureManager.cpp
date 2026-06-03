@@ -304,6 +304,8 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
                     DISPATCHER->second(k->arg);
                     found = found || !k->nonConsuming;
                 }
+                break;
+
             default:
                 if (useMouseDispatcher) {
                     Log::logger->log(Log::DEBUG, "[hyprgrass] calling mouse dispatcher ({})", bind);
@@ -354,6 +356,8 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
         }
         case DragGestureType::EDGE_SWIPE:
             this->updateWorkspaceSwipe();
+            break;
+
         case DragGestureType::PINCH:
             break;
     }
