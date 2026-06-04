@@ -179,7 +179,7 @@ TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
         ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {0, 290}},
         ExpectResult{ExpectResultType::SENT_WINDOW_CANCEL},
-        // TODO CHECK progress == 0.5
+        ExpectResult{.type = ExpectResultType::CHECK_PROGRESS, .progress = 0.5},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {50, 300}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {100, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {100, 290}},
@@ -342,9 +342,12 @@ TEST_CASE("Edge Swipe: Complete upon: \n"
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
+        ExpectResult{.type = ExpectResultType::CHECK_PROGRESS, .progress = 0},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
         Ev{wf::touch::EVENT_TYPE_MOTION, 150, 0, {250, 300}},
+        ExpectResult{ExpectResultType::SENT_WINDOW_CANCEL},
+        ExpectResult{.type = ExpectResultType::CHECK_PROGRESS, .progress = 0.5},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {455, 300}},
-        // TODO Check progress == 0.5
         Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {455, 300}},
     };
     ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
@@ -398,7 +401,10 @@ TEST_CASE("Edge Swipe Drag: begin") {
 
     const std::vector<TouchEvent> events{
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
         Ev{wf::touch::EVENT_TYPE_MOTION, 150, 0, {250, 300}},
+        ExpectResult{ExpectResultType::SENT_WINDOW_CANCEL},
+        ExpectResult{.type = ExpectResultType::CHECK_PROGRESS, .progress = 0.5},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {455, 300}},
     };
     const ExpectResult expected_result = {ExpectResultType::DRAG_TRIGGERED, 1.0};
@@ -516,11 +522,13 @@ TEST_CASE("Pinch in: full drag") {
         // pinch in
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {140, 190}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 150}},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {260, 190}},
+        ExpectResult{ExpectResultType::SENT_WINDOW_CANCEL},
+        ExpectResult{ExpectResultType::DRAG_TRIGGERED},
         Ev{wf::touch::EVENT_TYPE_MOTION, 260, 0, {170, 185}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 260, 1, {180, 160}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 260, 2, {250, 190}},
-        ExpectResult{ExpectResultType::DRAG_TRIGGERED},
 
         // continue drag
         Ev{wf::touch::EVENT_TYPE_MOTION, 260, 0, {160, 185}},
@@ -546,7 +554,9 @@ TEST_CASE("Pinch out: full drag") {
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 90}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {290, 200}},
 
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {60, 210}},
+        ExpectResult{ExpectResultType::SENT_WINDOW_CANCEL},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 120}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {340, 210}},
         ExpectResult{ExpectResultType::DRAG_TRIGGERED},
@@ -574,7 +584,9 @@ TEST_CASE("Pinch out: completed gesture") {
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 90}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {290, 200}},
 
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {60, 210}},
+        ExpectResult{ExpectResultType::SENT_WINDOW_CANCEL},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 120}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {340, 210}},
 
