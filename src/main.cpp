@@ -295,7 +295,7 @@ int newBind(lua_State* L) {
     lua_getfield(L, 1, "action");
     if (!Config::Lua::Bindings::Internal::pushDispatcherFunction(L, 2)) {
         return Config::Lua::Bindings::Internal::configError(
-            L, "hl.plugin.hyprgrass.bind: action must be a dispatcher (e.g. hl.dsp.window.close()) or a lua function"
+            L, "hyprgrass.bind: action must be a dispatcher (e.g. hl.dsp.window.close()) or a lua function"
         );
     }
 
@@ -368,7 +368,7 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
 
 int newGesture(lua_State* L) {
     if (!lua_istable(L, 1))
-        return Config::Lua::Bindings::Internal::configError(L, "hl.plugin.hyprgrass.gesture: argument must be a table");
+        return Config::Lua::Bindings::Internal::configError(L, "hyprgrass.gesture: argument must be a table");
 
     GestureConfig gesture;
     {
@@ -390,7 +390,7 @@ int newGesture(lua_State* L) {
     // TODO: standardize parsing
     if (deltaScale < 0.1f) {
         return Config::Lua::Bindings::Internal::configError(
-            L, "hl.plugin.hyprgrass.gesture: field \"scale\" must be at least 0.1"
+            L, "hyprgrass.gesture: field \"scale\" must be at least 0.1"
         );
     }
 
@@ -411,7 +411,7 @@ int newGesture(lua_State* L) {
             lua_pop(L, 1);
         } else {
             return Config::Lua::Bindings::Internal::configError(
-                L, "hl.plugin.hyprgrass.gesture: action must be a string (e.g. \"workspace\"), lua function, or "
+                L, "hyprgrass.gesture: action must be a string (e.g. \"workspace\"), lua function, or "
                    "dispatcher (e.g. hl.dsp.focus(...))"
             );
         }
@@ -487,7 +487,7 @@ int newGesture(lua_State* L) {
             result = handler->removeGesture(gesture.fingers(), gesture.direction, modMask, deltaScale, disableInhibit);
         } else
             return Config::Lua::Bindings::Internal::configError(
-                L, std::format("hl.gesture: unknown action \"{}\"", action)
+                L, std::format("hyprgrass.gesture: unknown action \"{}\"", action)
             );
     }
 
@@ -578,14 +578,16 @@ Hyprlang::CParseResult hyrgrassBindKeyword(const char* K, const char* V) {
     const auto dispatcher     = flags.mouse ? "mouse" : vars[2];
     const auto dispatcherArgs = flags.mouse ? vars[2] : vars[3];
 
-    g_pGestureManager->internalBinds.emplace_back(makeShared<SKeybind>(SKeybind{
-        .key     = key,
-        .modmask = modMask,
-        .handler = dispatcher,
-        .arg     = dispatcherArgs,
-        .locked  = flags.locked,
-        .mouse   = flags.mouse,
-    }));
+    g_pGestureManager->internalBinds.emplace_back(
+        makeShared<SKeybind>(SKeybind{
+            .key     = key,
+            .modmask = modMask,
+            .handler = dispatcher,
+            .arg     = dispatcherArgs,
+            .locked  = flags.locked,
+            .mouse   = flags.mouse,
+        })
+    );
 
     return result;
 }
