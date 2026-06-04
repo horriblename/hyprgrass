@@ -307,7 +307,13 @@ void IGestureManager::addEdgeSwipeGesture(
                   .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
                   .edge_origin  = origin_edges
             };
-            if (this->emitDragGesture(gesture)) {
+            auto completed = CompletedGestureEvent{
+                .type         = CompletedGestureType::EDGE_SWIPE,
+                .direction    = direction,
+                .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
+                .edge_origin  = origin_edges
+            };
+            if (this->emitDragGesture(gesture) || this->reserveCompletedGesture(completed)) {
                 this->cancelTouchEventsOnAllWindows();
             }
         });
