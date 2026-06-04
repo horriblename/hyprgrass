@@ -171,8 +171,13 @@ void IGestureManager::addMultiFingerGesture(
                 .direction    = swipe_ptr->target_direction,
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
             };
+            const auto completed = CompletedGestureEvent{
+                .type         = CompletedGestureType::SWIPE,
+                .direction    = swipe_ptr->target_direction,
+                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
+            };
 
-            if (this->emitDragGesture(gesture)) {
+            if (this->emitDragGesture(gesture) || this->reserveCompletedGesture(completed)) {
                 this->cancelTouchEventsOnAllWindows();
             }
         });
