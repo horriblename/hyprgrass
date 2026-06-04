@@ -1,4 +1,6 @@
 #include <iostream>
+#include <type_traits>
+#include <utility>
 #include <variant>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
@@ -17,11 +19,13 @@ static void log_start_of_test() {
     std::cout << "=== start of: " << doctest::detail::g_cs->currentTest->m_name << std::endl;
 }
 
-enum class ExpectResultType {
+enum class ExpectResultType : int {
     COMPLETED,
     DRAG_TRIGGERED,
     DRAG_ENDED,
     CANCELLED,
+    NOT_SENT_WINDOW_CANCEL,
+    SENT_WINDOW_CANCEL,
     CHECK_PROGRESS,
     NOTHING_HAPPENED,
 };
@@ -45,10 +49,14 @@ void checkCondition(CMockGestureManager& gm, ExpectResult expect) {
     switch (expect.type) {
         case ExpectResultType::COMPLETED:
             CHECK(gm.triggered);
+            // implies sent cancel: might be sent earlier but must be sent at this point
+            CHECK(gm.sentWindowCancel);
             break;
         case ExpectResultType::DRAG_TRIGGERED:
             CHECK(gm.getActiveDragGesture().has_value());
             CHECK(gm.eventForwardingInhibited());
+            // implies sent cancel: might be sent earlier but must be sent at this point
+            CHECK(gm.sentWindowCancel);
             break;
         case ExpectResultType::DRAG_ENDED:
             CHECK(gm.dragEnded);
@@ -62,11 +70,18 @@ void checkCondition(CMockGestureManager& gm, ExpectResult expect) {
             CHECK(!gm.dragEnded);
             CHECK(!gm.getActiveDragGesture().has_value());
             break;
-        case ExpectResultType::CHECK_PROGRESS:
-            const auto got = gm.getGestureAt(expect.gesture_index)->get()->get_progress();
+        case ExpectResultType::NOT_SENT_WINDOW_CANCEL:
+            CHECK(!gm.sentWindowCancel);
+            break;
+        case ExpectResultType::SENT_WINDOW_CANCEL:
+            CHECK(gm.sentWindowCancel);
+            break;
+        case ExpectResultType::CHECK_PROGRESS: {
+            const double got = gm.getGestureAt(expect.gesture_index)->get()->get_progress();
             // fuck floating point math
             CHECK(std::abs(got - expect.progress) < 1e-5);
             break;
+        }
     }
 }
 
@@ -128,7 +143,9 @@ TEST_CASE("Swipe Drag: Start drag upon moving more than the threshold") {
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {550, 290}},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {0, 290}},
+        ExpectResult{ExpectResultType::SENT_WINDOW_CANCEL},
     };
     ProcessEvents(gm, {.type = ExpectResultType::DRAG_TRIGGERED}, events);
 }
@@ -159,7 +176,9 @@ TEST_CASE("Swipe: Complete upon moving more than the threshold then lifting a "
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {550, 290}},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {0, 290}},
+        ExpectResult{ExpectResultType::SENT_WINDOW_CANCEL},
         // TODO CHECK progress == 0.5
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {50, 300}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {100, 290}},
@@ -177,7 +196,9 @@ TEST_CASE("Multi-finger Tap") {
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
         Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 120, 2, {550, 290}},
+        ExpectResult{ExpectResultType::SENT_WINDOW_CANCEL},
     };
 
     ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
@@ -193,6 +214,7 @@ TEST_CASE("Multi-finger Tap: Timeout") {
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 510, 2, {550, 290}},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
     };
 
     ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
@@ -224,7 +246,9 @@ TEST_CASE("Long press: begin drag") {
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {460, 300}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 300, 1, {510, 290}},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
         Ev{wf::touch::EVENT_TYPE_MOTION, 511, 2, {560, 300}},
+        ExpectResult{ExpectResultType::SENT_WINDOW_CANCEL},
     };
 
     ProcessEvents(gm, {.type = ExpectResultType::DRAG_TRIGGERED}, events);

@@ -19,9 +19,10 @@ class CMockGestureManager final : public IGestureManager {
     // if set to true, handleDragGesture() will return true
     bool handlesDragEvents;
 
-    bool triggered = false;
-    bool cancelled = false;
-    bool dragEnded = false;
+    bool triggered        = false;
+    bool cancelled        = false;
+    bool dragEnded        = false;
+    bool sentWindowCancel = false;
 
     struct {
         double x, y;
