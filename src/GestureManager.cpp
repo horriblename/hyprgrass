@@ -307,15 +307,21 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
                 break;
 
             default:
+                if (!k->mouse) {
+                    // only mouse actions are considered on drag begin/end
+                    continue;
+                }
+
                 if (useMouseDispatcher) {
                     Log::logger->log(Log::DEBUG, "[hyprgrass] calling mouse dispatcher ({})", bind);
                     char pressed = type == GestureEventType::DRAG_BEGIN ? '1' : '0';
                     DISPATCHER->second(pressed + k->arg);
                     found = found || !k->nonConsuming;
                 } else {
-                    bool pressed = type == GestureEventType::DRAG_BEGIN;
+                    bool pressed          = type == GestureEventType::DRAG_BEGIN;
+                    this->mouseBindActive = pressed;
                     // yes this is how the lua dispatcher detects key press state
-                    Config::Actions::state()->m_passPressed = sc<int>(pressed);
+                    Config::Actions::state()->m_passPressed = static_cast<int>(pressed);
 
                     DISPATCHER->second(k->arg);
 
@@ -390,7 +396,11 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
                 return;
             }
 
-            this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_END);
+            // longpress already triggered CompletedGesture on timeout
+            if (this->mouseBindActive) {
+                this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_END);
+            }
+
             return;
         case DragGestureType::EDGE_SWIPE:
             if (this->workspaceSwipeActive) {
