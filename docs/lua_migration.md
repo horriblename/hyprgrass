@@ -14,13 +14,13 @@ A few things to keep in mind for your migration to Lua:
    ```lua
    -- workspace_swipe_fingers
    hl.plugin.hyprgrass.gesture({
-       gesture = {kind = "swipe", fingers = 3, direction = "horizontal"},
+       pattern = {kind = "swipe", fingers = 3, direction = "horizontal"},
        action = "workspace"
    })
 
    -- workspace_swipe_edge
    hl.plugin.hyprgrass.gesture({
-       gesture = {kind = "edge", origin = "down", direction = "horizontal"},
+       pattern = {kind = "edge", origin = "down", direction = "horizontal"},
        action = "workspace",
    })
    ```

@@ -283,7 +283,7 @@ int newBind(lua_State* L) {
     {
         Hyprutils::Utils::CScopeGuard x([L] { lua_pop(L, 1); });
 
-        lua_getfield(L, 1, "gesture");
+        lua_getfield(L, 1, "pattern");
         if (!lua_isstring(L, -1))
             return Config::Lua::Bindings::Internal::configError(L, "hyprgrass.bind: gesture must be a string");
 
@@ -373,7 +373,7 @@ int newGesture(lua_State* L) {
     GestureConfig gesture;
     {
         Hyprutils::Utils::CScopeGuard x([L] { lua_pop(L, 1); });
-        lua_getfield(L, 1, "gesture");
+        lua_getfield(L, 1, "pattern");
 
         auto maybeGesture = gestureConfigFromTable(L, 2);
         if (!maybeGesture)

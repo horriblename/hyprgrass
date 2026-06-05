@@ -56,30 +56,30 @@ TBD
 
 ```lua
 hl.plugin.hyprgrass.bind {
-    gesture = "edge:d:l",
+    pattern = "edge:d:l",
     action = hl.dsp.focus({workspace = "+1"}),
 }
 
 hl.plugin.hyprgrass.bind {
-    gesture = "edge:d:u",
+    pattern = "edge:d:u",
     mod = "ALT+SHIFT",
     action = hl.dsp.exec_cmd("firefox"),
 }
 
 -- longpress can trigger mouse binds:
 hl.plugin.hyprgrass.bind {
-    gesture = "longpress:3",
+    pattern = "longpress:3",
     action = hl.dsp.window.drag(),
     mouse = true,
 }
 
 hl.plugin.hyprgrass.bind {
-    gesture = "tap:3",
+    pattern = "tap:3",
     action = hl.dsp.window.float(),
 }
 
 hl.plugin.hyprgrass.bind {
-    gesture = "pinch:3:i",
+    pattern = "pinch:3:i",
     action = hl.dsp.exec_cmd("foot"),
 }
 ```
@@ -97,12 +97,12 @@ hyprgrass-gesture = <gesture_type>, <gesture_arg>, <direction>, [modifiers, ...]
 
 ```lua
 hl.plugin.hyprgrass.gesture {
-    gesture = {kind = "swipe", fingers = 3, direction = "down"},
+    pattern = {kind = "swipe", fingers = 3, direction = "down"},
     action = "close",
 }
 ```
 
-`gesture` is one of:
+`pattern` is one of:
 
 ```lua
 { kind = "swipe", fingers = ..., direction = ... }
@@ -132,7 +132,7 @@ The `origin` field for `kind = "edge"` is one of: left, right, up, down
 
 ```lua
 hl.plugin.hyprgrass.gesture {
-    gesture = {kind = "longpress", fingers = 3}
+    pattern = {kind = "longpress", fingers = 3}
     mod = "ALT + SHIFT",
     scale = 2.5,
 }
@@ -171,14 +171,14 @@ Example:
 
 ```lua
 hl.plugin.gesture {
-    gesture = {kind = "edge", origin = "up", direction = "down"},
+    pattern = {kind = "edge", origin = "up", direction = "down"},
     action = "emulate_touchpad",
     emulate_fingers = 4,
     emulate_direction = "down",
 }
 
 hl.plugin.gesture {
-    gesture = {kind = "swipe", fingers = 3, direction = "down"},
+    pattern = {kind = "swipe", fingers = 3, direction = "down"},
     action = "emulate_touchpad",
     emulate_fingers = 3,
     emulate_direction = "down",
@@ -193,13 +193,13 @@ hyprgrass-gesture = swipe, 3, down, emulate_touchpad, 3, down
 
 ```lua
 hl.plugin.hyprgrass.gesture {
-    gesture = {kind = "swipe", fingers = 3, direction = "down"},
+    pattern = {kind = "swipe", fingers = 3, direction = "down"},
     action = "close",
 }
 
 -- Swipe from upper edge downwards
 hl.plugin.hyprgrass.gesture {
-    gesture = {kind = "swipe", origin = "up", direction = "down"},
+    pattern = {kind = "swipe", origin = "up", direction = "down"},
     action = "special",
 }
 
