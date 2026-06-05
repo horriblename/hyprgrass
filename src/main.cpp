@@ -261,7 +261,7 @@ static std::optional<const char*> luaTableMaybeGetString(lua_State* L, int idx, 
 int newBind(lua_State* L) {
     if (!lua_istable(L, 1))
         return Config::Lua::Bindings::Internal::configError(
-            L, "bind: expected a table { mod, gesture, dispatcher, args }"
+            L, "hyprgrass.bind: expected a table { mod, gesture, dispatcher, args }"
         );
 
     SKeybind bind{};
@@ -273,7 +273,7 @@ int newBind(lua_State* L) {
         lua_getfield(L, 1, "mod");
         if (!lua_isnil(L, -1)) {
             if (!lua_isstring(L, -1))
-                return Config::Lua::Bindings::Internal::configError(L, "bind: mod must be a string");
+                return Config::Lua::Bindings::Internal::configError(L, "hyprgrass.bind: mod must be a string");
 
             const char* modStr = lua_tostring(L, -1);
             bind.modmask       = g_pKeybindManager->stringToModMask(modStr);
@@ -285,7 +285,7 @@ int newBind(lua_State* L) {
 
         lua_getfield(L, 1, "gesture");
         if (!lua_isstring(L, -1))
-            return Config::Lua::Bindings::Internal::configError(L, "bind: gesture must be a string");
+            return Config::Lua::Bindings::Internal::configError(L, "hyprgrass.bind: gesture must be a string");
 
         bind.key = lua_tostring(L, -1);
         // TODO: idk what this is
