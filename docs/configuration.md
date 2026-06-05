@@ -56,30 +56,30 @@ TBD
 
 ```lua
 hl.plugin.hyprgrass.bind {
-    pattern = "edge:d:l",
+    pattern = {kind = "edge", origin = "d", direction = "l"},
     action = hl.dsp.focus({workspace = "+1"}),
 }
 
 hl.plugin.hyprgrass.bind {
-    pattern = "edge:d:u",
+    pattern = {kind = "edge", origin = "d", direction = "u"},
     mod = "ALT+SHIFT",
     action = hl.dsp.exec_cmd("firefox"),
 }
 
 -- longpress can trigger mouse binds:
 hl.plugin.hyprgrass.bind {
-    pattern = "longpress:3",
+    pattern = {kind = "longpress", fingers = 3}
     action = hl.dsp.window.drag(),
     mouse = true,
 }
 
 hl.plugin.hyprgrass.bind {
-    pattern = "tap:3",
+    pattenr = {kind = "tap", fingers = 3}
     action = hl.dsp.window.float(),
 }
 
 hl.plugin.hyprgrass.bind {
-    pattern = "pinch:3:i",
+    pattenr = {kind = "pinch", fingers = 3, direction = "pinchin"}
     action = hl.dsp.exec_cmd("foot"),
 }
 ```
