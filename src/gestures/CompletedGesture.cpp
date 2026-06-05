@@ -1,5 +1,22 @@
 #include "CompletedGesture.hpp"
 #include "Shared.hpp"
+#include <string>
+
+std::string stringifyGestureType(const GestureType& type) {
+    switch (type) {
+        case GestureType::EDGE_SWIPE:
+            return "edge";
+
+        case GestureType::SWIPE:
+            return "swipe";
+        case GestureType::LONG_PRESS:
+            return "longpress";
+        case GestureType::PINCH:
+            return "pinch";
+        case GestureType::TAP:
+            return "tap";
+    }
+}
 
 std::string CompletedGestureEvent::to_string() const {
     switch (type) {

@@ -30,6 +30,16 @@ bool ShimTrackpadGestures::isSingleDirection(eTrackpadGestureDirection dir) {
     }
 }
 
+bool ShimTrackpadGestures::isSinglePinchDirection(eTrackpadGestureDirection dir) {
+    switch (dir) {
+        case TRACKPAD_GESTURE_DIR_PINCH_OUT:
+        case TRACKPAD_GESTURE_DIR_PINCH_IN:
+            return true;
+        default:
+            return false;
+    }
+}
+
 bool ShimTrackpadGestures::isPinch(eTrackpadGestureDirection dir) {
     switch (dir) {
         case TRACKPAD_GESTURE_DIR_PINCH:

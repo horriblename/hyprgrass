@@ -11,6 +11,8 @@ enum class GestureType {
     TAP,
 };
 
+std::string stringifyGestureType(const GestureType&);
+
 struct CompletedGestureEvent {
     GestureType type;
     GestureDirection direction;

@@ -1,4 +1,6 @@
+#include "gestures/CompletedGesture.hpp"
 #include "gestures/DragGesture.hpp"
+#include "gestures/Shared.hpp"
 #include "src/managers/input/trackpad/GestureTypes.hpp"
 #include <any>
 #include <cstddef>
@@ -16,6 +18,8 @@
 constexpr size_t MOD_MASK_SHIFT = 8;
 constexpr size_t FINGERS_MASK   = 0xFF; // lowest 8 bits
 
+GestureDirection toHyprgrassDirection(eTrackpadGestureDirection dir);
+
 struct GestureConfig {
     GestureType type;
     eTrackpadGestureDirection direction;
@@ -27,11 +31,23 @@ struct GestureConfig {
         return fingersOrOrigin;
     }
 
+    inline GestureDirection edgeOrigin() const {
+        return static_cast<GestureDirection>(this->fingersOrOrigin);
+    }
+
     static eTrackpadGestureDirection originFromFingers(size_t);
+    std::string to_string() const {
+        CompletedGestureEvent gev{
+            .type         = this->type,
+            .direction    = toHyprgrassDirection(this->direction),
+            .finger_count = static_cast<uint32_t>(this->type == GestureType::EDGE_SWIPE ? 0 : this->fingers()),
+            .edge_origin  = this->type == GestureType::EDGE_SWIPE ? this->edgeOrigin() : 0,
+        };
+        return gev.to_string();
+    }
 };
 
 std::expected<GestureConfig, std::string> parseGesturePattern(Hyprutils::String::CConstVarList& vars);
-GestureDirection toHyprgrassDirection(eTrackpadGestureDirection dir);
 
 struct ShimTrackpadGestures {
   public:
@@ -69,6 +85,7 @@ struct ShimTrackpadGestures {
 
     static bool isPinch(eTrackpadGestureDirection dir);
     static bool isSingleDirection(eTrackpadGestureDirection dir);
+    static bool isSinglePinchDirection(eTrackpadGestureDirection dir);
 };
 
 inline std::unique_ptr<ShimTrackpadGestures> g_pShimTrackpadGestures;

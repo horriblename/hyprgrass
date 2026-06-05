@@ -1,6 +1,7 @@
 #include "EmulateTouchpadGesture.hpp"
 #include "GestureManager.hpp"
 #include "TouchVisualizer.hpp"
+#include "gestures/CompletedGesture.hpp"
 #include "gestures/DragGesture.hpp"
 #include "globals.hpp"
 #include "version.hpp"
@@ -248,6 +249,8 @@ static std::optional<float> luaTableMaybeGetFloat(lua_State* L, int idx, std::st
     return v;
 }
 
+static std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, int index, bool hgGesture);
+
 // Note: we don't own the returned string
 static std::optional<const char*> luaTableMaybeGetString(lua_State* L, int idx, std::string_view key) {
     lua_getfield(L, idx, key.data());
@@ -261,7 +264,7 @@ static std::optional<const char*> luaTableMaybeGetString(lua_State* L, int idx, 
 int newBind(lua_State* L) {
     if (!lua_istable(L, 1))
         return Config::Lua::Bindings::Internal::configError(
-            L, "hyprgrass.bind: expected a table { mod, gesture, dispatcher, args }"
+            L, "hyprgrass.bind: expected a table { mod, pattern, dispatcher, args }"
         );
 
     SKeybind bind{};
@@ -284,10 +287,14 @@ int newBind(lua_State* L) {
         Hyprutils::Utils::CScopeGuard x([L] { lua_pop(L, 1); });
 
         lua_getfield(L, 1, "pattern");
-        if (!lua_isstring(L, -1))
-            return Config::Lua::Bindings::Internal::configError(L, "hyprgrass.bind: gesture must be a string");
+        auto maybeGesture = gestureConfigFromTable(L, 2, false);
+        if (!maybeGesture) {
+            return Config::Lua::Bindings::Internal::configError(
+                L, std::format("invalid pattern field: {}", maybeGesture.error())
+            );
+        }
 
-        bind.key = lua_tostring(L, -1);
+        bind.key = maybeGesture.value().to_string();
         // TODO: idk what this is
         bind.displayKey = bind.key;
     }
@@ -311,7 +318,9 @@ int newBind(lua_State* L) {
     return 0;
 }
 
-std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, int index) {
+// If hgGesture is true, allows multi-directional direction where applicable, and allows
+// a direction for longpress
+std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, int index, bool hgGesture) {
     std::string kind = luaTableGetString(L, index, "kind");
     GestureType type;
     size_t fingersOrOrigin              = 0;
@@ -329,7 +338,13 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
             return std::unexpected("kind=swipe: direction must be a valid direction string");
         direction = g_pTrackpadGestures->dirForString(dirStr);
         if (ShimTrackpadGestures::isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE)
-            return std::unexpected(std::format("invalid direction for a swipe gesture: {}", dirStr));
+            return std::unexpected(std::format("kind=swipe: invalid direction {}", dirStr));
+
+        if (!hgGesture && !ShimTrackpadGestures::isSingleDirection(direction)) {
+            return std::unexpected(
+                std::format("direction must be left/right/up/down for hyprgrass.bind, got {}", dirStr)
+            );
+        }
     } else if (kind == "edge") {
         type = GestureType::EDGE_SWIPE;
 
@@ -339,7 +354,7 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
         auto origin = g_pTrackpadGestures->dirForString(originStr);
         if (!ShimTrackpadGestures::isSingleDirection(origin))
             return std::unexpected(
-                std::format("invalid ORIGIN for an edge gesture, expected a single direction, got {}", originStr)
+                std::format("invalid origin for an edge gesture, expected a single direction, got {}", originStr)
             );
         fingersOrOrigin = toHyprgrassDirection(origin);
 
@@ -349,12 +364,50 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
         direction = g_pTrackpadGestures->dirForString(dirStr);
         if (ShimTrackpadGestures::isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE)
             return std::unexpected(std::format("invalid direction for an edge gesture: {}", dirStr));
+
+        if (!hgGesture && !ShimTrackpadGestures::isSingleDirection(direction)) {
+            return std::unexpected(
+                std::format("direction must be left/right/up/down for hyprgrass.bind, got {}", dirStr)
+            );
+        }
     } else if (kind == "longpress") {
+        type = GestureType::LONG_PRESS;
 
         fingersOrOrigin = luaTableGetInt(L, index, "fingers");
         if (fingersOrOrigin == 0)
-            return std::unexpected("longpress: fingers must be a positive integer");
-        type = GestureType::LONG_PRESS;
+            return std::unexpected("kind=longpress: fingers must be a positive integer");
+
+        if (hgGesture) {
+            const char* dirStr = luaTableGetString(L, index, "direction");
+            direction          = g_pTrackpadGestures->dirForString(dirStr);
+        }
+    } else if (kind == "pinch") {
+        type = GestureType::PINCH;
+
+        fingersOrOrigin = luaTableGetInt(L, index, "fingers");
+        if (fingersOrOrigin == 0)
+            return std::unexpected("kind=pinch: fingers must be a positive integer");
+
+        const char* dirStr = luaTableGetString(L, index, "direction");
+        direction          = g_pTrackpadGestures->dirForString(dirStr);
+        if (!hgGesture && !ShimTrackpadGestures::isSinglePinchDirection(direction)) {
+            return std::unexpected("kind=pinch: direction must be pinchin/pinchout");
+        }
+
+        if (!ShimTrackpadGestures::isPinch(direction)) {
+            if (hgGesture) {
+                return std::unexpected("kind=pinch: direction must be pinch/pinchin/pinchout");
+            } else {
+                return std::unexpected("kind=pinch: direction must be pinchin/pinchout");
+            }
+        }
+
+    } else if (!hgGesture && kind == "tap") {
+        type = GestureType::TAP;
+
+        fingersOrOrigin = luaTableGetInt(L, index, "fingers");
+        if (fingersOrOrigin == 0)
+            return std::unexpected("kind=tap: fingers must be a positive integer");
     } else {
         return std::unexpected(std::format("invalid gesture kind: {}", kind));
     }
@@ -368,16 +421,21 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
 
 int newGesture(lua_State* L) {
     if (!lua_istable(L, 1))
-        return Config::Lua::Bindings::Internal::configError(L, "hyprgrass.gesture: argument must be a table");
+        return Config::Lua::Bindings::Internal::configError(
+            L, "hyprgrass.gesture: expected argument to be a table {pattern, action, ...}"
+        );
 
     GestureConfig gesture;
     {
         Hyprutils::Utils::CScopeGuard x([L] { lua_pop(L, 1); });
         lua_getfield(L, 1, "pattern");
 
-        auto maybeGesture = gestureConfigFromTable(L, 2);
-        if (!maybeGesture)
-            return Config::Lua::Bindings::Internal::configError(L, maybeGesture.error());
+        auto maybeGesture = gestureConfigFromTable(L, 2, true);
+        if (!maybeGesture) {
+            return Config::Lua::Bindings::Internal::configError(
+                L, std::format("invalid pattern field: {}", maybeGesture.error())
+            );
+        }
 
         gesture = maybeGesture.value();
     }
@@ -614,6 +672,10 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         HyprlandAPI::addConfigKeyword(
             PHANDLE, KEYWORD_HG_GESTURE, hyprgrassGestureKeyword, Hyprlang::SHandlerOptions{true}
         );
+
+        // legacy-only options
+        HyprlandAPI::addConfigValueV2(PHANDLE, g_config->workspaceSwipeFingers);
+        HyprlandAPI::addConfigValueV2(PHANDLE, g_config->workspaceSwipeEdge);
 #pragma GCC diagnostic pop
     } else {
         g_config = makeUnique<Cfg>("hyprgrass");
@@ -629,10 +691,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         });
     }
 
-    HyprlandAPI::addConfigValueV2(PHANDLE, g_config->workspaceSwipeFingers);
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->longPressDelay);
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->edgeMargin);
-    HyprlandAPI::addConfigValueV2(PHANDLE, g_config->workspaceSwipeEdge);
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->sensitivity);
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->sendCancel);
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->resizeOnBorder);
