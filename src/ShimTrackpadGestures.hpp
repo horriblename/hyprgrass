@@ -17,7 +17,7 @@ constexpr size_t MOD_MASK_SHIFT = 8;
 constexpr size_t FINGERS_MASK   = 0xFF; // lowest 8 bits
 
 struct GestureConfig {
-    DragGestureType type;
+    GestureType type;
     eTrackpadGestureDirection direction;
     size_t fingersOrOrigin;
     // bit mask of eKeyboardModifiers
@@ -43,19 +43,19 @@ struct ShimTrackpadGestures {
     }
 
     inline CTrackpadGestures* swipe() {
-        return &gestures[size_t(DragGestureType::SWIPE)];
+        return &gestures[size_t(GestureType::SWIPE)];
     }
     inline CTrackpadGestures* edge() {
-        return &gestures[size_t(DragGestureType::EDGE_SWIPE)];
+        return &gestures[size_t(GestureType::EDGE_SWIPE)];
     }
     inline CTrackpadGestures* longPress() {
-        return &gestures[size_t(DragGestureType::LONG_PRESS)];
+        return &gestures[size_t(GestureType::LONG_PRESS)];
     }
     inline CTrackpadGestures* pinch() {
-        return &gestures[size_t(DragGestureType::PINCH)];
+        return &gestures[size_t(GestureType::PINCH)];
     }
 
-    inline CTrackpadGestures* get(DragGestureType type) {
+    inline CTrackpadGestures* get(GestureType type) {
         if (0 <= size_t(type) && size_t(type) < sizeof(gestures) / sizeof(CTrackpadGestures))
             return &gestures[size_t(type)];
 

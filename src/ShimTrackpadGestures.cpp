@@ -42,7 +42,7 @@ bool ShimTrackpadGestures::isPinch(eTrackpadGestureDirection dir) {
 }
 
 std::expected<GestureConfig, std::string> parseGesturePattern(Hyprutils::String::CConstVarList& vars) {
-    DragGestureType type;
+    GestureType type;
     size_t fingersOrOrigin              = 0;
     eTrackpadGestureDirection direction = TRACKPAD_GESTURE_DIR_NONE;
 
@@ -51,7 +51,7 @@ std::expected<GestureConfig, std::string> parseGesturePattern(Hyprutils::String:
     }
 
     if (vars[0] == "swipe") {
-        type = DragGestureType::SWIPE;
+        type = GestureType::SWIPE;
 
         auto res = parseFingers(vars[1], fingersOrOrigin);
         if (!res) {
@@ -63,7 +63,7 @@ std::expected<GestureConfig, std::string> parseGesturePattern(Hyprutils::String:
             return std::unexpected(std::format("invalid direction for a swipe gesture: {}", vars[2]));
         }
     } else if (vars[0] == "edge") {
-        type        = DragGestureType::EDGE_SWIPE;
+        type        = GestureType::EDGE_SWIPE;
         auto origin = g_pTrackpadGestures->dirForString(vars[1]);
         if (!ShimTrackpadGestures::isSingleDirection(origin)) {
             return std::unexpected(
@@ -78,7 +78,7 @@ std::expected<GestureConfig, std::string> parseGesturePattern(Hyprutils::String:
             return std::unexpected(std::format("invalid direction for an edge gesture: {}", vars[2]));
         }
     } else if (vars[0] == "longpress") {
-        type     = DragGestureType::LONG_PRESS;
+        type     = GestureType::LONG_PRESS;
         auto res = parseFingers(vars[1], fingersOrOrigin);
         if (!res) {
             return std::unexpected(res.error());
@@ -87,7 +87,7 @@ std::expected<GestureConfig, std::string> parseGesturePattern(Hyprutils::String:
         direction = g_pTrackpadGestures->dirForString(vars[2]);
         // // pinch disabled for now for being buggy
         // } else if (vars[0] == "pinch") {
-        //     type = DragGestureType::PINCH;
+        //     type = GestureType::PINCH;
         //     auto res = parseFingers(vars[1], fingersOrOrigin);
         //     if (!res) {
         //         return std::unexpected(res.error());
@@ -137,25 +137,25 @@ GestureDirection toHyprgrassDirection(eTrackpadGestureDirection dir) {
     return 0;
 }
 
-static void printGesture(DragGestureType type, const CTrackpadGestures::SGestureData& gesture) {
+static void printGesture(GestureType type, const CTrackpadGestures::SGestureData& gesture) {
     switch (type) {
-        case DragGestureType::SWIPE: {
+        case GestureType::SWIPE: {
             std::string direction = stringifyDirection(toHyprgrassDirection(gesture.direction));
             Log::logger->log(
                 Log::DEBUG, "| gesture: swipe, fingers: {}, direction: {}", gesture.fingerCount, direction
             );
             break;
         }
-        case DragGestureType::LONG_PRESS:
+        case GestureType::LONG_PRESS:
             Log::logger->log(Log::DEBUG, "| gesture: long_press, fingers: {}", gesture.fingerCount);
             break;
-        case DragGestureType::EDGE_SWIPE: {
+        case GestureType::EDGE_SWIPE: {
             std::string origin    = stringifyDirection(gesture.fingerCount);
             std::string direction = stringifyDirection(toHyprgrassDirection(gesture.direction));
             Log::logger->log(Log::DEBUG, "| gesture: edge, origin: {}, direction: {}", origin, direction);
             break;
         }
-        case DragGestureType::PINCH:
+        case GestureType::PINCH:
             Log::logger->log(Log::DEBUG, "| gesture: long_press, fingers: {}", gesture.fingerCount);
             break;
     }
@@ -171,13 +171,13 @@ void ShimTrackpadGestures::listGestures() {
     Log::logger->log(Log::DEBUG, "[hyprgrass] listing gestures:");
 
     const auto types = std::array{
-        DragGestureType::SWIPE,
-        DragGestureType::LONG_PRESS,
-        DragGestureType::EDGE_SWIPE,
-        DragGestureType::PINCH,
+        GestureType::SWIPE,
+        GestureType::LONG_PRESS,
+        GestureType::EDGE_SWIPE,
+        GestureType::PINCH,
     };
 
-    for (const DragGestureType type : types) {
+    for (const GestureType type : types) {
         for (const auto& gesture : this->get(type)->m_gestures) {
             printGesture(type, *gesture);
         }

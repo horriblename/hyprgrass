@@ -313,12 +313,12 @@ int newBind(lua_State* L) {
 
 std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, int index) {
     std::string kind = luaTableGetString(L, index, "kind");
-    DragGestureType type;
+    GestureType type;
     size_t fingersOrOrigin              = 0;
     eTrackpadGestureDirection direction = TRACKPAD_GESTURE_DIR_NONE;
 
     if (kind == "swipe") {
-        type = DragGestureType::SWIPE;
+        type = GestureType::SWIPE;
 
         fingersOrOrigin = luaTableGetInt(L, index, "fingers");
         if (fingersOrOrigin <= 0)
@@ -331,7 +331,7 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
         if (ShimTrackpadGestures::isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE)
             return std::unexpected(std::format("invalid direction for a swipe gesture: {}", dirStr));
     } else if (kind == "edge") {
-        type = DragGestureType::EDGE_SWIPE;
+        type = GestureType::EDGE_SWIPE;
 
         const char* originStr = luaTableGetString(L, index, "origin");
         if (!originStr)
@@ -350,11 +350,11 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
         if (ShimTrackpadGestures::isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE)
             return std::unexpected(std::format("invalid direction for an edge gesture: {}", dirStr));
     } else if (kind == "longpress") {
-        type = DragGestureType::LONG_PRESS;
 
         fingersOrOrigin = luaTableGetInt(L, index, "fingers");
         if (fingersOrOrigin == 0)
             return std::unexpected("longpress: fingers must be a positive integer");
+        type = GestureType::LONG_PRESS;
     } else {
         return std::unexpected(std::format("invalid gesture kind: {}", kind));
     }
@@ -509,10 +509,10 @@ static void onPreConfigReload() {
 }
 
 SDispatchResult listInternalBinds(std::string) {
-    static const DragGestureType dragGestureTypes[3] = {
-        DragGestureType::SWIPE,
-        DragGestureType::LONG_PRESS,
-        DragGestureType::EDGE_SWIPE,
+    static const GestureType dragGestureTypes[3] = {
+        GestureType::SWIPE,
+        GestureType::LONG_PRESS,
+        GestureType::EDGE_SWIPE,
     };
     Log::logger->log(Log::DEBUG, "[hyprgrass] Listing internal binds:");
     for (const auto& bind : g_pGestureManager->internalBinds) {

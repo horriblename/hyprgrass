@@ -167,12 +167,12 @@ void IGestureManager::addMultiFingerGesture(
 
             const auto gesture = DragGestureEvent{
                 .time         = time,
-                .type         = DragGestureType::SWIPE,
+                .type         = GestureType::SWIPE,
                 .direction    = swipe_ptr->target_direction,
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
             };
             const auto completed = CompletedGestureEvent{
-                .type         = CompletedGestureType::SWIPE,
+                .type         = GestureType::SWIPE,
                 .direction    = swipe_ptr->target_direction,
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
             };
@@ -187,7 +187,7 @@ void IGestureManager::addMultiFingerGesture(
         std::make_unique<OnCompleteAction>(std::move(swipe_liftoff), [=, this](uint32_t time, bool _) {
             const auto drag = DragGestureEvent{
                 .time         = time,
-                .type         = DragGestureType::SWIPE,
+                .type         = GestureType::SWIPE,
                 .direction    = 0,
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
             };
@@ -195,7 +195,7 @@ void IGestureManager::addMultiFingerGesture(
                 return;
             } else {
                 const auto gesture = CompletedGestureEvent{
-                    .type         = CompletedGestureType::SWIPE,
+                    .type         = GestureType::SWIPE,
                     .direction    = swipe_ptr->target_direction,
                     .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
                 };
@@ -222,7 +222,7 @@ void IGestureManager::addMultiFingerTap(double base_finger_slip, const float* se
 
     auto ack = [this]() {
         const auto gesture = CompletedGestureEvent{
-            .type         = CompletedGestureType::TAP,
+            .type         = GestureType::TAP,
             .direction    = 0,
             .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
         };
@@ -247,13 +247,13 @@ void IGestureManager::addLongPress(double base_finger_slip, const float* sensiti
             }
             const auto gesture = DragGestureEvent{
                 .time         = time,
-                .type         = DragGestureType::LONG_PRESS,
+                .type         = GestureType::LONG_PRESS,
                 .direction    = 0,
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
             };
 
             const auto gesture1 = CompletedGestureEvent{
-                .type         = CompletedGestureType::LONG_PRESS,
+                .type         = GestureType::LONG_PRESS,
                 .direction    = 0,
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
             };
@@ -307,13 +307,13 @@ void IGestureManager::addEdgeSwipeGesture(
             auto direction = edge_ptr->target_direction;
             auto gesture   = DragGestureEvent{
                   .time         = time,
-                  .type         = DragGestureType::EDGE_SWIPE,
+                  .type         = GestureType::EDGE_SWIPE,
                   .direction    = direction,
                   .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
                   .edge_origin  = origin_edges
             };
             auto completed = CompletedGestureEvent{
-                .type         = CompletedGestureType::EDGE_SWIPE,
+                .type         = GestureType::EDGE_SWIPE,
                 .direction    = direction,
                 .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
                 .edge_origin  = origin_edges
@@ -323,13 +323,12 @@ void IGestureManager::addEdgeSwipeGesture(
             }
         });
     auto release_and_ack = std::make_unique<OnCompleteAction>(
-        std::make_unique<wf::touch::touch_action_t>(1, false),
-        [edge_ptr, edge_margin, this](uint32_t time, bool _) {
+        std::make_unique<wf::touch::touch_action_t>(1, false), [edge_ptr, edge_margin, this](uint32_t time, bool _) {
             auto origin_edges = find_swipe_edges(m_sGestureState.get_center().origin, *edge_margin);
             auto direction    = edge_ptr->target_direction;
             auto dragEvent    = DragGestureEvent{
                    .time         = time,
-                   .type         = DragGestureType::EDGE_SWIPE,
+                   .type         = GestureType::EDGE_SWIPE,
                    .direction    = direction,
                    .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
                    .edge_origin  = origin_edges,
@@ -344,7 +343,7 @@ void IGestureManager::addEdgeSwipeGesture(
             }
 
             auto event = CompletedGestureEvent{
-                .type         = CompletedGestureType::EDGE_SWIPE,
+                .type         = GestureType::EDGE_SWIPE,
                 .direction    = direction,
                 .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
                 .edge_origin  = origin_edges,
@@ -385,7 +384,7 @@ void IGestureManager::addPinchGesture(double base_threshold, const float* sensit
 
             auto gesture = DragGestureEvent{
                 .time         = time,
-                .type         = DragGestureType::PINCH,
+                .type         = GestureType::PINCH,
                 .direction    = dir,
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
                 .edge_origin  = 0,
@@ -396,7 +395,7 @@ void IGestureManager::addPinchGesture(double base_threshold, const float* sensit
             }
 
             auto completed = CompletedGestureEvent{
-                .type         = CompletedGestureType::PINCH,
+                .type         = GestureType::PINCH,
                 .direction    = dir,
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
             };
@@ -414,7 +413,7 @@ void IGestureManager::addPinchGesture(double base_threshold, const float* sensit
         if (!this->activeDragGesture.has_value()) {
             auto dir   = this->m_sGestureState.get_pinch_scale() < 1.0 ? GESTURE_DIRECTION_OUT : GESTURE_DIRECTION_IN;
             auto event = CompletedGestureEvent{
-                .type         = CompletedGestureType::PINCH,
+                .type         = GestureType::PINCH,
                 .direction    = dir,
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
                 .edge_origin  = 0,
