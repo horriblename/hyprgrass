@@ -44,16 +44,19 @@ struct Cfg {
           workspaceSwipeEdgeName{key(pluginName, "workspace_swipe_edge")},
           sensitivityName{key(pluginName, "sensitivity")}, sendCancelName{key(pluginName, "debug:send_cancel")},
           resizeOnBorderName{key(pluginName, "resize_on_border_long_press")},
-          workspaceSwipeFingers{
-              makeShared<INT>(workspaceSwipeFingersName.data(), "Number of fingers to trigger workspace swipe", 3)
-          },
+          // config options
+          workspaceSwipeFingers{makeShared<INT>(
+              workspaceSwipeFingersName.data(), "Number of fingers to trigger workspace swipe",
+              pluginName == "hyprgrass" ? -1 : 3
+          )},
           longPressDelay{makeShared<INT>(longPressDelayName.data(), "Long press delay in milliseconds", 400)},
           edgeMargin{makeShared<INT>(
               edgeMarginName.data(), "Distance from edge of screen to consider for edge gestures, in pixels", 10
           )},
-          workspaceSwipeEdge{
-              makeShared<STR>(workspaceSwipeEdgeName.data(), "Edge to swipe from to trigger workspace swipe", "d")
-          },
+          workspaceSwipeEdge{makeShared<STR>(
+              workspaceSwipeEdgeName.data(), "Edge to swipe from to trigger workspace swipe",
+              pluginName == "hyprgrass" ? "" : "d"
+          )},
           sensitivity{makeShared<FLOAT>(sensitivityName.data(), "Gesture sensitivity", 1.0)},
           sendCancel{makeShared<BOOL>(
               sendCancelName.data(), "Whether to send cancel events to windows on gesture activation", true
