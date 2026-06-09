@@ -23,7 +23,7 @@
         }));
   in {
     packages = withPkgsFor (system: pkgs: rec {
-      inherit (pkgs) wf-touch;
+      inherit (pkgs) wf-touch hyprland;
       inherit (pkgs.hyprlandPlugins) hyprgrass hyprgrass-pulse hyprgrass-backlight;
 
       default = hyprgrass;
