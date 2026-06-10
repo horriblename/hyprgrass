@@ -234,15 +234,6 @@ static int luaTableGetInt(lua_State* L, int idx, std::string_view key) {
     return v;
 }
 
-// Note: we don't own the returned string
-// Can return NULL
-static const char* luaTableGetString(lua_State* L, int idx, std::string_view key) {
-    lua_getfield(L, idx, key.data());
-    const char* v = lua_tostring(L, -1);
-    lua_pop(L, 1);
-    return v;
-}
-
 static std::expected<std::optional<float>, std::string>
 luaTableMaybeGetFloat(lua_State* L, int idx, std::string_view key) {
     int valid;
@@ -266,14 +257,30 @@ luaTableMaybeGetFloat(lua_State* L, int idx, std::string_view key) {
 
 static std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, int index, bool hgGesture);
 
-// Note: we don't own the returned string
-static std::optional<const char*> luaTableMaybeGetString(lua_State* L, int idx, std::string_view key) {
+static std::expected<std::optional<std::string_view>, std::string>
+luaTableMaybeGetString(lua_State* L, int idx, std::string_view key) {
     lua_getfield(L, idx, key.data());
+    Hyprutils::Utils::CScopeGuard x([L] { lua_pop(L, 1); });
+
     if (lua_isnil(L, -1))
         return std::nullopt;
+
     const char* v = lua_tostring(L, -1);
-    lua_pop(L, 1);
+
+    if (v == NULL) {
+        return std::unexpected{std::format("in field \"{}\": expected a string", key)};
+    }
     return v;
+}
+
+static std::expected<std::string_view, std::string> luaTableGetString(lua_State* L, int idx, std::string_view key) {
+    auto v = luaTableMaybeGetString(L, idx, key);
+    if (!v)
+        return std::unexpected{v.error()};
+    if (v.value() == std::nullopt) {
+        return std::unexpected{std::format("missing field \"{}\", expected a string", key)};
+    }
+    return v.value().value();
 }
 
 int newBind(lua_State* L) {
@@ -345,7 +352,15 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
         )};
     }
 
-    std::string kind = luaTableGetString(L, index, "kind");
+    auto maybeKindResult = luaTableMaybeGetString(L, index, "kind");
+    if (!maybeKindResult) {
+        return std::unexpected{
+            std::format("invalid type in field \"kind\", expected \"swipe|edge|longpress|pinch|tap\"")
+        };
+    } else if (!maybeKindResult.value().has_value()) {
+        return std::unexpected{std::format("missing field \"kind\", expected \"swipe|edge|longpress|pinch|tap\"")};
+    }
+    std::string kind{maybeKindResult.value().value()};
     GestureType type;
     size_t fingersOrOrigin              = 0;
     eTrackpadGestureDirection direction = TRACKPAD_GESTURE_DIR_NONE;
@@ -357,10 +372,11 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
         if (fingersOrOrigin <= 0)
             return std::unexpected("kind=swipe: fingers must be a positive integer");
 
-        const char* dirStr = luaTableGetString(L, index, "direction");
-        if (!dirStr)
-            return std::unexpected("kind=swipe: direction must be a valid direction string");
-        direction = g_pTrackpadGestures->dirForString(dirStr);
+        const auto dirStrResult = luaTableGetString(L, index, "direction");
+        if (!dirStrResult)
+            return std::unexpected{"kind=swipe: field \"direction\" must be a valid direction string"};
+        const std::string_view dirStr = dirStrResult.value();
+        direction                     = g_pTrackpadGestures->dirForString(dirStr);
         if (ShimTrackpadGestures::isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE)
             return std::unexpected(std::format("kind=swipe: invalid direction {}", dirStr));
 
@@ -372,26 +388,31 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
     } else if (kind == "edge") {
         type = GestureType::EDGE_SWIPE;
 
-        const char* originStr = luaTableGetString(L, index, "origin");
-        if (!originStr)
-            return std::unexpected("kind=edge: origin must be a valid direction string");
-        auto origin = g_pTrackpadGestures->dirForString(originStr);
+        const auto originStrResult = luaTableGetString(L, index, "origin");
+        if (!originStrResult)
+            return std::unexpected("kind=edge: field \"origin\" must be a valid direction string");
+        auto origin = g_pTrackpadGestures->dirForString(originStrResult.value());
         if (!ShimTrackpadGestures::isSingleDirection(origin))
             return std::unexpected(
-                std::format("invalid origin for an edge gesture, expected a single direction, got {}", originStr)
+                std::format(
+                    "invalid origin for an edge gesture, expected a single direction, got {}", originStrResult.value()
+                )
             );
         fingersOrOrigin = toHyprgrassDirection(origin);
 
-        const char* dirStr = luaTableGetString(L, index, "direction");
-        if (!dirStr)
+        const auto dirStrResult = luaTableGetString(L, index, "direction");
+        if (!dirStrResult)
             return std::unexpected("kind=edge: direction must be a valid direction string");
-        direction = g_pTrackpadGestures->dirForString(dirStr);
+        std::string_view dirStr = dirStrResult.value();
+        direction               = g_pTrackpadGestures->dirForString(dirStrResult.value());
         if (ShimTrackpadGestures::isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE)
-            return std::unexpected(std::format("invalid direction for an edge gesture: {}", dirStr));
+            return std::unexpected(
+                std::format("invalid direction for an edge gesture: \"{}\", expected left/right/up/down", dirStr)
+            );
 
         if (!hgGesture && !ShimTrackpadGestures::isSingleDirection(direction)) {
             return std::unexpected(
-                std::format("direction must be left/right/up/down for hyprgrass.bind, got {}", dirStr)
+                std::format("direction must be left/right/up/down for hyprgrass.bind, got \"{}\"", dirStr)
             );
         }
     } else if (kind == "longpress") {
@@ -402,8 +423,12 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
             return std::unexpected("kind=longpress: fingers must be a positive integer");
 
         if (hgGesture) {
-            const char* dirStr = luaTableGetString(L, index, "direction");
-            direction          = g_pTrackpadGestures->dirForString(dirStr);
+            auto dirStrResult = luaTableMaybeGetString(L, index, "direction");
+            if (!dirStrResult) {
+                return std::unexpected("kind=longpress: field \"direction\" should be a valid direction string");
+            }
+            if (dirStrResult.value().has_value())
+                direction = g_pTrackpadGestures->dirForString(dirStrResult.value().value());
         }
     } else if (kind == "pinch") {
         type = GestureType::PINCH;
@@ -412,8 +437,10 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
         if (fingersOrOrigin == 0)
             return std::unexpected("kind=pinch: fingers must be a positive integer");
 
-        const char* dirStr = luaTableGetString(L, index, "direction");
-        direction          = g_pTrackpadGestures->dirForString(dirStr);
+        auto dirStrResult = luaTableGetString(L, index, "direction");
+        if (!dirStrResult)
+            return std::unexpected{std::format("kind=pinch: field \"direction\" must be a valid direction string")};
+        direction = g_pTrackpadGestures->dirForString(dirStrResult.value());
         if (!hgGesture && !ShimTrackpadGestures::isSinglePinchDirection(direction)) {
             return std::unexpected("kind=pinch: direction must be pinchin/pinchout");
         }
@@ -464,8 +491,13 @@ int newGesture(lua_State* L) {
         gesture = maybeGesture.value();
     }
 
-    auto maybeMod    = luaTableMaybeGetString(L, 1, "mod");
-    uint32_t modMask = maybeMod ? g_pKeybindManager->stringToModMask(maybeMod.value()) : 0;
+    auto modResult = luaTableMaybeGetString(L, 1, "mod");
+    if (!modResult) {
+        return Config::Lua::Bindings::Internal::configError(L, "hyprgrass.gesture: {}", modResult.error());
+    }
+
+    auto maybeMod    = modResult.value();
+    uint32_t modMask = maybeMod ? g_pKeybindManager->stringToModMask(std::string{maybeMod.value()}) : 0;
 
     auto maybeScaleResult = luaTableMaybeGetFloat(L, 1, "scale");
     if (!maybeScaleResult) {
@@ -504,9 +536,20 @@ int newGesture(lua_State* L) {
     CTrackpadGestures* handler = g_pShimTrackpadGestures->get(gesture.type);
     std::expected<void, std::string> result;
 
-    auto workspaceName = luaTableMaybeGetString(L, 1, "workspace_name").value_or("");
-    auto zoomLevel     = luaTableMaybeGetString(L, 1, "zoom_level").value_or("");
-    auto mode          = luaTableMaybeGetString(L, 1, "mode").value_or("");
+    auto wsNameResult = luaTableMaybeGetString(L, 1, "workspace_name");
+    if (!wsNameResult)
+        return Config::Lua::Bindings::Internal::configError(L, wsNameResult.error());
+    std::string workspaceName{wsNameResult.value().value_or("")};
+
+    auto zoomLevelResult = luaTableMaybeGetString(L, 1, "zoom_level");
+    if (!zoomLevelResult)
+        return Config::Lua::Bindings::Internal::configError(L, zoomLevelResult.error());
+    std::string zoomLevel{zoomLevelResult.value().value_or("")};
+
+    auto modeResult = luaTableMaybeGetString(L, 1, "zoom_level");
+    if (!modeResult)
+        return Config::Lua::Bindings::Internal::configError(L, modeResult.error());
+    std::string mode{modeResult.value().value_or("")};
 
     // TODO: impl
     const bool disableInhibit = false;
