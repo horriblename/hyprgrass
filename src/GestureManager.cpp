@@ -235,6 +235,9 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 
             return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
             break;
+        case GestureType::TAP:
+            // tap does not trigger drag
+            break;
     }
 
     return false;
@@ -366,6 +369,9 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
 
         case GestureType::PINCH:
             break;
+        case GestureType::TAP:
+            // tap does not trigger drag
+            break;
     }
 }
 
@@ -410,6 +416,9 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
         case GestureType::PINCH:
             this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_END);
             return;
+        case GestureType::TAP:
+            // tap does not trigger drag
+            break;
     }
 }
 

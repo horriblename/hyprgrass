@@ -1,9 +1,9 @@
 #include "ShimTrackpadGestures.hpp"
 #include "debug/log/Logger.hpp"
-#include "gestures/DragGesture.hpp"
 #include "gestures/Shared.hpp"
 #include "managers/input/trackpad/GestureTypes.hpp"
 #include "managers/input/trackpad/TrackpadGestures.hpp"
+#include <lua.h>
 #include <string>
 
 static std::expected<void, std::string> parseFingers(const std::string_view& s, size_t& fingers) {
@@ -151,22 +151,23 @@ static void printGesture(GestureType type, const CTrackpadGestures::SGestureData
     switch (type) {
         case GestureType::SWIPE: {
             std::string direction = stringifyDirection(toHyprgrassDirection(gesture.direction));
-            Log::logger->log(
-                Log::DEBUG, "| gesture: swipe, fingers: {}, direction: {}", gesture.fingerCount, direction
-            );
+            Log::logger->log(Log::DEBUG, "| kind: swipe, fingers: {}, direction: {}", gesture.fingerCount, direction);
             break;
         }
         case GestureType::LONG_PRESS:
-            Log::logger->log(Log::DEBUG, "| gesture: long_press, fingers: {}", gesture.fingerCount);
+            Log::logger->log(Log::DEBUG, "| kind: long_press, fingers: {}", gesture.fingerCount);
             break;
         case GestureType::EDGE_SWIPE: {
             std::string origin    = stringifyDirection(gesture.fingerCount);
             std::string direction = stringifyDirection(toHyprgrassDirection(gesture.direction));
-            Log::logger->log(Log::DEBUG, "| gesture: edge, origin: {}, direction: {}", origin, direction);
+            Log::logger->log(Log::DEBUG, "| kind: edge, origin: {}, direction: {}", origin, direction);
             break;
         }
         case GestureType::PINCH:
-            Log::logger->log(Log::DEBUG, "| gesture: long_press, fingers: {}", gesture.fingerCount);
+            Log::logger->log(Log::DEBUG, "| kind: long_press, fingers: {}", gesture.fingerCount);
+            break;
+        case GestureType::TAP:
+            Log::logger->log(Log::DEBUG, "| kind: tap, fingers: {}", gesture.fingerCount);
             break;
     }
 

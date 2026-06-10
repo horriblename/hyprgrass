@@ -12,6 +12,9 @@ std::string DragGestureEvent::to_string() const {
             return "edge:" + stringifyDirection(this->edge_origin) + ":" + stringifyDirection(this->direction);
         case GestureType::PINCH:
             return "pinch:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
+        case GestureType::TAP:
+            // tap in drag gesture shouldn't be possible, but still just print it out
+            return "tap:" + std::to_string(finger_count);
     }
 
     return "";
