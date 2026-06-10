@@ -301,7 +301,7 @@ void IGestureManager::addEdgeSwipeGesture(
     auto edge_ptr = edge.get();
     auto edge_drag_begin =
         std::make_unique<OnCompleteAction>(std::move(edge), [=, this](uint32_t time, bool cancelled) {
-            if (cancelled)
+            if (cancelled || this->activeDragGesture)
                 return;
 
             auto origin_edges = this->find_swipe_edges(m_sGestureState.get_center().origin, *edge_margin);
@@ -381,7 +381,7 @@ void IGestureManager::addPinchGesture(double base_threshold, const float* sensit
 
     auto pinch_wrapper =
         std::make_unique<OnCompleteAction>(std::move(pinch_begin), [this](uint32_t time, bool cancelled) {
-            if (cancelled)
+            if (cancelled || this->activeDragGesture)
                 return;
 
             GestureDirection dir =
