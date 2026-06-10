@@ -49,15 +49,11 @@ bool IGestureManager::reserveCompletedGesture(const CompletedGestureEvent& gev) 
 }
 
 bool IGestureManager::emitCompletedGesture(const CompletedGestureEvent& gev) {
-    if (this->activeDragGesture) {
+    if (this->gestureTriggered) {
         return false;
     }
 
     if (this->promisedCompletedGesture && gev != this->promisedCompletedGesture.value()) {
-        return false;
-    }
-
-    if (this->gestureTriggered) {
         return false;
     }
 
