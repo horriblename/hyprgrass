@@ -103,6 +103,7 @@ class IGestureManager {
 
     // try to find a CompletedGesture to later emit
     bool reserveCompletedGesture(const CompletedGestureEvent& gev);
+    // TODO: rename to checkAndEmit
     bool emitCompletedGesture(const CompletedGestureEvent& gev);
     bool emitDragGesture(const DragGestureEvent& gev);
     bool emitDragGestureEnd(const DragGestureEvent& gev);
