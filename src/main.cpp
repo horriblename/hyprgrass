@@ -185,7 +185,9 @@ static Hyprlang::CParseResult hyprgrassGestureKeyword(const char* LHS, const cha
         try {
             fingers = std::stoul(std::string(fingersStr));
         } catch (std::invalid_argument&) {
-            result.setError(std::format("Argument for emulate_touchpad expects a number, got: {}", fingersStr).c_str());
+            result.setError(
+                std::format("Argument for emulate_touchpad expects a number, got: \"{}\"", fingersStr).c_str()
+            );
             return result;
         }
 
@@ -233,6 +235,7 @@ static int luaTableGetInt(lua_State* L, int idx, std::string_view key) {
 }
 
 // Note: we don't own the returned string
+// Can return NULL
 static const char* luaTableGetString(lua_State* L, int idx, std::string_view key) {
     lua_getfield(L, idx, key.data());
     const char* v = lua_tostring(L, -1);
@@ -240,12 +243,24 @@ static const char* luaTableGetString(lua_State* L, int idx, std::string_view key
     return v;
 }
 
-static std::optional<float> luaTableMaybeGetFloat(lua_State* L, int idx, std::string_view key) {
+static std::expected<std::optional<float>, std::string>
+luaTableMaybeGetFloat(lua_State* L, int idx, std::string_view key) {
+    int valid;
+
     lua_getfield(L, idx, key.data());
+    Hyprutils::Utils::CScopeGuard x([L] { lua_pop(L, 1); });
+
     if (lua_isnil(L, -1))
         return std::nullopt;
-    float v = lua_tonumber(L, -1);
-    lua_pop(L, 1);
+
+    float v = lua_tonumberx(L, -1, &valid);
+
+    if (!valid) {
+        return std::unexpected{
+            std::format("in field \"{}\": expected an optional number, got \"{}\"", key, lua_tostring(L, -1))
+        };
+    }
+
     return v;
 }
 
@@ -290,7 +305,7 @@ int newBind(lua_State* L) {
         auto maybeGesture = gestureConfigFromTable(L, 2, false);
         if (!maybeGesture) {
             return Config::Lua::Bindings::Internal::configError(
-                L, std::format("invalid pattern field: {}", maybeGesture.error())
+                L, std::format("hyprgrass.bind: in field \"pattern\": {}", maybeGesture.error())
             );
         }
 
@@ -321,6 +336,15 @@ int newBind(lua_State* L) {
 // If hgGesture is true, allows multi-directional direction where applicable, and allows
 // a direction for longpress
 std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, int index, bool hgGesture) {
+    // normalize index to positive value
+    index = index > 0 ? index : lua_gettop(L) + index + 1;
+
+    if (!lua_istable(L, index)) {
+        return std::unexpected{std::format(
+            "expected a table {{kind = \"swipe|edge|longpress|pinch|tap\", ...}}\n\tgot \"{}\"", lua_tostring(L, index)
+        )};
+    }
+
     std::string kind = luaTableGetString(L, index, "kind");
     GestureType type;
     size_t fingersOrOrigin              = 0;
@@ -342,7 +366,7 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
 
         if (!hgGesture && !ShimTrackpadGestures::isSingleDirection(direction)) {
             return std::unexpected(
-                std::format("direction must be left/right/up/down for hyprgrass.bind, got {}", dirStr)
+                std::format("direction must be left/right/up/down for hyprgrass.bind, got \"{}\"", dirStr)
             );
         }
     } else if (kind == "edge") {
@@ -433,7 +457,7 @@ int newGesture(lua_State* L) {
         auto maybeGesture = gestureConfigFromTable(L, 2, true);
         if (!maybeGesture) {
             return Config::Lua::Bindings::Internal::configError(
-                L, std::format("invalid pattern field: {}", maybeGesture.error())
+                L, std::format("hyprgrass.gesture: in field \"pattern\": {}", maybeGesture.error())
             );
         }
 
@@ -443,9 +467,11 @@ int newGesture(lua_State* L) {
     auto maybeMod    = luaTableMaybeGetString(L, 1, "mod");
     uint32_t modMask = maybeMod ? g_pKeybindManager->stringToModMask(maybeMod.value()) : 0;
 
-    auto maybeScale  = luaTableMaybeGetFloat(L, 1, "scale");
-    float deltaScale = maybeScale ? maybeScale.value() : 1.f;
-    // TODO: standardize parsing
+    auto maybeScaleResult = luaTableMaybeGetFloat(L, 1, "scale");
+    if (!maybeScaleResult) {
+        return Config::Lua::Bindings::Internal::configError(L, "hyprgrass.gesture: {}", maybeScaleResult.error());
+    }
+    float deltaScale = maybeScaleResult.value().value_or(1.f);
     if (deltaScale < 0.1f) {
         return Config::Lua::Bindings::Internal::configError(
             L, "hyprgrass.gesture: field \"scale\" must be at least 0.1"
