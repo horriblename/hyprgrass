@@ -309,14 +309,19 @@ int newBind(lua_State* L) {
         Hyprutils::Utils::CScopeGuard x([L] { lua_pop(L, 1); });
 
         lua_getfield(L, 1, "pattern");
-        auto maybeGesture = gestureConfigFromTable(L, 2, false);
-        if (!maybeGesture) {
-            return Config::Lua::Bindings::Internal::configError(
-                L, std::format("hyprgrass.bind: in field \"pattern\": {}", maybeGesture.error())
-            );
+
+        if (lua_isstring(L, 2)) {
+            bind.key = lua_tostring(L, 2);
+        } else {
+            auto maybeGesture = gestureConfigFromTable(L, 2, false);
+            if (!maybeGesture) {
+                return Config::Lua::Bindings::Internal::configError(
+                    L, std::format("hyprgrass.bind: in field \"pattern\": {}", maybeGesture.error())
+                );
+            }
+            bind.key = maybeGesture.value().to_string();
         }
 
-        bind.key = maybeGesture.value().to_string();
         // TODO: idk what this is
         bind.displayKey = bind.key;
     }
