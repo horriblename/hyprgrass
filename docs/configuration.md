@@ -1,5 +1,10 @@
 # Configuration
 
+> [!NOTE]
+>
+> If you're migrating from Hyprlang, be sure to read the
+> [Lua migration guide](./lua_migration.md) for relevant breaking changes
+
 ## Options
 
 ```lua
