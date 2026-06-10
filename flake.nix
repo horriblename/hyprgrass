@@ -23,7 +23,7 @@
         }));
   in {
     packages = withPkgsFor (system: pkgs: rec {
-      inherit (pkgs) wf-touch;
+      inherit (pkgs) wf-touch hyprland;
       inherit (pkgs.hyprlandPlugins) hyprgrass hyprgrass-pulse hyprgrass-backlight;
 
       default = hyprgrass;
@@ -56,6 +56,7 @@
             meson setup build -Dbuildtype=debug -Dhyprgrass-pulse=true -Dhyprgrass-backlight=true --reconfigure
             sed -e 's/c++23/c++2b/g' ./build/compile_commands.json > ./compile_commands.json
           '';
+          hardeningDisable = ["fortify"];
           name = "hyprgrass-shell";
           nativeBuildInputs = with pkgs; [meson pkg-config ninja];
           buildInputs = [pkgs.hyprland pkgs.pulseaudio pkgs.glibmm pkgs.udev];

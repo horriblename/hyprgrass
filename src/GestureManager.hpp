@@ -4,9 +4,14 @@
 #include "VecSet.hpp"
 
 #include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
+#include <hyprutils/memory/SharedPtr.hpp>
 
 #define private public
 #include <hyprland/src/config/ConfigValue.hpp>
+#include <hyprland/src/config/values/types/BoolValue.hpp>
+#include <hyprland/src/config/values/types/FloatValue.hpp>
+#include <hyprland/src/config/values/types/IntValue.hpp>
+#include <hyprland/src/config/values/types/StringValue.hpp>
 #include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
@@ -16,6 +21,54 @@ enum class GestureEventType {
     DRAG_BEGIN,
     DRAG_END,
     COMPLETED, // CompletedGestureEvent
+};
+
+struct Cfg {
+    // hack to get a C str pointer, we're gonna get rid of all this once hyprlang is dead so I don't really care how
+    // ugly it is
+    std::string workspaceSwipeFingersName, longPressDelayName, edgeMarginName, workspaceSwipeEdgeName, sensitivityName,
+        sendCancelName, resizeOnBorderName;
+
+    SP<Config::Values::CIntValue> workspaceSwipeFingers, longPressDelay, edgeMargin;
+    SP<Config::Values::CStringValue> workspaceSwipeEdge;
+    SP<Config::Values::CFloatValue> sensitivity;
+    SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder;
+
+    using INT   = Config::Values::CIntValue;
+    using STR   = Config::Values::CStringValue;
+    using FLOAT = Config::Values::CFloatValue;
+    using BOOL  = Config::Values::CBoolValue;
+    Cfg(std::string pluginName)
+        : workspaceSwipeFingersName{key(pluginName, "workspace_swipe_fingers")},
+          longPressDelayName{key(pluginName, "long_press_delay")}, edgeMarginName{key(pluginName, "edge_margin")},
+          workspaceSwipeEdgeName{key(pluginName, "workspace_swipe_edge")},
+          sensitivityName{key(pluginName, "sensitivity")}, sendCancelName{key(pluginName, "debug:send_cancel")},
+          resizeOnBorderName{key(pluginName, "resize_on_border_long_press")},
+          // config options
+          workspaceSwipeFingers{makeShared<INT>(
+              workspaceSwipeFingersName.data(), "Number of fingers to trigger workspace swipe",
+              pluginName == "hyprgrass" ? -1 : 3
+          )},
+          longPressDelay{makeShared<INT>(longPressDelayName.data(), "Long press delay in milliseconds", 400)},
+          edgeMargin{makeShared<INT>(
+              edgeMarginName.data(), "Distance from edge of screen to consider for edge gestures, in pixels", 10
+          )},
+          workspaceSwipeEdge{makeShared<STR>(
+              workspaceSwipeEdgeName.data(), "Edge to swipe from to trigger workspace swipe",
+              pluginName == "hyprgrass" ? "" : "d"
+          )},
+          sensitivity{makeShared<FLOAT>(sensitivityName.data(), "Gesture sensitivity", 1.0)},
+          sendCancel{makeShared<BOOL>(
+              sendCancelName.data(), "Whether to send cancel events to windows on gesture activation", true
+          )},
+          resizeOnBorder{
+              makeShared<BOOL>(resizeOnBorderName.data(), "Resize window by pressing and holding on borders", true)
+          } {}
+
+  private:
+    static constexpr std::string key(std::string pluginName, std::string key) {
+        return std::format("plugin:{}:{}", pluginName, key);
+    }
 };
 
 class GestureManager : public IGestureManager {
@@ -61,7 +114,8 @@ class GestureManager : public IGestureManager {
     } resizeOnBorderInfo;
     bool workspaceSwipeActive                = false;
     CTrackpadGestures* activeTrackpadGesture = nullptr;
-    // used by emulate_touchpad_swipe and trackpadGesture* functions
+    bool mouseBindActive                     = false;
+    // used by trackpadGesture* functions
     wf::touch::point_t emulatedSwipePoint;
 
     bool handleGestureBind(std::string bind, GestureEventType);
@@ -92,3 +146,4 @@ class GestureManager : public IGestureManager {
 };
 
 inline std::unique_ptr<GestureManager> g_pGestureManager;
+inline UP<Cfg> g_config;

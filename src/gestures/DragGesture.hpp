@@ -1,16 +1,10 @@
 #pragma once
+#include "CompletedGesture.hpp"
 #include "Shared.hpp"
-
-enum class DragGestureType {
-    SWIPE,
-    LONG_PRESS,
-    EDGE_SWIPE,
-    PINCH,
-};
 
 struct DragGestureEvent {
     uint32_t time;
-    DragGestureType type;
+    GestureType type;
     GestureDirection direction;
     uint32_t finger_count;
 

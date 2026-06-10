@@ -37,5 +37,6 @@ void CMockGestureManager::handleCancelledGesture() {
 }
 
 void CMockGestureManager::sendCancelEventsToWindows() {
+    this->sentWindowCancel = true;
     std::cout << "cancel touch on windows\n";
 }

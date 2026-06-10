@@ -1,12 +1,15 @@
 #include "GestureManager.hpp"
 #include "HyprLogger.hpp"
-#include "globals.hpp"
+#include "config/lua/ConfigManager.hpp"
+#include "config/shared/actions/ConfigActions.hpp"
+#include "config/shared/complex/ComplexDataTypes.hpp"
+#include "config/supplementary/propRefresher/PropRefresher.hpp"
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
-#include <hyprland/src/config/legacy/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
+#include <hyprland/src/config/legacy/ConfigManager.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/helpers/Monitor.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
@@ -23,7 +26,7 @@
 // constexpr double SWIPE_THRESHOLD = 30.;
 constexpr int RESIZE_BORDER_GAP_INCREMENT = 10;
 
-std::string trim(const std::string& str) {
+static std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(' ');
     if (std::string::npos == first) {
         return str;
@@ -32,7 +35,7 @@ std::string trim(const std::string& str) {
     return str.substr(first, (last - first + 1));
 }
 
-std::vector<std::string> splitString(const std::string& s, char delimiter, int numSubstrings) {
+static std::vector<std::string> splitString(const std::string& s, char delimiter, int numSubstrings) {
     std::vector<std::string> substrings;
     auto split_view = std::ranges::views::split(s, delimiter);
     auto iter       = split_view.begin();
@@ -56,37 +59,56 @@ std::vector<std::string> splitString(const std::string& s, char delimiter, int n
     return substrings;
 }
 
-int handleLongPressTimer(void* data) {
+static int handleLongPressTimer(void* data) {
     const auto gesture_manager = (GestureManager*)data;
     gesture_manager->onLongPressTimeout(gesture_manager->long_press_next_trigger_time);
 
     return 0;
 }
 
-std::string commaSeparatedCssGaps(Config::CCssGapData data) {
+static std::string commaSeparatedCssGaps(const Config::CCssGapData& data) {
     return std::to_string(data.m_top) + "," + std::to_string(data.m_right) + "," + std::to_string(data.m_bottom) + "," +
            std::to_string(data.m_left);
 }
 
-GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>()) {
-    static auto const PSENSITIVITY =
-        (Hyprlang::FLOAT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:sensitivity")
-            ->getDataStaticPtr();
-    static auto const LONG_PRESS_DELAY =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:long_press_delay")
-            ->getDataStaticPtr();
-    static auto const EDGE_MARGIN =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:edge_margin")
-            ->getDataStaticPtr();
+static void updateGapsIn(const Config::CCssGapData& newGapsIn) {
+    static auto PGAPSINDATA = CConfigValue<Config::IComplexConfigValue>("general:gaps_in");
 
-    this->addEdgeSwipeGesture(
-        SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, *PSENSITIVITY, *LONG_PRESS_DELAY, *EDGE_MARGIN
-    );
+    if (Config::mgr()->type() == Config::CONFIG_LEGACY) {
+        Config::Legacy::mgr()->parseKeyword("general:gaps_in", commaSeparatedCssGaps(newGapsIn));
+    } else {
+        auto luaMgr = dynamicPointerCast<Config::Lua::CConfigManager>(WP<Config::IConfigManager>(Config::mgr()));
+
+        const auto it = luaMgr->m_configValues.find("general.gaps_in");
+        if (it == luaMgr->m_configValues.end()) {
+            Log::logger->log(Log::ERR, "[hyprgrass] lua config 'general.gaps_in' not found");
+            return;
+        }
+
+        auto* gapsInPtr = dynamic_cast<Config::CCssGapData*>(PGAPSINDATA.ptr());
+        // idk why `*gapsInPtr = newGapsIn` doesn't work
+        gapsInPtr->m_bottom = newGapsIn.m_bottom;
+        gapsInPtr->m_top    = newGapsIn.m_top;
+        gapsInPtr->m_left   = newGapsIn.m_left;
+        gapsInPtr->m_right  = newGapsIn.m_right;
+        Config::Supplementary::refresher()->scheduleRefresh(it->second->refreshBits());
+    }
+}
+
+GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>()) {
+    static auto const PSENSITIVITY     = g_config->sensitivity;
+    static auto const LONG_PRESS_DELAY = g_config->longPressDelay;
+    static auto const EDGE_MARGIN      = g_config->edgeMargin;
+    const auto sensitivity             = PSENSITIVITY->m_val.ptr();
+    const auto longPressDelay          = LONG_PRESS_DELAY->m_val.ptr();
+    const auto margin                  = EDGE_MARGIN->m_val.ptr();
+
+    this->addEdgeSwipeGesture(SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, longPressDelay, margin);
     // TODO: should I use SWIPE_INCORRECT_DRAG_TOLERANCE instead?
-    this->addLongPress(SWIPE_THRESHOLD, *PSENSITIVITY, *LONG_PRESS_DELAY);
-    this->addMultiFingerGesture(SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, *PSENSITIVITY, *LONG_PRESS_DELAY);
-    this->addMultiFingerTap(SWIPE_INCORRECT_DRAG_TOLERANCE, *PSENSITIVITY, *LONG_PRESS_DELAY);
-    this->addPinchGesture(PINCH_THRESHOLD, *PSENSITIVITY, *LONG_PRESS_DELAY);
+    this->addLongPress(SWIPE_THRESHOLD, sensitivity, longPressDelay);
+    this->addMultiFingerGesture(SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, longPressDelay);
+    this->addMultiFingerTap(SWIPE_INCORRECT_DRAG_TOLERANCE, sensitivity, longPressDelay);
+    this->addPinchGesture(PINCH_THRESHOLD, sensitivity, longPressDelay);
 
     this->long_press_timer = wl_event_loop_add_timer(g_pCompositor->m_wlEventLoop, handleLongPressTimer, this);
 }
@@ -103,53 +125,34 @@ bool GestureManager::handleCompletedGesture(const CompletedGestureEvent& gev) {
 }
 
 bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
-    static auto const WORKSPACE_SWIPE_FINGERS =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_fingers")
-            ->getDataStaticPtr();
-    static auto const WORKSPACE_SWIPE_EDGE =
-        (Hyprlang::STRING const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:workspace_swipe_edge")
-            ->getDataStaticPtr();
-    static auto const RESIZE_LONG_PRESS =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:resize_on_border_long_press")
-            ->getDataStaticPtr();
-    static auto const EMULATE_TOUCHPAD =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:emulate_touchpad_swipe")
-            ->getDataStaticPtr();
+    static auto const WORKSPACE_SWIPE_FINGERS = g_config->workspaceSwipeFingers;
+    static auto const WORKSPACE_SWIPE_EDGE    = g_config->workspaceSwipeEdge;
+    static auto const RESIZE_LONG_PRESS       = g_config->resizeOnBorder;
 
-    static auto PBORDERSIZE =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "general:border_size")->getDataStaticPtr();
-    static auto PBORDERGRABEXTEND =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "general:extend_border_grab_area")
-            ->getDataStaticPtr();
-    static auto PGAPSINDATA = CConfigValue<Config::IComplexConfigValue>("general:gaps_in");
+    static auto PBORDERSIZE       = CConfigValue<Config::INTEGER>("general:border_size");
+    static auto PBORDERGRABEXTEND = CConfigValue<Config::INTEGER>("general:extend_border_grab_area");
+    static auto PGAPSINDATA       = CConfigValue<Config::IComplexConfigValue>("general:gaps_in");
 
     Log::logger->log(Log::DEBUG, "[hyprgrass] Drag gesture begin: {}", gev.to_string());
 
-    auto const workspace_swipe_edge_str = std::string{*WORKSPACE_SWIPE_EDGE};
+    auto const workspace_swipe_edge_str = WORKSPACE_SWIPE_EDGE->value();
 
     switch (gev.type) {
-        case DragGestureType::SWIPE: {
+        case GestureType::SWIPE: {
             if (this->trackpadGestureBegin(gev))
                 return true;
 
-            if (**WORKSPACE_SWIPE_FINGERS != gev.finger_count) {
+            if (WORKSPACE_SWIPE_FINGERS->value() != gev.finger_count) {
                 return false;
             }
 
             if (this->handleWorkspaceSwipe(gev.direction))
                 return true;
 
-            if (!**EMULATE_TOUCHPAD)
-                return false;
-
-            this->workspaceSwipeActive       = false; // reset just in case
-            this->emulatedSwipePoint         = this->m_sGestureState.get_center().current;
-            IPointer::SSwipeBeginEvent swipe = {.fingers = static_cast<uint32_t>(m_sGestureState.fingers.size())};
-            g_pInputManager->onSwipeBegin(swipe);
-            return true;
+            return false;
         }
 
-        case DragGestureType::EDGE_SWIPE: {
+        case GestureType::EDGE_SWIPE: {
             if (workspace_swipe_edge_str == "l" && gev.edge_origin == GESTURE_DIRECTION_LEFT) {
                 return this->handleWorkspaceSwipe(gev.direction);
             }
@@ -169,13 +172,13 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             return false;
         }
 
-        case DragGestureType::LONG_PRESS:
+        case GestureType::LONG_PRESS:
             if (g_pSessionLockManager->isSessionLocked()) {
                 return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
             }
 
-            if (**RESIZE_LONG_PRESS && gev.finger_count == 1) {
-                const auto BORDER_GRAB_AREA = **PBORDERSIZE + **PBORDERGRABEXTEND;
+            if (RESIZE_LONG_PRESS->value() && gev.finger_count == 1) {
+                const auto BORDER_GRAB_AREA = *PBORDERSIZE + *PBORDERGRABEXTEND;
 
                 // kind of a hack: this is the window detected from previous touch events
                 const auto w = g_pInputManager->m_foundWindowToFocus.lock();
@@ -204,18 +207,18 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                         };
                         g_pKeybindManager->resizeWithBorder(e);
 
-                        auto* PGAPSIN            = static_cast<Config::CCssGapData*>(PGAPSINDATA.ptr());
+                        auto oldGapsIn           = *static_cast<Config::CCssGapData*>(PGAPSINDATA.ptr());
                         this->resizeOnBorderInfo = {
                             .active      = true,
-                            .old_gaps_in = *PGAPSIN,
+                            .old_gaps_in = oldGapsIn,
                         };
 
-                        Config::CCssGapData newGapsIn = *PGAPSIN;
+                        Config::CCssGapData newGapsIn = oldGapsIn;
                         newGapsIn.m_top += RESIZE_BORDER_GAP_INCREMENT;
                         newGapsIn.m_right += RESIZE_BORDER_GAP_INCREMENT;
                         newGapsIn.m_bottom += RESIZE_BORDER_GAP_INCREMENT;
                         newGapsIn.m_left += RESIZE_BORDER_GAP_INCREMENT;
-                        Config::Legacy::mgr()->parseKeyword("general:gaps_in", commaSeparatedCssGaps(newGapsIn));
+                        updateGapsIn(newGapsIn);
                         return true;
                     }
                 }
@@ -226,11 +229,14 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 
             return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
 
-        case DragGestureType::PINCH:
+        case GestureType::PINCH:
             if (this->trackpadGestureBegin(gev))
                 return true;
 
             return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
+            break;
+        case GestureType::TAP:
+            // tap does not trigger drag
             break;
     }
 
@@ -283,7 +289,9 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
         if (k->modmask != MODS)
             continue;
 
-        const auto DISPATCHER = g_pKeybindManager->m_dispatchers.find(k->mouse ? "mouse" : k->handler);
+        // only legacy config uses "mouse" dispatcher
+        bool useMouseDispatcher = k->mouse && Config::mgr()->type() == Config::CONFIG_LEGACY;
+        const auto DISPATCHER   = g_pKeybindManager->m_dispatchers.find(useMouseDispatcher ? "mouse" : k->handler);
 
         // Should never happen, as we check in the ConfigManager, but oh well
         if (DISPATCHER == g_pKeybindManager->m_dispatchers.end()) {
@@ -293,16 +301,35 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
 
         switch (type) {
             case GestureEventType::COMPLETED:
-                if (k->handler != "mouse") {
+                // mouse dispatchers only trigger on drag begin/end
+                if (!k->mouse) {
                     Log::logger->log(Log::DEBUG, "[hyprgrass] calling dispatcher ({})", bind);
                     DISPATCHER->second(k->arg);
                     found = found || !k->nonConsuming;
                 }
+                break;
+
             default:
-                if (k->handler == "mouse") {
+                if (!k->mouse) {
+                    // only mouse actions are considered on drag begin/end
+                    continue;
+                }
+
+                if (useMouseDispatcher) {
                     Log::logger->log(Log::DEBUG, "[hyprgrass] calling mouse dispatcher ({})", bind);
                     char pressed = type == GestureEventType::DRAG_BEGIN ? '1' : '0';
                     DISPATCHER->second(pressed + k->arg);
+                    found = found || !k->nonConsuming;
+                } else {
+                    bool pressed          = type == GestureEventType::DRAG_BEGIN;
+                    this->mouseBindActive = pressed;
+                    // yes this is how the lua dispatcher detects key press state
+                    Config::Actions::state()->m_passPressed = static_cast<int>(pressed);
+
+                    DISPATCHER->second(k->arg);
+
+                    Config::Actions::state()->m_passPressed = -1;
+
                     found = found || !k->nonConsuming;
                 }
         }
@@ -314,10 +341,6 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
 void GestureManager::handleCancelledGesture() {}
 
 void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
-    static auto const EMULATE_TOUCHPAD =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:emulate_touchpad_swipe")
-            ->getDataStaticPtr();
-
     if (!this->getActiveDragGesture().has_value()) {
         return;
     }
@@ -328,38 +351,31 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
     }
 
     switch (this->getActiveDragGesture()->type) {
-        case DragGestureType::SWIPE:
+        case GestureType::SWIPE:
             if (this->workspaceSwipeActive) {
                 this->updateWorkspaceSwipe();
-            } else if (**EMULATE_TOUCHPAD) {
-                const auto currentPoint           = this->m_sGestureState.get_center().current;
-                const auto delta                  = currentPoint - this->emulatedSwipePoint;
-                IPointer::SSwipeUpdateEvent swipe = {
-                    .fingers = this->getActiveDragGesture()->finger_count, .delta = Vector2D(delta.x, delta.y)
-                };
-                g_pInputManager->onSwipeUpdate(swipe);
-                this->emulatedSwipePoint = currentPoint;
-            };
+            }
             return;
 
-        case DragGestureType::LONG_PRESS: {
+        case GestureType::LONG_PRESS: {
             const auto pos = this->m_sGestureState.get_center().current;
             g_pCompositor->warpCursorTo(Vector2D(pos.x, pos.y));
             g_pInputManager->simulateMouseMovement();
             return;
         }
-        case DragGestureType::EDGE_SWIPE:
+        case GestureType::EDGE_SWIPE:
             this->updateWorkspaceSwipe();
-        case DragGestureType::PINCH:
+            break;
+
+        case GestureType::PINCH:
+            break;
+        case GestureType::TAP:
+            // tap does not trigger drag
             break;
     }
 }
 
 void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
-    static auto const EMULATE_TOUCHPAD =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:emulate_touchpad_swipe")
-            ->getDataStaticPtr();
-
     if (g_pSessionLockManager->isSessionLocked()) {
         this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_END);
         return;
@@ -372,34 +388,37 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
 
     Log::logger->log(Log::DEBUG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
     switch (gev.type) {
-        case DragGestureType::SWIPE:
+        case GestureType::SWIPE:
             if (this->workspaceSwipeActive) {
                 g_pUnifiedWorkspaceSwipe->end();
                 this->workspaceSwipeActive = false;
-            } else if (**EMULATE_TOUCHPAD) {
-                g_pInputManager->onSwipeEnd(IPointer::SSwipeEndEvent{.cancelled = false});
             }
             return;
-        case DragGestureType::LONG_PRESS:
+        case GestureType::LONG_PRESS:
             if (this->resizeOnBorderInfo.active) {
                 g_pKeybindManager->changeMouseBindMode(eMouseBindMode::MBIND_INVALID);
-                Config::Legacy::mgr()->parseKeyword(
-                    "general:gaps_in", commaSeparatedCssGaps(this->resizeOnBorderInfo.old_gaps_in)
-                );
+                updateGapsIn(this->resizeOnBorderInfo.old_gaps_in);
                 this->resizeOnBorderInfo = {};
                 return;
             }
 
-            this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_END);
+            // longpress already triggered CompletedGesture on timeout
+            if (this->mouseBindActive) {
+                this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_END);
+            }
+
             return;
-        case DragGestureType::EDGE_SWIPE:
+        case GestureType::EDGE_SWIPE:
             if (this->workspaceSwipeActive) {
                 g_pUnifiedWorkspaceSwipe->end();
             }
             break;
-        case DragGestureType::PINCH:
+        case GestureType::PINCH:
             this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_END);
             return;
+        case GestureType::TAP:
+            // tap does not trigger drag
+            break;
     }
 }
 
@@ -442,7 +461,7 @@ bool GestureManager::trackpadGestureBegin(const DragGestureEvent& gev) {
     // we look it up ourselves beforehand
     bool foundLongPress = false;
     // hyprland has an arbitrary threshold of 5 pixels
-    if (gev.type == DragGestureType::LONG_PRESS && std::abs(delta.x) < 5 && std::abs(delta.y) < 5) {
+    if (gev.type == GestureType::LONG_PRESS && std::abs(delta.x) < 5 && std::abs(delta.y) < 5) {
         const auto MODS = g_pInputManager->getModsFromAllKBs();
         for (const auto& g : g_pShimTrackpadGestures->longPress()->m_gestures) {
             if (g->fingerCount == gev.finger_count && g->modMask == MODS) {
@@ -451,10 +470,10 @@ bool GestureManager::trackpadGestureBegin(const DragGestureEvent& gev) {
             }
         }
     }
-    uint32_t fingers = gev.type == DragGestureType::EDGE_SWIPE ? gev.edge_origin : gev.finger_count;
+    uint32_t fingers = gev.type == GestureType::EDGE_SWIPE ? gev.edge_origin : gev.finger_count;
 
     CTrackpadGestures* handler = g_pShimTrackpadGestures->get(gev.type);
-    if (gev.type == DragGestureType::PINCH) {
+    if (gev.type == GestureType::PINCH) {
         IPointer::SPinchBeginEvent pinchBegin = {
             .timeMs  = gev.time,
             .fingers = fingers,
@@ -499,12 +518,11 @@ void GestureManager::trackpadGestureUpdate(uint32_t time) {
     const Vector2D delta    = pixelToTrackpadDistance(deltaPx);
 
     DragGestureEvent activeDrag = this->getActiveDragGesture().value();
-    uint32_t fingers =
-        activeDrag.type == DragGestureType::EDGE_SWIPE ? activeDrag.edge_origin : activeDrag.finger_count;
+    uint32_t fingers = activeDrag.type == GestureType::EDGE_SWIPE ? activeDrag.edge_origin : activeDrag.finger_count;
 
     this->emulatedSwipePoint = currentPoint;
 
-    if (activeDrag.type == DragGestureType::PINCH) {
+    if (activeDrag.type == GestureType::PINCH) {
         IPointer::SPinchUpdateEvent pinch = {
             .timeMs  = time,
             .fingers = fingers,
@@ -528,7 +546,7 @@ void GestureManager::trackpadGestureUpdate(uint32_t time) {
 
 void GestureManager::trackpadGestureEnd(uint32_t time) {
     DragGestureEvent activeDrag = this->getActiveDragGesture().value();
-    if (activeDrag.type == DragGestureType::PINCH) {
+    if (activeDrag.type == GestureType::PINCH) {
         IPointer::SPinchEndEvent swipe = {
             .timeMs    = time,
             .cancelled = false,
@@ -554,11 +572,9 @@ void GestureManager::stopLongPressTimer() {
 }
 
 void GestureManager::sendCancelEventsToWindows() {
-    static auto const SEND_CANCEL =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
-            ->getDataStaticPtr();
+    static auto const SEND_CANCEL = g_config->sendCancel;
 
-    if (!**SEND_CANCEL) {
+    if (!SEND_CANCEL->value()) {
         return;
     }
 
@@ -572,9 +588,7 @@ void GestureManager::sendCancelEventsToWindows() {
 
 // @return whether or not to inhibit further actions
 bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
-    static auto const SEND_CANCEL =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
-            ->getDataStaticPtr();
+    static auto const SEND_CANCEL = g_config->sendCancel;
 
     auto monitor = g_pCompositor->getMonitorFromName(!ev.device->m_boundOutput.empty() ? ev.device->m_boundOutput : "");
     monitor      = monitor ? monitor : Desktop::focusState()->monitor();
@@ -590,10 +604,12 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     const auto& monitorSize = this->m_lastTouchedMonitor->m_size;
     this->m_monitorArea     = SMonitorArea{monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
 
-    g_pCompositor->warpCursorTo(Vector2D{
-        monitorPos.x + ev.pos.x * monitorSize.x,
-        monitorPos.y + ev.pos.y * monitorSize.y,
-    });
+    g_pCompositor->warpCursorTo(
+        Vector2D{
+            monitorPos.x + ev.pos.x * monitorSize.x,
+            monitorPos.y + ev.pos.y * monitorSize.y,
+        }
+    );
 
     g_pInputManager->refocus();
 
@@ -602,7 +618,7 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         this->activeTrackpadGesture = nullptr;
     }
 
-    if (!eventForwardingInhibited() && **SEND_CANCEL && g_pInputManager->m_touchData.touchFocusSurface) {
+    if (!eventForwardingInhibited() && SEND_CANCEL->value() && g_pInputManager->m_touchData.touchFocusSurface) {
         // remember which surfaces were touched, to later send cancel events
         const auto surface = g_pInputManager->m_touchData.touchFocusSurface;
 
@@ -635,9 +651,7 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
 }
 
 bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
-    static auto const SEND_CANCEL =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "plugin:touch_gestures:experimental:send_cancel")
-            ->getDataStaticPtr();
+    static auto const SEND_CANCEL = g_config->sendCancel;
 
     wf::touch::point_t lift_off_pos;
     try {
@@ -654,7 +668,7 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
     };
 
     const auto BLOCK = IGestureManager::onTouchUp(gesture_event);
-    if (**SEND_CANCEL) {
+    if (SEND_CANCEL->value()) {
         const auto surface = g_pInputManager->m_touchData.touchFocusSurface;
 
         if (!surface.valid()) {
@@ -733,10 +747,8 @@ Vector2D GestureManager::pixelPositionToPercentagePosition(wf::touch::point_t po
 }
 
 Vector2D GestureManager::pixelToTrackpadDistance(wf::touch::point_t distancePx) const {
-    static auto const PSWIPEDIST =
-        (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, "gestures:workspace_swipe_distance")
-            ->getDataStaticPtr();
-    const auto SWIPEDISTANCE = std::clamp(**PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
+    static auto const PSWIPEDIST = CConfigValue<Config::INTEGER>("gestures:workspace_swipe_distance");
+    const auto SWIPEDISTANCE     = std::clamp(*PSWIPEDIST, (int64_t)1LL, (int64_t)UINT32_MAX);
 
     const auto monArea       = this->getMonitorArea();
     const auto delta_percent = distancePx / wf::touch::point_t(monArea.w, monArea.h);
@@ -755,11 +767,13 @@ void GestureManager::touchBindDispatcher(std::string args) {
     const auto dispatcher     = trim(argsSplit[2]);
     const auto dispatcherArgs = trim(argsSplit[3]);
 
-    this->internalBinds.emplace_back(makeShared<SKeybind>(SKeybind{
-        .key     = key,
-        .handler = dispatcher,
-        .arg     = dispatcherArgs,
-    }));
+    this->internalBinds.emplace_back(
+        makeShared<SKeybind>(SKeybind{
+            .key     = key,
+            .handler = dispatcher,
+            .arg     = dispatcherArgs,
+        })
+    );
 }
 
 void GestureManager::debugLog(const std::string& msg) {

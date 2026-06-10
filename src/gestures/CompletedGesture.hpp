@@ -2,17 +2,19 @@
 #include "Shared.hpp"
 #include <string>
 
-enum class CompletedGestureType {
+enum class GestureType {
     // Invalid Gesture
     SWIPE,
     EDGE_SWIPE,
-    TAP,
     LONG_PRESS,
     PINCH,
+    TAP,
 };
 
+std::string stringifyGestureType(const GestureType&);
+
 struct CompletedGestureEvent {
-    CompletedGestureType type;
+    GestureType type;
     GestureDirection direction;
     uint32_t finger_count;
 

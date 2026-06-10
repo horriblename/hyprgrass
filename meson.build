@@ -12,6 +12,11 @@ else
   error('Could not configure current C++ compiler (' + cpp_compiler.get_id() + ' ' + cpp_compiler.version() + ') with required C++ standard (C++23)')
 endif
 
+if cpp_compiler.has_argument('-Wimplicit-fallthrough')
+  add_global_arguments('-Wimplicit-fallthrough', language: 'cpp')
+endif
+add_global_arguments('-Wall', language: 'cpp')
+
 hyprland_headers = dependency('hyprland', required: false)
 if not hyprland_headers.found()
   hyprland_src = run_command('printenv', 'HYPRLAND_HEADERS', check: false).stdout().strip()
@@ -36,6 +41,7 @@ hyprland_deps = [
   dependency('wayland-server'),
   dependency('xkbcommon'),
   dependency('libdrm'),
+  dependency('lua')
 ]
 
 subdir('examples')

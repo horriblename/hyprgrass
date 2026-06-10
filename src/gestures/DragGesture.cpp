@@ -4,14 +4,17 @@
 
 std::string DragGestureEvent::to_string() const {
     switch (type) {
-        case DragGestureType::LONG_PRESS:
+        case GestureType::LONG_PRESS:
             return "longpress:" + std::to_string(finger_count);
-        case DragGestureType::SWIPE:
+        case GestureType::SWIPE:
             return "swipe:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
-        case DragGestureType::EDGE_SWIPE:
+        case GestureType::EDGE_SWIPE:
             return "edge:" + stringifyDirection(this->edge_origin) + ":" + stringifyDirection(this->direction);
-        case DragGestureType::PINCH:
+        case GestureType::PINCH:
             return "pinch:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
+        case GestureType::TAP:
+            // tap in drag gesture shouldn't be possible, but still just print it out
+            return "tap:" + std::to_string(finger_count);
     }
 
     return "";
