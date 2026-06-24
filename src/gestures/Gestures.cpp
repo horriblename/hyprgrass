@@ -182,7 +182,7 @@ void IGestureManager::addMultiFingerGesture(
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
             };
 
-            if (this->emitDragGesture(gesture) || this->reserveCompletedGesture(completed)) {
+            if (this->reserveCompletedGesture(completed) || this->emitDragGesture(gesture)) {
                 this->cancelTouchEventsOnAllWindows();
             }
         });
@@ -263,7 +263,7 @@ void IGestureManager::addLongPress(double base_finger_slip, const float* sensiti
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
             };
 
-            bool handled = this->emitDragGesture(gesture) || this->emitCompletedGesture(gesture1);
+            bool handled = this->emitCompletedGesture(gesture1) || this->emitDragGesture(gesture);
 
             if (handled) {
                 this->cancelTouchEventsOnAllWindows();
@@ -323,7 +323,7 @@ void IGestureManager::addEdgeSwipeGesture(
                 .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
                 .edge_origin  = origin_edges
             };
-            if (this->emitDragGesture(gesture) || this->reserveCompletedGesture(completed)) {
+            if (this->reserveCompletedGesture(completed) || this->emitDragGesture(gesture)) {
                 this->cancelTouchEventsOnAllWindows();
             }
         });
@@ -387,6 +387,16 @@ void IGestureManager::addPinchGesture(double base_threshold, const float* sensit
             GestureDirection dir =
                 this->m_sGestureState.get_pinch_scale() < 1.0 ? GESTURE_DIRECTION_OUT : GESTURE_DIRECTION_IN;
 
+            auto completed = CompletedGestureEvent{
+                .type         = GestureType::PINCH,
+                .direction    = dir,
+                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
+            };
+            if (this->reserveCompletedGesture(completed)) {
+                this->cancelTouchEventsOnAllWindows();
+                return;
+            }
+
             auto gesture = DragGestureEvent{
                 .time         = time,
                 .type         = GestureType::PINCH,
@@ -397,15 +407,6 @@ void IGestureManager::addPinchGesture(double base_threshold, const float* sensit
             if (this->emitDragGesture(gesture)) {
                 this->cancelTouchEventsOnAllWindows();
                 return;
-            }
-
-            auto completed = CompletedGestureEvent{
-                .type         = GestureType::PINCH,
-                .direction    = dir,
-                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
-            };
-            if (this->reserveCompletedGesture(completed)) {
-                this->cancelTouchEventsOnAllWindows();
             }
         });
     auto release = std::make_unique<LiftoffAction>();
