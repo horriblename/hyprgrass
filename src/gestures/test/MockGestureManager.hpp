@@ -43,6 +43,11 @@ class CMockGestureManager final : public IGestureManager {
         return CMockGestureManager(true, false);
     }
 
+    // creates a gesture manager that handles both completed and drag events
+    static CMockGestureManager newBothHandler() {
+        return CMockGestureManager(true, true);
+    }
+
     void resetTestResults() {
         triggered = false;
         cancelled = false;
