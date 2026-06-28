@@ -8,13 +8,14 @@ void hyprgrass_debug(const std::string& s) {
 }
 
 bool CMockGestureManager::findCompletedGesture(const CompletedGestureEvent& gev) const {
-    return true;
+    return this->handlesCompletedEvents;
 }
 
 bool CMockGestureManager::handleCompletedGesture(const CompletedGestureEvent& gev) {
     std::cout << "gesture triggered: " << gev.to_string() << "\n";
-    this->triggered = true;
-    return true;
+    if (this->handlesCompletedEvents)
+        this->triggered = true;
+    return this->handlesCompletedEvents;
 }
 
 bool CMockGestureManager::handleDragGesture(const DragGestureEvent& gev) {

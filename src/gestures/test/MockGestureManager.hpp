@@ -12,11 +12,12 @@ constexpr double MONITOR_HEIGHT = 1080;
 
 class CMockGestureManager final : public IGestureManager {
   public:
-    CMockGestureManager(bool handlesDragEvents)
-        : IGestureManager(std::make_unique<CoutLogger>()), handlesDragEvents(handlesDragEvents) {}
+    CMockGestureManager(bool handlesCompletedEvents, bool handlesDragEvents)
+        : IGestureManager(std::make_unique<CoutLogger>()), handlesCompletedEvents(handlesCompletedEvents),
+          handlesDragEvents(handlesDragEvents) {}
     ~CMockGestureManager() {}
 
-    // if set to true, handleDragGesture() will return true
+    bool handlesCompletedEvents;
     bool handlesDragEvents;
 
     bool triggered        = false;
@@ -34,12 +35,12 @@ class CMockGestureManager final : public IGestureManager {
 
     // creates a gesture manager that handles all drag gestures
     static CMockGestureManager newDragHandler() {
-        return CMockGestureManager(true);
+        return CMockGestureManager(false, true);
     }
 
     // creates a gesture manager that ignores drag gesture events
     static CMockGestureManager newCompletedGestureOnlyHandler() {
-        return CMockGestureManager(false);
+        return CMockGestureManager(true, false);
     }
 
     void resetTestResults() {
