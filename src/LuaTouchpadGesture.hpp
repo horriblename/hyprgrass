@@ -127,6 +127,8 @@ class LuaTouchpadGesture : public ITrackpadGesture {
             lua_setfield(L, -2, "x"); // pos.x = (center.x)
             lua_pushnumber(L, center.y);
             lua_setfield(L, -2, "y"); // pos.y = (center.y)
+
+            lua_setfield(L, -2, "pos"); // opt.pos = pos
         }
 
         pushMonitorInfo(L);
@@ -136,7 +138,7 @@ class LuaTouchpadGesture : public ITrackpadGesture {
         if (result != LUA_OK) {
             Log::logger->log(Log::ERR, "[hyprgrass] finish function failed: {}", lua_tostring(L, -1));
         }
-    };
+    }
 
   private:
     int startRef;
