@@ -1,10 +1,12 @@
 #include "EmulateTouchpadGesture.hpp"
 #include "GestureManager.hpp"
+#include "LuaTouchpadGesture.hpp"
 #include "TouchVisualizer.hpp"
 #include "gestures/CompletedGesture.hpp"
 #include "gestures/DragGesture.hpp"
 #include "globals.hpp"
 #include "version.hpp"
+#include <vector>
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
@@ -59,6 +61,7 @@ const std::string KEYWORD_HG_GESTURE = "hyprgrass-gesture";
 
 inline std::unique_ptr<Visualizer> g_pVisualizer;
 
+static std::vector<int> heldLuaRefs{};
 static bool g_unloading = false;
 
 void hkOnTouchDown(ITouch::SDownEvent ev, Event::SCallbackInfo& cbinfo) {
@@ -516,6 +519,9 @@ int newGesture(lua_State* L) {
     }
 
     int functionRef         = LUA_NOREF;
+    int startRef            = LUA_NOREF;
+    int updateRef           = LUA_NOREF;
+    int endRef              = LUA_NOREF;
     std::string_view action = "";
     {
         Hyprutils::Utils::CScopeGuard x([L] { lua_pop(L, 1); });
@@ -526,14 +532,50 @@ int newGesture(lua_State* L) {
         } else if (lua_isfunction(L, -1)) {
             lua_pushvalue(L, -1);
             functionRef = luaL_ref(L, LUA_REGISTRYINDEX);
-            Config::Lua::mgr()->registerLuaRef(functionRef);
+            heldLuaRefs.push_back(functionRef);
+        } else if (lua_istable(L, -1)) {
+            lua_getfield(L, -1, "start");
+            if (!(lua_isfunction(L, -1))) {
+                lua_pop(L, 1);
+                return Config::Lua::Bindings::Internal::configError(
+                    L, "hyprgrass.gesture: action table must have a start function"
+                );
+            }
+            startRef = luaL_ref(L, LUA_REGISTRYINDEX);
+            heldLuaRefs.push_back(functionRef);
+
+            lua_getfield(L, -1, "update");
+            if ((lua_isfunction(L, -1))) {
+                updateRef = luaL_ref(L, LUA_REGISTRYINDEX);
+                heldLuaRefs.push_back(functionRef);
+            } else {
+                lua_pop(L, 1);
+                if (!lua_isnil(L, -1)) {
+                    return Config::Lua::Bindings::Internal::configError(
+                        L, "hyprgrass.gesture: action.update must be a function or nil"
+                    );
+                }
+            }
+
+            lua_getfield(L, -1, "finish");
+            if (lua_isfunction(L, -1)) {
+                endRef = luaL_ref(L, LUA_REGISTRYINDEX);
+                heldLuaRefs.push_back(functionRef);
+            } else {
+                lua_pop(L, 1);
+                if (!lua_isnil(L, -1)) {
+                    return Config::Lua::Bindings::Internal::configError(
+                        L, "hyprgrass.gesture: action.finish must be a function or nil"
+                    );
+                }
+            }
         } else if (Config::Lua::Bindings::Internal::pushDispatcherFunction(L, -1)) {
             functionRef = luaL_ref(L, LUA_REGISTRYINDEX);
             lua_pop(L, 1);
         } else {
             return Config::Lua::Bindings::Internal::configError(
-                L, "hyprgrass.gesture: action must be a string (e.g. \"workspace\"), lua function, or "
-                   "dispatcher (e.g. hl.dsp.focus(...))"
+                L, "hyprgrass.gesture: action must be a string (e.g. \"workspace\"), lua function, "
+                   "dispatcher (e.g. hl.dsp.focus(...)), or table {start, update, finish}"
             );
         }
     }
@@ -563,6 +605,11 @@ int newGesture(lua_State* L) {
         result = handler->addGesture(
             makeUnique<CLuaFunctionGesture>(functionRef), gesture.fingers(), gesture.direction, modMask, deltaScale,
             disableInhibit
+        );
+    } else if (startRef != LUA_NOREF) {
+        result = handler->addGesture(
+            makeUnique<LuaTouchpadGesture>(startRef, updateRef, endRef), gesture.fingers(), gesture.direction, modMask,
+            deltaScale, disableInhibit
         );
     } else {
         if (action == "workspace")
@@ -811,5 +858,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
+    // TODO: cleanup heldLuaRefs
     g_unloading = true;
 }
