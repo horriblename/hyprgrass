@@ -1,6 +1,5 @@
-#pragma once
-
 #include <hyprutils/utils/ScopeGuard.hpp>
+#include <stdexcept>
 extern "C" {
 #include <lauxlib.h>
 #include <lua.h>
@@ -60,7 +59,7 @@ class LuaTouchpadGesture : public ITrackpadGesture {
         pushMonitorInfo(L);
         lua_setfield(L, -2, "monitor"); // opt.monitor = monitor
 
-        int result = mgr->guardedPCall(1, 0, this->startRef, TIMEOUT_MSEC, "hyprgrass.gesture: start()");
+        int result = mgr->guardedPCall(1, 0, 0, TIMEOUT_MSEC, "hyprgrass.gesture: start()");
         if (result != LUA_OK) {
             Log::logger->log(Log::ERR, "[hyprgrass] start function failed: {}", lua_tostring(L, -1));
         }
@@ -104,7 +103,7 @@ class LuaTouchpadGesture : public ITrackpadGesture {
         lua_pushinteger(L, time_msec);
         lua_setfield(L, -2, "time_msec"); // opt.time_msec = (time)
 
-        int result = mgr->guardedPCall(1, 0, this->updateRef, TIMEOUT_MSEC, "hyprgrass.gesture: update()");
+        int result = mgr->guardedPCall(1, 0, 0, TIMEOUT_MSEC, "hyprgrass.gesture: update()");
         if (result != LUA_OK) {
             Log::logger->log(Log::ERR, "[hyprgrass] update function failed: {}", lua_tostring(L, -1));
         }
@@ -138,7 +137,7 @@ class LuaTouchpadGesture : public ITrackpadGesture {
         pushMonitorInfo(L);
         lua_setfield(L, -2, "monitor"); // opt.monitor = monitor
 
-        int result = mgr->guardedPCall(1, 0, this->endRef, TIMEOUT_MSEC, "hyprgrass.gesture: finish()");
+        int result = mgr->guardedPCall(1, 0, 0, TIMEOUT_MSEC, "hyprgrass.gesture: finish()");
         if (result != LUA_OK) {
             Log::logger->log(Log::ERR, "[hyprgrass] finish function failed: {}", lua_tostring(L, -1));
         }
