@@ -98,9 +98,9 @@ class GestureManager : public IGestureManager {
     const wf::touch::gesture_state_t& getGestureState() const {
         return this->m_sGestureState;
     }
+    SMonitorArea getMonitorArea() const override;
 
   protected:
-    SMonitorArea getMonitorArea() const override;
     bool findCompletedGesture(const CompletedGestureEvent& gev) const override;
     bool handleCompletedGesture(const CompletedGestureEvent& gev) override;
     void handleCancelledGesture() override;
