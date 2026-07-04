@@ -121,8 +121,9 @@ void AudioBackend::onStdin(pa_mainloop_api* ea, pa_io_event* e, int fd, pa_io_ev
                     process_line(std::string_view{buf + pos, nl});
                     pos = (nl - buf) + 1;
                 } else {
-                    process_line(std::string_view{buf + pos, buf + buf_len});
-                    pos = buf_len;
+                    // no newline, just process the rest of the line
+                    process_line(std::string_view{buf + pos, buf_len - pos});
+                    break;
                 }
             }
         } else if (n == 0) {
