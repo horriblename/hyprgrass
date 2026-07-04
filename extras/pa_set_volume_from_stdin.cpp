@@ -1,4 +1,5 @@
 #include "pulse/mainloop-api.h"
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <errno.h>
@@ -28,6 +29,9 @@
 #include <utility>
 
 #define LOG(...) fprintf(stderr, "[pa_set_volume_from_stdin] " __VA_ARGS__)
+
+// 10 fps
+static constexpr uint32_t THROTTLE_INTERVAL_MSEC = 100;
 
 AudioBackend::AudioBackend(std::function<void()> on_updated_cb, private_constructor_tag tag)
     : mainloop_(nullptr), mainloop_api_(nullptr), context_(nullptr), volume_(0), muted_(false), source_volume_(0),
@@ -95,16 +99,26 @@ void AudioBackend::onStdin(pa_mainloop_api* ea, pa_io_event* e, int fd, pa_io_ev
     size_t buf_len = sizeof(buf);
 
     const auto process_line = [backend](std::string_view line) {
-        float value = 0;
+        static float accumulated = 0;
+        static std::chrono::steady_clock::time_point last_update{};
+
         try {
-            value = std::strtof(line.data(), nullptr);
+            float value = std::strtof(line.data(), nullptr);
+            accumulated += value;
         } catch (std::exception&) {
             LOG("not a float: %s\n", line.data());
+        }
+
+        auto now = std::chrono::steady_clock::now();
+        if (now - last_update < std::chrono::milliseconds(THROTTLE_INTERVAL_MSEC) || accumulated == 0) {
             return;
         }
 
-        auto direction = value >= 0 ? ChangeType::Increase : ChangeType::Decrease;
-        backend->changeVolume(direction, std::abs(value));
+        auto direction = accumulated >= 0 ? ChangeType::Increase : ChangeType::Decrease;
+        backend->changeVolume(direction, std::abs(accumulated));
+
+        last_update = now;
+        accumulated = 0;
     };
 
     while (true) {
