@@ -27,6 +27,8 @@
 #include <stdexcept>
 #include <utility>
 
+#define LOG(...) fprintf(stderr, "pa_set_volume_from_stdin >" __VA_ARGS__)
+
 AudioBackend::AudioBackend(std::function<void()> on_updated_cb, private_constructor_tag tag)
     : mainloop_(nullptr), mainloop_api_(nullptr), context_(nullptr), volume_(0), muted_(false), source_volume_(0),
       source_muted_(false), on_updated_cb_(std::move(on_updated_cb)) {
@@ -82,7 +84,7 @@ void AudioBackend::onStdin(pa_mainloop_api* ea, pa_io_event* e, int fd, pa_io_ev
         try {
             value = std::strtof(line.data(), nullptr);
         } catch (std::exception&) {
-            fprintf(stderr, "not a float: %s\n", line.data());
+            LOG("not a float: %s\n", line.data());
             return;
         }
 
@@ -105,7 +107,7 @@ void AudioBackend::onStdin(pa_mainloop_api* ea, pa_io_event* e, int fd, pa_io_ev
                 pos = (nl - buf) + 1;
             } else {
                 // FIXME: rollover to next onStdin call?
-                fprintf(stderr, "line too long or unbuffered stdin, discarding %zu bytes\n", nl - (buf + pos));
+                LOG("line too long or unbuffered stdin, discarding %zu bytes\n", nl - (buf + pos));
                 break;
             }
         }
@@ -182,7 +184,7 @@ void AudioBackend::volumeModifyCb(pa_context* c, int success, void* data) {
     if (success) {
         pa_context_get_sink_info_by_index(backend->context_, backend->sink_idx_, sinkInfoCb, data);
     } else {
-        fprintf(stderr, "failed to set volume\n");
+        LOG("failed to set volume\n");
     }
 }
 
