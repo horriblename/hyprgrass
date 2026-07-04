@@ -79,8 +79,16 @@ void AudioBackend::connectContext() {
 
 void AudioBackend::onStdin(pa_mainloop_api* ea, pa_io_event* e, int fd, pa_io_event_flags_t events, void* data) {
     auto backend = static_cast<AudioBackend*>(data);
-    if (!(events & PA_IO_EVENT_INPUT))
+    if (events & PA_IO_EVENT_HANGUP) {
+        ea->quit(ea, 0);
         return;
+    }
+    if (!(events & PA_IO_EVENT_INPUT)) {
+        // idk what the best course of action is here
+        LOG("unhandled event flag %d", events);
+        ea->quit(ea, 1);
+        return;
+    }
 
     // TODO: handle data size > 1024
     char buf[1024] = {};
