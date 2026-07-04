@@ -549,12 +549,12 @@ int newGesture(lua_State* L) {
                 updateRef = luaL_ref(L, LUA_REGISTRYINDEX);
                 heldLuaRefs.push_back(functionRef);
             } else {
-                lua_pop(L, 1);
                 if (!lua_isnil(L, -1)) {
                     return Config::Lua::Bindings::Internal::configError(
                         L, "hyprgrass.gesture: action.update must be a function or nil"
                     );
                 }
+                lua_pop(L, 1);
             }
 
             lua_getfield(L, -1, "finish");
@@ -562,12 +562,12 @@ int newGesture(lua_State* L) {
                 endRef = luaL_ref(L, LUA_REGISTRYINDEX);
                 heldLuaRefs.push_back(functionRef);
             } else {
-                lua_pop(L, 1);
                 if (!lua_isnil(L, -1)) {
                     return Config::Lua::Bindings::Internal::configError(
                         L, "hyprgrass.gesture: action.finish must be a function or nil"
                     );
                 }
+                lua_pop(L, 1);
             }
         } else if (Config::Lua::Bindings::Internal::pushDispatcherFunction(L, -1)) {
             functionRef = luaL_ref(L, LUA_REGISTRYINDEX);
