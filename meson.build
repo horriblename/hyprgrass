@@ -35,6 +35,8 @@ if get_option('hyprgrass')
   endif
 endif
 
+pulse = dependency('libpulse')
+
 hyprland_deps = [
   dependency('pixman-1'),
   dependency('libinput'),
@@ -46,3 +48,4 @@ hyprland_deps = [
 
 subdir('examples')
 subdir('src')
+subdir('extras')

@@ -1,6 +1,4 @@
 if get_option('hyprgrass-pulse')
-  pulse = dependency('libpulse')
-
   shared_module(
     'hyprgrass-pulse',
     'main.cpp',
