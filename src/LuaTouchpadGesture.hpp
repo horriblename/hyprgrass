@@ -83,7 +83,7 @@ class LuaTouchpadGesture : public ITrackpadGesture {
 
         lua_rawgeti(L, LUA_REGISTRYINDEX, this->updateRef);
 
-        lua_createtable(L, 0, 2); // local opt = {}
+        lua_createtable(L, 0, 3); // local opt = {}
 
         {
             lua_createtable(L, 0, 2); // local pos = {}
@@ -99,6 +99,10 @@ class LuaTouchpadGesture : public ITrackpadGesture {
 
         pushMonitorInfo(L);
         lua_setfield(L, -2, "monitor"); // opt.monitor = monitor
+
+        auto time_msec = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+        lua_pushinteger(L, time_msec);
+        lua_setfield(L, -2, "time_msec"); // opt.time_msec = (time)
 
         int result = mgr->guardedPCall(1, 0, this->updateRef, TIMEOUT_MSEC, "hyprgrass.gesture: update()");
         if (result != LUA_OK) {
