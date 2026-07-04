@@ -1,8 +1,8 @@
 #include "pulse/mainloop-api.h"
-#include <cerrno>
 #include <cstdio>
 #include <cstring>
-#include <iostream>
+#include <errno.h>
+#include <fcntl.h>
 #include <pulse/context.h>
 #include <pulse/introspect.h>
 #include <pulse/mainloop.h>
@@ -27,7 +27,7 @@
 #include <stdexcept>
 #include <utility>
 
-#define LOG(...) fprintf(stderr, "pa_set_volume_from_stdin >" __VA_ARGS__)
+#define LOG(...) fprintf(stderr, "[pa_set_volume_from_stdin] " __VA_ARGS__)
 
 AudioBackend::AudioBackend(std::function<void()> on_updated_cb, private_constructor_tag tag)
     : mainloop_(nullptr), mainloop_api_(nullptr), context_(nullptr), volume_(0), muted_(false), source_volume_(0),
@@ -38,6 +38,13 @@ AudioBackend::AudioBackend(std::function<void()> on_updated_cb, private_construc
     }
     mainloop_api_ = pa_mainloop_get_api(mainloop_);
     connectContext();
+
+    int flags = fcntl(STDIN_FILENO, F_GETFL);
+    assert(flags >= 0);
+
+    // if (flags & O_NONBLOCK == 0)
+    if (fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK) == -1)
+        LOG("fcntl() error: %s", strerror(errno));
 
     mainloop_api_->io_new(mainloop_api_, STDIN_FILENO, PA_IO_EVENT_INPUT, onStdin, this);
 }
@@ -92,31 +99,35 @@ void AudioBackend::onStdin(pa_mainloop_api* ea, pa_io_event* e, int fd, pa_io_ev
         backend->changeVolume(direction, std::abs(value));
     };
 
-    ssize_t n = read(STDIN_FILENO, buf, sizeof(buf));
+    while (true) {
+        ssize_t n = read(STDIN_FILENO, buf, sizeof(buf));
+        if (n > 0) {
+            size_t pos = 0;
+            while (true) {
+                if (buf[pos] == '\0')
+                    break;
 
-    if (n > 0) {
-        size_t pos = 0;
-        while (true) {
-            if (buf[pos] == '\0')
-                break;
-
-            void* p  = memchr(buf + pos, '\n', (buf_len - pos));
-            char* nl = static_cast<char*>(p);
-            if (p) {
-                process_line(std::string_view{buf + pos, nl});
-                pos = (nl - buf) + 1;
-            } else {
-                // FIXME: rollover to next onStdin call?
-                LOG("line too long or unbuffered stdin, discarding %zu bytes\n", nl - (buf + pos));
-                break;
+                void* p  = memchr(buf + pos, '\n', (buf_len - pos));
+                char* nl = static_cast<char*>(p);
+                if (p) {
+                    process_line(std::string_view{buf + pos, nl});
+                    pos = (nl - buf) + 1;
+                } else {
+                    process_line(std::string_view{buf + pos, buf + buf_len});
+                    pos = buf_len;
+                }
             }
+        } else if (n == 0) {
+            // EOF
+            ea->quit(ea, 0);
+            return;
+        } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return;
+        } else {
+            // TODO: handle errors
+            LOG("reading stdin: %s", strerror(errno));
+            break;
         }
-    } else if (n == 0) {
-        // EOF
-        ea->quit(ea, 0);
-        return;
-    } else {
-        // TODO: errors
     }
 }
 
