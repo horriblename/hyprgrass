@@ -1,6 +1,5 @@
 #include "EmulateTouchpadGesture.hpp"
 #include "GestureManager.hpp"
-#include "TouchVisualizer.hpp"
 #include "gestures/CompletedGesture.hpp"
 #include "gestures/DragGesture.hpp"
 #include "globals.hpp"
@@ -56,8 +55,6 @@ const CHyprColor s_pluginColor       = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255
 const CHyprColor error_color         = {204. / 255.0, 2. / 255.0, 2. / 255.0, 1.0};
 const std::string KEYWORD_HG_BIND    = "hyprgrass-bind";
 const std::string KEYWORD_HG_GESTURE = "hyprgrass-gesture";
-
-inline std::unique_ptr<Visualizer> g_pVisualizer;
 
 static bool g_unloading = false;
 

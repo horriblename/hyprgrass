@@ -14,7 +14,6 @@ if get_option('hyprgrass')
     'GestureManager.cpp',
     'ShimTrackpadGestures.cpp',
     'VecSet.cpp',
-    'TouchVisualizer.cpp',
     cpp_args: ['-DWLR_USE_UNSTABLE'],
     link_with: [gestures],
     dependencies: [

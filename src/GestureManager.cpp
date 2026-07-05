@@ -11,7 +11,9 @@
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/config/legacy/ConfigManager.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
-#include <hyprland/src/helpers/Monitor.hpp>
+#include <hyprland/src/output/Monitor.hpp>
+#include <hyprland/src/pointer/PointerController.hpp>
+#include <hyprland/src/state/MonitorState.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/UnifiedWorkspaceSwipeGesture.hpp>
@@ -359,7 +361,7 @@ void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
 
         case GestureType::LONG_PRESS: {
             const auto pos = this->m_sGestureState.get_center().current;
-            g_pCompositor->warpCursorTo(Vector2D(pos.x, pos.y));
+            Pointer::pointerController()->warpTo(Vector2D(pos.x, pos.y));
             g_pInputManager->simulateMouseMovement();
             return;
         }
@@ -590,7 +592,7 @@ void GestureManager::sendCancelEventsToWindows() {
 bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     static auto const SEND_CANCEL = g_config->sendCancel;
 
-    auto monitor = g_pCompositor->getMonitorFromName(!ev.device->m_boundOutput.empty() ? ev.device->m_boundOutput : "");
+    auto monitor = State::monitorState()->query().name(!ev.device->m_boundOutput.empty() ? ev.device->m_boundOutput : "").run();
     monitor      = monitor ? monitor : Desktop::focusState()->monitor();
 
     if (!monitor) {
@@ -604,7 +606,7 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     const auto& monitorSize = this->m_lastTouchedMonitor->m_size;
     this->m_monitorArea     = SMonitorArea{monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
 
-    g_pCompositor->warpCursorTo(
+    Pointer::pointerController()->warpTo(
         Vector2D{
             monitorPos.x + ev.pos.x * monitorSize.x,
             monitorPos.y + ev.pos.y * monitorSize.y,
