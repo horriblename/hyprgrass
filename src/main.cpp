@@ -44,7 +44,6 @@
 #include <format>
 #include <memory>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 
@@ -58,6 +57,19 @@ const CHyprColor error_color   = {204. / 255.0, 2. / 255.0, 2. / 255.0, 1.0};
 
 static std::vector<int> heldLuaRefs{};
 static bool g_unloading = false;
+
+void clearHeldLuaRefs() {
+    // TODO: should I just move this into GestureManager/LuaTouchpadGesture? :/
+    if (Config::mgr()->type() == Config::CONFIG_LUA) {
+        lua_State* L = Config::Lua::mgr()->m_lua;
+
+        for (const auto& r : heldLuaRefs) {
+            luaL_unref(L, LUA_REGISTRYINDEX, r);
+        }
+
+        heldLuaRefs.clear();
+    }
+}
 
 void hkOnTouchDown(ITouch::SDownEvent ev, Event::SCallbackInfo& cbinfo) {
     cbinfo.cancelled = g_pGestureManager->onTouchDown(ev);
@@ -656,6 +668,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
-    // TODO: cleanup heldLuaRefs
     g_unloading = true;
+    clearHeldLuaRefs();
 }
