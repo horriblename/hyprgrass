@@ -16,6 +16,7 @@ std::string stringifyGestureType(const GestureType& type) {
         case GestureType::TAP:
             return "tap";
     }
+    return "";
 }
 
 std::string CompletedGestureEvent::to_string() const {

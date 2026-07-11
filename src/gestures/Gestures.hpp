@@ -13,7 +13,7 @@ struct SMonitorArea {
 };
 
 enum class FindGestureResult {
-    NONE,
+    NONE = 0,
     NON_CONSUMING,
     FOUND,
 };

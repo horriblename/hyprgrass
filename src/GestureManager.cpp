@@ -1,5 +1,6 @@
 #include "GestureManager.hpp"
 #include "HyprLogger.hpp"
+#include "gestures/Gestures.hpp"
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
@@ -115,12 +116,10 @@ GestureManager::~GestureManager() {
 }
 
 FindGestureResult GestureManager::findCompletedGesture(const CompletedGestureEvent& gev) const {
-    return this->findGestureBind(gev.to_string(), GestureEventType::COMPLETED) ? FindGestureResult::FOUND
-                                                                               : FindGestureResult::NONE;
+    return this->findGestureBind(gev.to_string(), GestureEventType::COMPLETED);
 }
 FindGestureResult GestureManager::handleCompletedGesture(const CompletedGestureEvent& gev) {
-    return this->handleGestureBind(gev.to_string(), GestureEventType::COMPLETED) ? FindGestureResult::FOUND
-                                                                                 : FindGestureResult::NONE;
+    return this->handleGestureBind(gev.to_string(), GestureEventType::COMPLETED);
 }
 
 bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
@@ -173,7 +172,8 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 
         case GestureType::LONG_PRESS:
             if (g_pSessionLockManager->isSessionLocked()) {
-                return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
+                return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN) !=
+                       FindGestureResult::NONE;
             }
 
             if (RESIZE_LONG_PRESS->value() && gev.finger_count == 1) {
@@ -187,15 +187,15 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 if (w && !Fullscreen::controller()->isFullscreen(w)) {
                     const Vector2D realPos  = w->position(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
                     const Vector2D realSize = w->size(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
-                    const CBox real = {realPos.x, realPos.y, realSize.x, realSize.y};
-                    const CBox grab = {
+                    const CBox real         = {realPos.x, realPos.y, realSize.x, realSize.y};
+                    const CBox grab         = {
                         real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA, real.width + 2 * BORDER_GRAB_AREA,
                         real.height + 2 * BORDER_GRAB_AREA
                     };
 
                     bool notInRealWindow = !real.containsPoint(touchPos) || w->isInCurvedCorner(touchPos.x, touchPos.y);
-                    bool onTiledGap      = !w->m_isFloating && !Fullscreen::controller()->isFullscreen(w) && notInRealWindow;
-                    bool inGrabArea      = notInRealWindow && grab.containsPoint(touchPos);
+                    bool onTiledGap = !w->m_isFloating && !Fullscreen::controller()->isFullscreen(w) && notInRealWindow;
+                    bool inGrabArea = notInRealWindow && grab.containsPoint(touchPos);
 
                     if ((onTiledGap || inGrabArea) && !w->hasPopupAt(touchPos)) {
                         IPointer::SButtonEvent e = {
@@ -225,13 +225,13 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
             if (this->trackpadGestureBegin(gev))
                 return true;
 
-            return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
+            return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN) != FindGestureResult::NONE;
 
         case GestureType::PINCH:
             if (this->trackpadGestureBegin(gev))
                 return true;
 
-            return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN);
+            return this->handleGestureBind(gev.to_string(), GestureEventType::DRAG_BEGIN) != FindGestureResult::NONE;
             break;
         case GestureType::TAP:
             // tap does not trigger drag
@@ -241,8 +241,10 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
     return false;
 }
 
-bool GestureManager::findGestureBind(std::string bind, GestureEventType type) const {
+FindGestureResult GestureManager::findGestureBind(std::string bind, GestureEventType type) const {
     Log::logger->log(Log::DEBUG, "[hyprgrass] Looking for binds matching: {}", bind);
+
+    auto result = FindGestureResult::NONE;
 
     auto allBinds   = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
     const auto MODS = g_pInputManager->getModsFromAllKBs();
@@ -260,15 +262,20 @@ bool GestureManager::findGestureBind(std::string bind, GestureEventType type) co
         if (k->modmask != MODS)
             continue;
 
-        return true;
+        if (k->nonConsuming) {
+            result = FindGestureResult::NON_CONSUMING;
+            continue;
+        }
+
+        return FindGestureResult::FOUND;
     }
-    return false;
+    return result;
 }
 
 // bind is the name of the gesture event.
 // pressed only matters for mouse binds: only start of drag gestures should set it to true
-bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) {
-    bool found = false;
+FindGestureResult GestureManager::handleGestureBind(std::string bind, GestureEventType type) {
+    auto found = FindGestureResult::NONE;
     Log::logger->log(Log::DEBUG, "[hyprgrass] Looking for binds matching: {}", bind);
 
     auto allBinds   = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
@@ -302,7 +309,8 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
                 if (!k->mouse) {
                     Log::logger->log(Log::DEBUG, "[hyprgrass] calling dispatcher ({})", bind);
                     luaMgr->callLuaFn(*ref);
-                    found = found || !k->nonConsuming;
+                    found =
+                        std::max(found, k->nonConsuming ? FindGestureResult::NON_CONSUMING : FindGestureResult::FOUND);
                 }
                 break;
 
@@ -321,7 +329,7 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
 
                 Config::Actions::state()->m_passPressed = -1;
 
-                found = found || !k->nonConsuming;
+                found = std::max(found, k->nonConsuming ? FindGestureResult::NON_CONSUMING : FindGestureResult::FOUND);
             }
         }
     }

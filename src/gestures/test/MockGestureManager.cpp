@@ -8,14 +8,14 @@ void hyprgrass_debug(const std::string& s) {
 }
 
 FindGestureResult CMockGestureManager::findCompletedGesture(const CompletedGestureEvent& gev) const {
-    return this->handlesCompletedEvents ? FindGestureResult::FOUND : FindGestureResult::NONE;
+    return this->completedEventsResult;
 }
 
 FindGestureResult CMockGestureManager::handleCompletedGesture(const CompletedGestureEvent& gev) {
     std::cout << "gesture triggered: " << gev.to_string() << "\n";
-    if (this->handlesCompletedEvents)
+    if (this->completedEventsResult != FindGestureResult::NONE)
         this->triggered = true;
-    return this->handlesCompletedEvents ? FindGestureResult::FOUND : FindGestureResult::NONE;
+    return this->completedEventsResult;
 }
 
 bool CMockGestureManager::handleDragGesture(const DragGestureEvent& gev) {

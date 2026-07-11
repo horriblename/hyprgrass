@@ -430,9 +430,11 @@ void IGestureManager::addPinchGesture(double base_threshold, const float* sensit
             return;
         }
 
-        auto active = this->activeDragGesture.value();
-        if (this->emitDragGestureEnd(active) != FindGestureResult::NONE) {
-            return;
+        if (this->activeDragGesture.has_value()) {
+            auto active = this->activeDragGesture.value();
+            if (this->emitDragGestureEnd(active)) {
+                return;
+            }
         }
     };
     auto cancel = [this]() { this->handleCancelledGesture(); };
