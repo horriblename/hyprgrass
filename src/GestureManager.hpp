@@ -98,8 +98,8 @@ class GestureManager : public IGestureManager {
 
   protected:
     SMonitorArea getMonitorArea() const override;
-    bool findCompletedGesture(const CompletedGestureEvent& gev) const override;
-    bool handleCompletedGesture(const CompletedGestureEvent& gev) override;
+    FindGestureResult findCompletedGesture(const CompletedGestureEvent& gev) const override;
+    FindGestureResult handleCompletedGesture(const CompletedGestureEvent& gev) override;
     void handleCancelledGesture() override;
 
     void debugLog(const std::string& msg) override;

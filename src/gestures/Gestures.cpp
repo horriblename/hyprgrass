@@ -35,35 +35,35 @@ void IGestureManager::cancelTouchEventsOnAllWindows() {
     }
 }
 
-bool IGestureManager::reserveCompletedGesture(const CompletedGestureEvent& gev) {
+FindGestureResult IGestureManager::reserveCompletedGesture(const CompletedGestureEvent& gev) {
     if (this->gestureTriggered) {
-        return false;
+        return FindGestureResult::NONE;
     }
 
-    bool handled = this->findCompletedGesture(gev);
-    if (handled) {
+    auto result = this->findCompletedGesture(gev);
+    if (result != FindGestureResult::NONE) {
         this->promisedCompletedGesture = gev;
     }
 
-    return handled;
+    return result;
 }
 
-bool IGestureManager::emitCompletedGesture(const CompletedGestureEvent& gev) {
+FindGestureResult IGestureManager::emitCompletedGesture(const CompletedGestureEvent& gev) {
     if (this->gestureTriggered) {
-        return false;
+        return FindGestureResult::NONE;
     }
 
     if (this->promisedCompletedGesture && gev != this->promisedCompletedGesture.value()) {
-        return false;
+        return FindGestureResult::NONE;
     }
 
-    bool handled = this->handleCompletedGesture(gev);
-    if (handled) {
+    auto result = this->handleCompletedGesture(gev);
+    if (result != FindGestureResult::NONE) {
         this->gestureTriggered = true;
         this->stopLongPressTimer();
     }
 
-    return handled;
+    return result;
 }
 
 bool IGestureManager::emitDragGesture(const DragGestureEvent& gev) {
@@ -118,7 +118,7 @@ bool IGestureManager::onTouchUp(const wf::touch::gesture_event_t& ev) {
     return this->eventForwardingInhibited();
 }
 
-bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
+FindGestureResult IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
     this->updateGestures(ev);
     this->m_sGestureState.update(ev);
 
@@ -126,7 +126,7 @@ bool IGestureManager::onTouchMove(const wf::touch::gesture_event_t& ev) {
         this->dragGestureUpdate(ev);
     }
 
-    return this->eventForwardingInhibited();
+    return this->eventForwardingInhibited() ? FindGestureResult::FOUND : FindGestureResult::NONE;
 }
 
 GestureDirection IGestureManager::find_swipe_edges(wf::touch::point_t point, int edge_margin) {
@@ -182,7 +182,7 @@ void IGestureManager::addMultiFingerGesture(
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
             };
 
-            if (this->reserveCompletedGesture(completed) || this->emitDragGesture(gesture)) {
+            if (this->reserveCompletedGesture(completed) != FindGestureResult::NONE || this->emitDragGesture(gesture) != FindGestureResult::NONE) {
                 this->cancelTouchEventsOnAllWindows();
             }
         });
@@ -196,7 +196,7 @@ void IGestureManager::addMultiFingerGesture(
                 .direction    = 0,
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
             };
-            if (this->emitDragGestureEnd(drag)) {
+            if (this->emitDragGestureEnd(drag) != FindGestureResult::NONE) {
                 return;
             } else {
                 const auto gesture = CompletedGestureEvent{
@@ -231,7 +231,7 @@ void IGestureManager::addMultiFingerTap(double base_finger_slip, const float* se
             .direction    = 0,
             .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
         };
-        if (this->emitCompletedGesture(gesture)) {
+        if (this->emitCompletedGesture(gesture) != FindGestureResult::NONE) {
             this->cancelTouchEventsOnAllWindows();
         }
     };
@@ -263,7 +263,7 @@ void IGestureManager::addLongPress(double base_finger_slip, const float* sensiti
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
             };
 
-            bool handled = this->emitCompletedGesture(gesture1) || this->emitDragGesture(gesture);
+            bool handled = this->emitCompletedGesture(gesture1) != FindGestureResult::NONE || this->emitDragGesture(gesture) != FindGestureResult::NONE;
 
             if (handled) {
                 this->cancelTouchEventsOnAllWindows();
@@ -323,7 +323,7 @@ void IGestureManager::addEdgeSwipeGesture(
                 .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
                 .edge_origin  = origin_edges
             };
-            if (this->reserveCompletedGesture(completed) || this->emitDragGesture(gesture)) {
+            if (this->reserveCompletedGesture(completed) != FindGestureResult::NONE || this->emitDragGesture(gesture) != FindGestureResult::NONE) {
                 this->cancelTouchEventsOnAllWindows();
             }
         });
@@ -339,7 +339,7 @@ void IGestureManager::addEdgeSwipeGesture(
                    .edge_origin  = origin_edges,
             };
 
-            if (this->emitDragGestureEnd(dragEvent)) {
+            if (this->emitDragGestureEnd(dragEvent) != FindGestureResult::NONE) {
                 return;
             }
 
@@ -392,7 +392,7 @@ void IGestureManager::addPinchGesture(double base_threshold, const float* sensit
                 .direction    = dir,
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
             };
-            if (this->reserveCompletedGesture(completed)) {
+            if (this->reserveCompletedGesture(completed) != FindGestureResult::NONE) {
                 this->cancelTouchEventsOnAllWindows();
                 return;
             }
@@ -404,7 +404,7 @@ void IGestureManager::addPinchGesture(double base_threshold, const float* sensit
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
                 .edge_origin  = 0,
             };
-            if (this->emitDragGesture(gesture)) {
+            if (this->emitDragGesture(gesture) != FindGestureResult::NONE) {
                 this->cancelTouchEventsOnAllWindows();
                 return;
             }
@@ -431,7 +431,7 @@ void IGestureManager::addPinchGesture(double base_threshold, const float* sensit
         }
 
         auto active = this->activeDragGesture.value();
-        if (this->emitDragGestureEnd(active)) {
+        if (this->emitDragGestureEnd(active) != FindGestureResult::NONE) {
             return;
         }
     };

@@ -114,11 +114,13 @@ GestureManager::~GestureManager() {
     wl_event_source_remove(this->long_press_timer);
 }
 
-bool GestureManager::findCompletedGesture(const CompletedGestureEvent& gev) const {
-    return this->findGestureBind(gev.to_string(), GestureEventType::COMPLETED);
+FindGestureResult GestureManager::findCompletedGesture(const CompletedGestureEvent& gev) const {
+    return this->findGestureBind(gev.to_string(), GestureEventType::COMPLETED) ? FindGestureResult::FOUND
+                                                                               : FindGestureResult::NONE;
 }
-bool GestureManager::handleCompletedGesture(const CompletedGestureEvent& gev) {
-    return this->handleGestureBind(gev.to_string(), GestureEventType::COMPLETED);
+FindGestureResult GestureManager::handleCompletedGesture(const CompletedGestureEvent& gev) {
+    return this->handleGestureBind(gev.to_string(), GestureEventType::COMPLETED) ? FindGestureResult::FOUND
+                                                                                 : FindGestureResult::NONE;
 }
 
 bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
@@ -579,8 +581,9 @@ void GestureManager::sendCancelEventsToWindows() {
 bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     static auto const SEND_CANCEL = g_config->sendCancel;
 
-    auto monitor = State::monitorState()->query().name(!ev.device->m_boundOutput.empty() ? ev.device->m_boundOutput : "").run();
-    monitor      = monitor ? monitor : Desktop::focusState()->monitor();
+    auto monitor =
+        State::monitorState()->query().name(!ev.device->m_boundOutput.empty() ? ev.device->m_boundOutput : "").run();
+    monitor = monitor ? monitor : Desktop::focusState()->monitor();
 
     if (!monitor) {
         Log::logger->log(Log::ERR, "[hyprgrass] onTouchDown: could not find a monitor???");
@@ -701,7 +704,7 @@ bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
         .pos    = pos,
     };
 
-    return IGestureManager::onTouchMove(gesture_event);
+    return IGestureManager::onTouchMove(gesture_event) != FindGestureResult::NONE;
 }
 
 SMonitorArea GestureManager::getMonitorArea() const {
