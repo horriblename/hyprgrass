@@ -182,7 +182,14 @@ void IGestureManager::addMultiFingerGesture(
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
             };
 
-            if (this->reserveCompletedGesture(completed) != FindGestureResult::NONE || this->emitDragGesture(gesture) != FindGestureResult::NONE) {
+            FindGestureResult handled = this->reserveCompletedGesture(completed);
+            if (handled != FindGestureResult::NONE) {
+                if (handled == FindGestureResult::FOUND)
+                    this->cancelTouchEventsOnAllWindows();
+                return;
+            }
+
+            if (this->emitDragGesture(gesture)) {
                 this->cancelTouchEventsOnAllWindows();
             }
         });
@@ -196,18 +203,18 @@ void IGestureManager::addMultiFingerGesture(
                 .direction    = 0,
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
             };
-            if (this->emitDragGestureEnd(drag) != FindGestureResult::NONE) {
+            if (this->emitDragGestureEnd(drag)) {
                 return;
-            } else {
-                const auto gesture = CompletedGestureEvent{
-                    .type         = GestureType::SWIPE,
-                    .direction    = swipe_ptr->target_direction,
-                    .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
-                };
-
-                // cancel event already sent to windows on 3 finger down
-                this->emitCompletedGesture(gesture);
             }
+
+            const auto gesture = CompletedGestureEvent{
+                .type         = GestureType::SWIPE,
+                .direction    = swipe_ptr->target_direction,
+                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
+            };
+
+            // cancel event already sent to windows on 3 finger down
+            this->emitCompletedGesture(gesture);
         });
 
     std::vector<std::unique_ptr<wf::touch::gesture_action_t>> swipe_actions;
@@ -231,7 +238,7 @@ void IGestureManager::addMultiFingerTap(double base_finger_slip, const float* se
             .direction    = 0,
             .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
         };
-        if (this->emitCompletedGesture(gesture) != FindGestureResult::NONE) {
+        if (this->emitCompletedGesture(gesture) == FindGestureResult::FOUND) {
             this->cancelTouchEventsOnAllWindows();
         }
     };
@@ -250,12 +257,6 @@ void IGestureManager::addLongPress(double base_finger_slip, const float* sensiti
             if (cancelled || this->activeDragGesture.has_value()) {
                 return;
             }
-            const auto gesture = DragGestureEvent{
-                .time         = time,
-                .type         = GestureType::LONG_PRESS,
-                .direction    = 0,
-                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
-            };
 
             const auto gesture1 = CompletedGestureEvent{
                 .type         = GestureType::LONG_PRESS,
@@ -263,9 +264,21 @@ void IGestureManager::addLongPress(double base_finger_slip, const float* sensiti
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
             };
 
-            bool handled = this->emitCompletedGesture(gesture1) != FindGestureResult::NONE || this->emitDragGesture(gesture) != FindGestureResult::NONE;
+            FindGestureResult handled = this->emitCompletedGesture(gesture1);
+            if (handled != FindGestureResult::NONE) {
+                if (handled == FindGestureResult::FOUND)
+                    this->cancelTouchEventsOnAllWindows();
+                return;
+            }
 
-            if (handled) {
+            const auto gesture = DragGestureEvent{
+                .time         = time,
+                .type         = GestureType::LONG_PRESS,
+                .direction    = 0,
+                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size())
+            };
+
+            if (this->emitDragGesture(gesture)) {
                 this->cancelTouchEventsOnAllWindows();
             }
         }
@@ -323,7 +336,15 @@ void IGestureManager::addEdgeSwipeGesture(
                 .finger_count = static_cast<uint32_t>(edge_ptr->finger_count),
                 .edge_origin  = origin_edges
             };
-            if (this->reserveCompletedGesture(completed) != FindGestureResult::NONE || this->emitDragGesture(gesture) != FindGestureResult::NONE) {
+
+            FindGestureResult handled = this->reserveCompletedGesture(completed);
+            if (handled != FindGestureResult::NONE) {
+                if (handled == FindGestureResult::FOUND)
+                    this->cancelTouchEventsOnAllWindows();
+                return;
+            }
+
+            if (this->emitDragGesture(gesture)) {
                 this->cancelTouchEventsOnAllWindows();
             }
         });
@@ -339,7 +360,7 @@ void IGestureManager::addEdgeSwipeGesture(
                    .edge_origin  = origin_edges,
             };
 
-            if (this->emitDragGestureEnd(dragEvent) != FindGestureResult::NONE) {
+            if (this->emitDragGestureEnd(dragEvent)) {
                 return;
             }
 
@@ -392,8 +413,11 @@ void IGestureManager::addPinchGesture(double base_threshold, const float* sensit
                 .direction    = dir,
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
             };
-            if (this->reserveCompletedGesture(completed) != FindGestureResult::NONE) {
-                this->cancelTouchEventsOnAllWindows();
+
+            FindGestureResult handled = this->reserveCompletedGesture(completed);
+            if (handled != FindGestureResult::NONE) {
+                if (handled == FindGestureResult::FOUND)
+                    this->cancelTouchEventsOnAllWindows();
                 return;
             }
 
@@ -404,7 +428,7 @@ void IGestureManager::addPinchGesture(double base_threshold, const float* sensit
                 .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
                 .edge_origin  = 0,
             };
-            if (this->emitDragGesture(gesture) != FindGestureResult::NONE) {
+            if (this->emitDragGesture(gesture)) {
                 this->cancelTouchEventsOnAllWindows();
                 return;
             }
@@ -416,17 +440,15 @@ void IGestureManager::addPinchGesture(double base_threshold, const float* sensit
     pinch_actions.emplace_back(std::move(release));
 
     auto ack = [this]() {
-        if (!this->activeDragGesture.has_value()) {
-            auto dir   = this->m_sGestureState.get_pinch_scale() < 1.0 ? GESTURE_DIRECTION_OUT : GESTURE_DIRECTION_IN;
-            auto event = CompletedGestureEvent{
-                .type         = GestureType::PINCH,
-                .direction    = dir,
-                .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
-                .edge_origin  = 0,
-            };
+        auto dir   = this->m_sGestureState.get_pinch_scale() < 1.0 ? GESTURE_DIRECTION_OUT : GESTURE_DIRECTION_IN;
+        auto event = CompletedGestureEvent{
+            .type         = GestureType::PINCH,
+            .direction    = dir,
+            .finger_count = static_cast<uint32_t>(this->m_sGestureState.fingers.size()),
+            .edge_origin  = 0,
+        };
 
-            // already sent cancel event to windows in drag begin
-            this->emitCompletedGesture(event);
+        if (this->emitCompletedGesture(event) != FindGestureResult::NONE) {
             return;
         }
 
