@@ -3,7 +3,7 @@
 #include "Gesture.hpp"
 #include "globals.hpp"
 #include "pulse.hpp"
-#include "src/managers/input/trackpad/GestureTypes.hpp"
+#include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>
 
 #include <cstdlib>
 #include <hyprgraphics/color/Color.hpp>

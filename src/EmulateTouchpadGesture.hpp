@@ -3,11 +3,11 @@
 #include <cstdint>
 
 #include "GestureManager.hpp"
-#include "src/debug/log/Logger.hpp"
-#include "src/devices/IPointer.hpp"
-#include "src/managers/input/InputManager.hpp"
-#include "src/managers/input/trackpad/GestureTypes.hpp"
-#include "src/managers/input/trackpad/gestures/ITrackpadGesture.hpp"
+#include <hyprland/src/debug/log/Logger.hpp>
+#include <hyprland/src/devices/IPointer.hpp>
+#include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>
+#include <hyprland/src/managers/input/trackpad/gestures/ITrackpadGesture.hpp>
 
 class EmulateTouchpadGesture : public ITrackpadGesture {
   public:

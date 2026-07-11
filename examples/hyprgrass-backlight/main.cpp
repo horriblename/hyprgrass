@@ -3,7 +3,6 @@
 #include "Gesture.hpp"
 #include "backlight.hpp"
 #include "globals.hpp"
-#include "src/managers/input/trackpad/GestureTypes.hpp"
 
 #include <cstdlib>
 #include <hyprgraphics/color/Color.hpp>
@@ -12,6 +11,7 @@
 #include <hyprland/src/debug/log/Logger.hpp>
 #include <hyprland/src/event/EventBus.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/version.h>

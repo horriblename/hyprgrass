@@ -15,6 +15,7 @@
 #include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
+#include <hyprland/src/protocols/core/Seat.hpp>
 #undef private
 
 enum class GestureEventType {

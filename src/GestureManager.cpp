@@ -1,24 +1,24 @@
 #include "GestureManager.hpp"
 #include "HyprLogger.hpp"
-#include "config/lua/ConfigManager.hpp"
-#include "config/shared/actions/ConfigActions.hpp"
-#include "config/shared/complex/ComplexDataTypes.hpp"
-#include "config/supplementary/propRefresher/PropRefresher.hpp"
 
 #define private public
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
+#include <hyprland/src/config/lua/ConfigManager.hpp>
+#include <hyprland/src/config/shared/actions/ConfigActions.hpp>
+#include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
+#include <hyprland/src/config/supplementary/propRefresher/PropRefresher.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
-#include <hyprland/src/output/Monitor.hpp>
-#include <hyprland/src/pointer/PointerController.hpp>
-#include <hyprland/src/state/MonitorState.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/fullscreen/FullscreenController.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/UnifiedWorkspaceSwipeGesture.hpp>
+#include <hyprland/src/output/Monitor.hpp>
 #include <hyprland/src/plugins/PluginSystem.hpp>
+#include <hyprland/src/pointer/PointerController.hpp>
 #include <hyprland/src/protocols/core/Compositor.hpp>
+#include <hyprland/src/state/MonitorState.hpp>
 #undef private
 
 #include <hyprutils/string/Numeric.hpp>
@@ -29,6 +29,8 @@
 
 // constexpr double SWIPE_THRESHOLD = 30.;
 constexpr int RESIZE_BORDER_GAP_INCREMENT = 10;
+
+template class VecSet<Hyprutils::Memory::CWeakPointer<CWLTouchResource>>;
 
 static std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(' ');

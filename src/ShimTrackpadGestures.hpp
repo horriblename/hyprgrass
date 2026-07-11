@@ -1,7 +1,6 @@
 #include "gestures/CompletedGesture.hpp"
 #include "gestures/DragGesture.hpp"
 #include "gestures/Shared.hpp"
-#include "src/managers/input/trackpad/GestureTypes.hpp"
 #include <any>
 #include <cstddef>
 #include <cstdint>
@@ -12,6 +11,7 @@
 #include <hyprutils/string/VarList.hpp>
 
 #define private public
+#include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
 #undef private
 
