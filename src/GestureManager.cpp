@@ -187,10 +187,10 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 const Vector2D touchPos =
                     pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current) *
                     this->m_lastTouchedMonitor->m_size;
-                if (w && !w->isFullscreen()) {
+                if (w && !w->m_pinFullscreened) {
                     const CBox real = {
-                        w->m_realPosition->value().x, w->m_realPosition->value().y, w->m_realSize->value().x,
-                        w->m_realSize->value().y
+                        w->getWindowMainSurfaceBox().x, w->getWindowMainSurfaceBox().y, w->getWindowMainSurfaceBox().w,
+                        w->getWindowMainSurfaceBox().h
                     };
                     const CBox grab = {
                         real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA, real.width + 2 * BORDER_GRAB_AREA,
@@ -198,7 +198,7 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                     };
 
                     bool notInRealWindow = !real.containsPoint(touchPos) || w->isInCurvedCorner(touchPos.x, touchPos.y);
-                    bool onTiledGap      = !w->m_isFloating && !w->isFullscreen() && notInRealWindow;
+                    bool onTiledGap      = !w->m_isFloating && !w->m_pinFullscreened && notInRealWindow;
                     bool inGrabArea      = notInRealWindow && grab.containsPoint(touchPos);
 
                     if ((onTiledGap || inGrabArea) && !w->hasPopupAt(touchPos)) {
