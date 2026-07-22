@@ -15,6 +15,7 @@
 #include <hyprland/src/pointer/PointerController.hpp>
 #include <hyprland/src/state/MonitorState.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
+#include <hyprland/src/managers/fullscreen/FullscreenController.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/UnifiedWorkspaceSwipeGesture.hpp>
 #include <hyprland/src/plugins/PluginSystem.hpp>
@@ -187,18 +188,17 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                 const Vector2D touchPos =
                     pixelPositionToPercentagePosition(this->m_sGestureState.get_center().current) *
                     this->m_lastTouchedMonitor->m_size;
-                if (w && !w->isFullscreen()) {
-                    const CBox real = {
-                        w->m_realPosition->value().x, w->m_realPosition->value().y, w->m_realSize->value().x,
-                        w->m_realSize->value().y
-                    };
+                if (w && !Fullscreen::controller()->isFullscreen(w)) {
+                    const Vector2D realPos  = w->position(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
+                    const Vector2D realSize = w->size(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
+                    const CBox real = {realPos.x, realPos.y, realSize.x, realSize.y};
                     const CBox grab = {
                         real.x - BORDER_GRAB_AREA, real.y - BORDER_GRAB_AREA, real.width + 2 * BORDER_GRAB_AREA,
                         real.height + 2 * BORDER_GRAB_AREA
                     };
 
                     bool notInRealWindow = !real.containsPoint(touchPos) || w->isInCurvedCorner(touchPos.x, touchPos.y);
-                    bool onTiledGap      = !w->m_isFloating && !w->isFullscreen() && notInRealWindow;
+                    bool onTiledGap      = !w->m_isFloating && !Fullscreen::controller()->isFullscreen(w) && notInRealWindow;
                     bool inGrabArea      = notInRealWindow && grab.containsPoint(touchPos);
 
                     if ((onTiledGap || inGrabArea) && !w->hasPopupAt(touchPos)) {
