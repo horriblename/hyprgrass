@@ -9,7 +9,6 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
-#include <hyprland/src/config/legacy/ConfigManager.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/output/Monitor.hpp>
 #include <hyprland/src/pointer/PointerController.hpp>
@@ -21,6 +20,8 @@
 #include <hyprland/src/plugins/PluginSystem.hpp>
 #include <hyprland/src/protocols/core/Compositor.hpp>
 #undef private
+
+#include <hyprutils/string/Numeric.hpp>
 
 #include <algorithm>
 #include <ranges>
@@ -69,33 +70,24 @@ static int handleLongPressTimer(void* data) {
     return 0;
 }
 
-static std::string commaSeparatedCssGaps(const Config::CCssGapData& data) {
-    return std::to_string(data.m_top) + "," + std::to_string(data.m_right) + "," + std::to_string(data.m_bottom) + "," +
-           std::to_string(data.m_left);
-}
-
 static void updateGapsIn(const Config::CCssGapData& newGapsIn) {
     static auto PGAPSINDATA = CConfigValue<Config::IComplexConfigValue>("general:gaps_in");
 
-    if (Config::mgr()->type() == Config::CONFIG_LEGACY) {
-        Config::Legacy::mgr()->parseKeyword("general:gaps_in", commaSeparatedCssGaps(newGapsIn));
-    } else {
-        auto luaMgr = dynamicPointerCast<Config::Lua::CConfigManager>(WP<Config::IConfigManager>(Config::mgr()));
+    auto luaMgr = dynamicPointerCast<Config::Lua::CConfigManager>(WP<Config::IConfigManager>(Config::mgr()));
 
-        const auto it = luaMgr->m_configValues.find("general.gaps_in");
-        if (it == luaMgr->m_configValues.end()) {
-            Log::logger->log(Log::ERR, "[hyprgrass] lua config 'general.gaps_in' not found");
-            return;
-        }
-
-        auto* gapsInPtr = dynamic_cast<Config::CCssGapData*>(PGAPSINDATA.ptr());
-        // idk why `*gapsInPtr = newGapsIn` doesn't work
-        gapsInPtr->m_bottom = newGapsIn.m_bottom;
-        gapsInPtr->m_top    = newGapsIn.m_top;
-        gapsInPtr->m_left   = newGapsIn.m_left;
-        gapsInPtr->m_right  = newGapsIn.m_right;
-        Config::Supplementary::refresher()->scheduleRefresh(it->second->refreshBits());
+    const auto it = luaMgr->m_configValues.find("general.gaps_in");
+    if (it == luaMgr->m_configValues.end()) {
+        Log::logger->log(Log::ERR, "[hyprgrass] lua config 'general.gaps_in' not found");
+        return;
     }
+
+    auto* gapsInPtr = dynamic_cast<Config::CCssGapData*>(PGAPSINDATA.ptr());
+    // idk why `*gapsInPtr = newGapsIn` doesn't work
+    gapsInPtr->m_bottom = newGapsIn.m_bottom;
+    gapsInPtr->m_top    = newGapsIn.m_top;
+    gapsInPtr->m_left   = newGapsIn.m_left;
+    gapsInPtr->m_right  = newGapsIn.m_right;
+    Config::Supplementary::refresher()->scheduleRefresh(it->second->refreshBits());
 }
 
 GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>()) {
@@ -291,49 +283,42 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
         if (k->modmask != MODS)
             continue;
 
-        // only legacy config uses "mouse" dispatcher
-        bool useMouseDispatcher = k->mouse && Config::mgr()->type() == Config::CONFIG_LEGACY;
-        const auto DISPATCHER   = g_pKeybindManager->m_dispatchers.find(useMouseDispatcher ? "mouse" : k->handler);
-
         // Should never happen, as we check in the ConfigManager, but oh well
-        if (DISPATCHER == g_pKeybindManager->m_dispatchers.end()) {
-            Log::logger->log(Log::ERR, "Invalid handler in a keybind! (handler {} does not exist)", k->handler);
+        const auto ref = Hyprutils::String::strToNumber<int>(k->arg);
+        if (k->handler != "__lua" || !ref) {
+            Log::logger->log(Log::ERR, "Invalid handler in a keybind! (handler {} is not a lua function)", k->handler);
             continue;
         }
+
+        auto luaMgr = dynamicPointerCast<Config::Lua::CConfigManager>(WP<Config::IConfigManager>(Config::mgr()));
 
         switch (type) {
             case GestureEventType::COMPLETED:
                 // mouse dispatchers only trigger on drag begin/end
                 if (!k->mouse) {
                     Log::logger->log(Log::DEBUG, "[hyprgrass] calling dispatcher ({})", bind);
-                    DISPATCHER->second(k->arg);
+                    luaMgr->callLuaFnBind(*ref);
                     found = found || !k->nonConsuming;
                 }
                 break;
 
-            default:
+            default: {
                 if (!k->mouse) {
                     // only mouse actions are considered on drag begin/end
                     continue;
                 }
 
-                if (useMouseDispatcher) {
-                    Log::logger->log(Log::DEBUG, "[hyprgrass] calling mouse dispatcher ({})", bind);
-                    char pressed = type == GestureEventType::DRAG_BEGIN ? '1' : '0';
-                    DISPATCHER->second(pressed + k->arg);
-                    found = found || !k->nonConsuming;
-                } else {
-                    bool pressed          = type == GestureEventType::DRAG_BEGIN;
-                    this->mouseBindActive = pressed;
-                    // yes this is how the lua dispatcher detects key press state
-                    Config::Actions::state()->m_passPressed = static_cast<int>(pressed);
+                bool pressed          = type == GestureEventType::DRAG_BEGIN;
+                this->mouseBindActive = pressed;
+                // yes this is how the lua dispatcher detects key press state
+                Config::Actions::state()->m_passPressed = static_cast<int>(pressed);
 
-                    DISPATCHER->second(k->arg);
+                luaMgr->callLuaFnBind(*ref);
 
-                    Config::Actions::state()->m_passPressed = -1;
+                Config::Actions::state()->m_passPressed = -1;
 
-                    found = found || !k->nonConsuming;
-                }
+                found = found || !k->nonConsuming;
+            }
         }
     }
 
