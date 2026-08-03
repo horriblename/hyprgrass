@@ -251,7 +251,15 @@ std::expected<GesturePattern, std::string> gesturePatternFromTable(lua_State* L,
                     "invalid origin for an edge gesture, expected a single direction, got {}", originStrResult.value()
                 )
             );
-        fingersOrOrigin = toHyprgrassDirection(origin);
+
+        // default to 1 when unspecified
+        size_t edgeFingers = luaTableGetInt(L, index, "fingers");
+        if (edgeFingers == 0)
+            edgeFingers = 1;
+        else if (edgeFingers > FINGERS_MASK)
+            return std::unexpected("kind=edge: fingers is too large");
+
+        fingersOrOrigin = (static_cast<size_t>(toHyprgrassDirection(origin)) << MOD_MASK_SHIFT) | edgeFingers;
 
         const auto dirStrResult = luaTableGetString(L, index, "direction");
         if (!dirStrResult)

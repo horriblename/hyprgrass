@@ -81,7 +81,8 @@ std::expected<GesturePattern, std::string> parseGesturePattern(Hyprutils::String
             );
         }
 
-        fingersOrOrigin = toHyprgrassDirection(origin);
+        // default to 1 on hyprlang
+        fingersOrOrigin = (static_cast<size_t>(toHyprgrassDirection(origin)) << MOD_MASK_SHIFT) | 1;
 
         direction = g_pTrackpadGestures->dirForString(vars[2]);
         if (ShimTrackpadGestures::isPinch(direction) || direction == TRACKPAD_GESTURE_DIR_NONE) {
@@ -158,9 +159,12 @@ static void printGesture(GestureType type, const CTrackpadGestures::SGestureData
             Log::logger->log(Log::DEBUG, "| kind: long_press, fingers: {}", gesture.fingerCount);
             break;
         case GestureType::EDGE_SWIPE: {
-            std::string origin    = stringifyDirection(gesture.fingerCount);
+            std::string origin    = stringifyDirection(gesture.fingerCount >> MOD_MASK_SHIFT);
+            uint32_t fingers      = gesture.fingerCount & FINGERS_MASK;
             std::string direction = stringifyDirection(toHyprgrassDirection(gesture.direction));
-            Log::logger->log(Log::DEBUG, "| kind: edge, origin: {}, direction: {}", origin, direction);
+            Log::logger->log(
+                Log::DEBUG, "| kind: edge, origin: {}, fingers: {}, direction: {}", origin, fingers, direction
+            );
             break;
         }
         case GestureType::PINCH:

@@ -22,7 +22,8 @@ std::string stringifyGestureType(const GestureType& type) {
 std::string CompletedGestureEvent::to_string() const {
     switch (type) {
         case GestureType::EDGE_SWIPE:
-            return "edge:" + stringifyDirection(this->edge_origin) + ":" + stringifyDirection(this->direction);
+            return "edge:" + std::to_string(finger_count) + ":" + stringifyDirection(this->edge_origin) + ":" +
+                stringifyDirection(this->direction);
         case GestureType::SWIPE:
             return "swipe:" + std::to_string(finger_count) + ":" + stringifyDirection(this->direction);
             break;

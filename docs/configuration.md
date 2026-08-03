@@ -83,6 +83,11 @@ hl.plugin.hyprgrass.bind {
 }
 
 hl.plugin.hyprgrass.bind {
+    pattern = {kind = "edge", origin = "d", direction = "u", fingers = 2},
+    action = hl.dsp.exec_cmd("firefox"),
+}
+
+hl.plugin.hyprgrass.bind {
     pattern = {kind = "edge", origin = "d", direction = "u"},
     mod = "ALT+SHIFT",
     action = hl.dsp.exec_cmd("firefox"),
