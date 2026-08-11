@@ -37,6 +37,10 @@
         tag = final.lib.replaceStrings ["\n" "v"] ["" ""] (builtins.readFile ./VERSION);
         commit = self.shortRev or "dirty";
       in {
+        hyprland = prev.hyprland.overrideAttrs (old: {
+          nativeBuildInputs = (old.nativeBuildInputs or []) ++ [final.git];
+        });
+
         wf-touch = final.callPackage ./nix/wf-touch.nix {};
 
         hyprlandPlugins =
