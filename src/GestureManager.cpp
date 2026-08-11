@@ -297,7 +297,7 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
                 // mouse dispatchers only trigger on drag begin/end
                 if (!k->mouse) {
                     Log::logger->log(Log::DEBUG, "[hyprgrass] calling dispatcher ({})", bind);
-                    luaMgr->callLuaFnBind(*ref);
+                    luaMgr->callLuaFn(*ref);
                     found = found || !k->nonConsuming;
                 }
                 break;
@@ -313,7 +313,7 @@ bool GestureManager::handleGestureBind(std::string bind, GestureEventType type) 
                 // yes this is how the lua dispatcher detects key press state
                 Config::Actions::state()->m_passPressed = static_cast<int>(pressed);
 
-                luaMgr->callLuaFnBind(*ref);
+                luaMgr->callLuaFn(*ref);
 
                 Config::Actions::state()->m_passPressed = -1;
 
