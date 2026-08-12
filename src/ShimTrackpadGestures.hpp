@@ -1,5 +1,4 @@
 #include "gestures/CompletedGesture.hpp"
-#include "gestures/DragGesture.hpp"
 #include "gestures/Shared.hpp"
 #include <any>
 #include <cstddef>
@@ -20,7 +19,7 @@ constexpr size_t FINGERS_MASK   = 0xFF; // lowest 8 bits
 
 GestureDirection toHyprgrassDirection(eTrackpadGestureDirection dir);
 
-struct GestureConfig {
+struct GesturePattern {
     GestureType type;
     eTrackpadGestureDirection direction;
     size_t fingersOrOrigin;
@@ -47,7 +46,7 @@ struct GestureConfig {
     }
 };
 
-std::expected<GestureConfig, std::string> parseGesturePattern(Hyprutils::String::CConstVarList& vars);
+std::expected<GesturePattern, std::string> parseGesturePattern(Hyprutils::String::CConstVarList& vars);
 
 struct ShimTrackpadGestures {
   public:

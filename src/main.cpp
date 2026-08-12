@@ -102,7 +102,7 @@ luaTableMaybeGetFloat(lua_State* L, int idx, std::string_view key) {
     return v;
 }
 
-static std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, int index, bool hgGesture);
+static std::expected<GesturePattern, std::string> gesturePatternFromTable(lua_State* L, int index, bool hgGesture);
 
 static std::expected<std::optional<std::string_view>, std::string>
 luaTableMaybeGetString(lua_State* L, int idx, std::string_view key) {
@@ -160,7 +160,7 @@ int newBind(lua_State* L) {
         if (lua_isstring(L, 2)) {
             bind.key = lua_tostring(L, 2);
         } else {
-            auto maybeGesture = gestureConfigFromTable(L, 2, false);
+            auto maybeGesture = gesturePatternFromTable(L, 2, false);
             if (!maybeGesture) {
                 return Config::Lua::Bindings::Internal::configError(
                     L, std::format("hyprgrass.bind: in field \"pattern\": {}", maybeGesture.error())
@@ -195,7 +195,7 @@ int newBind(lua_State* L) {
 
 // If hgGesture is true, allows multi-directional direction where applicable, and allows
 // a direction for longpress
-std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, int index, bool hgGesture) {
+std::expected<GesturePattern, std::string> gesturePatternFromTable(lua_State* L, int index, bool hgGesture) {
     // normalize index to positive value
     index = index > 0 ? index : lua_gettop(L) + index + 1;
 
@@ -316,7 +316,7 @@ std::expected<GestureConfig, std::string> gestureConfigFromTable(lua_State* L, i
         return std::unexpected(std::format("invalid gesture kind: {}", kind));
     }
 
-    return GestureConfig{
+    return GesturePattern{
         .type            = type,
         .direction       = direction,
         .fingersOrOrigin = fingersOrOrigin,
@@ -329,12 +329,12 @@ int newGesture(lua_State* L) {
             L, "hyprgrass.gesture: expected argument to be a table {pattern, action, ...}"
         );
 
-    GestureConfig gesture;
+    GesturePattern gesture;
     {
         Hyprutils::Utils::CScopeGuard x([L] { lua_pop(L, 1); });
         lua_getfield(L, 1, "pattern");
 
-        auto maybeGesture = gestureConfigFromTable(L, 2, true);
+        auto maybeGesture = gesturePatternFromTable(L, 2, true);
         if (!maybeGesture) {
             return Config::Lua::Bindings::Internal::configError(
                 L, std::format("hyprgrass.gesture: in field \"pattern\": {}", maybeGesture.error())

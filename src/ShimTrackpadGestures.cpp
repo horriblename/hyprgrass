@@ -51,7 +51,7 @@ bool ShimTrackpadGestures::isPinch(eTrackpadGestureDirection dir) {
     }
 }
 
-std::expected<GestureConfig, std::string> parseGesturePattern(Hyprutils::String::CConstVarList& vars) {
+std::expected<GesturePattern, std::string> parseGesturePattern(Hyprutils::String::CConstVarList& vars) {
     GestureType type;
     size_t fingersOrOrigin              = 0;
     eTrackpadGestureDirection direction = TRACKPAD_GESTURE_DIR_NONE;
@@ -111,7 +111,7 @@ std::expected<GestureConfig, std::string> parseGesturePattern(Hyprutils::String:
         return std::unexpected(std::format("invalid gesture event: {}", vars[0]));
     }
 
-    return GestureConfig{
+    return GesturePattern{
         .type            = type,
         .direction       = direction,
         .fingersOrOrigin = static_cast<size_t>(fingersOrOrigin),
