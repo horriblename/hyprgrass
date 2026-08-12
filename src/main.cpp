@@ -95,7 +95,7 @@ luaTableMaybeGetFloat(lua_State* L, int idx, std::string_view key) {
 
     if (!valid) {
         return std::unexpected{
-            std::format("in field \"{}\": expected an optional number, got \"{}\"", key, lua_tostring(L, -1))
+            std::format("in field \"{}\": expected an optional number, got a {}", key, lua_typename(L, lua_type(L, -1)))
         };
     }
 
@@ -207,7 +207,8 @@ std::expected<GesturePattern, std::string> gesturePatternFromTable(lua_State* L,
 
     if (!lua_istable(L, index)) {
         return std::unexpected{std::format(
-            "expected a table {{kind = \"swipe|edge|longpress|pinch|tap\", ...}}\n\tgot \"{}\"", lua_tostring(L, index)
+            "expected a table {{kind = \"swipe|edge|longpress|pinch|tap\", ...}}\n\tgot a {}",
+            lua_typename(L, lua_type(L, index))
         )};
     }
 
