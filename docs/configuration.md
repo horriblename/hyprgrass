@@ -55,7 +55,24 @@ There are two ways to bind gesture events to some action.
 
 ### `hyprgrass-bind`
 
-TBD
+```lua
+hl.plugin.hyprgrass.bind {
+    pattern : Pattern -- see below
+    action : function
+    -- optional flags
+    locked : boolean?,
+    mouse : boolean?, -- currently only works with longpress
+    non_consuming : boolean?, 
+}
+```
+
+`pattern` is almost the same as the `pattern` in
+[`hyprgrass.gesture`](#hyrgrassgesture-syntax), with two differences:
+
+1. Only a single specific `direction` (left/right/up/down) is accepted
+2. 2 additional kinds:
+   - `{kind="tap", fingers = n}`
+   - `{kind="pinch", fingers = n, direction="pinchin" | "pinchout"}`
 
 #### hyprgrass-bind Examples
 
@@ -79,12 +96,12 @@ hl.plugin.hyprgrass.bind {
 }
 
 hl.plugin.hyprgrass.bind {
-    pattenr = {kind = "tap", fingers = 3}
+    pattern = {kind = "tap", fingers = 3}
     action = hl.dsp.window.float(),
 }
 
 hl.plugin.hyprgrass.bind {
-    pattenr = {kind = "pinch", fingers = 3, direction = "pinchin"}
+    pattern = {kind = "pinch", fingers = 3, direction = "pinchin"}
     action = hl.dsp.exec_cmd("foot"),
 }
 ```
@@ -94,11 +111,7 @@ hl.plugin.hyprgrass.bind {
 `hyprgrass-gesture` supports the builtin actions of Hyprland's
 [gestures](https://wiki.hypr.land/Configuring/Advanced-and-Cool/Gestures/).
 
-#### hyrgrass-gesture Syntax
-
-```hyprlang
-hyprgrass-gesture = <gesture_type>, <gesture_arg>, <direction>, [modifiers, ...] <action> [, <options>...]
-```
+#### `hyrgrass.gesture` Syntax
 
 ```lua
 hl.plugin.hyprgrass.gesture {

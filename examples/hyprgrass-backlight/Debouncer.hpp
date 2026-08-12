@@ -1,6 +1,5 @@
-
-#include "src/debug/log/Logger.hpp"
 #include <functional>
+#include <hyprland/src/debug/log/Logger.hpp>
 #include <wayland-server-core.h>
 #include <wayland-server.h>
 

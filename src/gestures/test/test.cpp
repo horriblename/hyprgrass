@@ -19,6 +19,7 @@ static void log_start_of_test() {
 
 enum class ExpectResultType : int {
     COMPLETED,
+    COMPLETED_NON_CONSUMING,
     DRAG_TRIGGERED,
     DRAG_ENDED,
     CANCELLED,
@@ -49,6 +50,11 @@ void checkCondition(CMockGestureManager& gm, ExpectResult expect) {
             CHECK(gm.triggered);
             // implies sent cancel: might be sent earlier but must be sent at this point
             CHECK(gm.sentWindowCancel);
+            break;
+        case ExpectResultType::COMPLETED_NON_CONSUMING:
+            CHECK(gm.triggered);
+            // the gesture was executed but not consumed: must not send a cancel
+            CHECK(!gm.sentWindowCancel);
             break;
         case ExpectResultType::DRAG_TRIGGERED:
             CHECK(gm.getActiveDragGesture().has_value());
@@ -210,6 +216,26 @@ TEST_CASE("Swipe: completed takes priority over drag gesture when both enabled")
     CHECK_FALSE(gm.getActiveDragGesture().has_value());
 }
 
+TEST_CASE("Swipe: non-consuming gesture does not send cancel to windows") {
+    log_start_of_test();
+    auto gm = CMockGestureManager::newNonConsumingHandler();
+    gm.addMultiFingerGesture(SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY);
+
+    const std::vector<TouchEvent> events{
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {500, 300}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {550, 290}},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {0, 290}},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {50, 300}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {100, 290}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {100, 290}},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED_NON_CONSUMING}, events);
+}
+
 TEST_CASE("Multi-finger Tap") {
     log_start_of_test();
     auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
@@ -257,6 +283,21 @@ TEST_CASE("Multi-finger Tap: finger moved too much") {
     };
 
     ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
+}
+
+TEST_CASE("Multi-finger Tap: non-consuming gesture does not send cancel to windows") {
+    log_start_of_test();
+    auto gm = CMockGestureManager::newNonConsumingHandler();
+    gm.addMultiFingerTap(SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY);
+
+    const std::vector<TouchEvent> events{
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 120, 2, {550, 290}},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED_NON_CONSUMING}, events);
 }
 
 TEST_CASE("Long press: begin drag") {
@@ -369,6 +410,23 @@ TEST_CASE("Long press: completed takes priority over drag gesture when both enab
     };
     ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
     CHECK_FALSE(gm.getActiveDragGesture().has_value());
+}
+
+TEST_CASE("Long press: non-consuming gesture does not send cancel to windows") {
+    log_start_of_test();
+    auto gm = CMockGestureManager::newNonConsumingHandler();
+    gm.addLongPress(SWIPE_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
+
+    const std::vector<TouchEvent> events{
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {460, 300}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 300, 1, {510, 290}},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 511, 2, {560, 300}},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED_NON_CONSUMING}, events);
 }
 
 TEST_CASE(
@@ -566,6 +624,21 @@ TEST_CASE("Edge Swipe: completed takes priority over drag gesture when both enab
     CHECK_FALSE(gm.getActiveDragGesture().has_value());
 }
 
+TEST_CASE("Edge Swipe: non-consuming gesture does not send cancel to windows") {
+    log_start_of_test();
+    auto gm = CMockGestureManager::newNonConsumingHandler();
+    gm.addEdgeSwipeGesture(
+        SWIPE_THRESHOLD, SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY, &EDGE_MARGIN
+    );
+
+    const std::vector<TouchEvent> events{
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {5, 300}}, ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 150, 0, {250, 300}},   ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {455, 300}},   Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {455, 300}},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED_NON_CONSUMING}, events);
+}
+
 TEST_CASE("Pinch in: full drag") {
     log_start_of_test();
     auto gm = CMockGestureManager::newDragHandler();
@@ -684,4 +757,32 @@ TEST_CASE("Pinch: completed takes priority over drag gesture when both enabled")
     };
     ProcessEvents(gm, {.type = ExpectResultType::COMPLETED}, events);
     CHECK_FALSE(gm.getActiveDragGesture().has_value());
+}
+
+TEST_CASE("Pinch: non-consuming gesture does not send cancel to windows") {
+    log_start_of_test();
+    auto gm = CMockGestureManager::newNonConsumingHandler();
+    gm.addPinchGesture(TEST_PINCH_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
+
+    const std::vector<TouchEvent> events{
+        // origin center is (200, 180)
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {150, 200}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 1, {200, 140}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 2, {250, 200}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {110, 200}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 90}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {290, 200}},
+
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 0, {60, 210}},
+        ExpectResult{ExpectResultType::NOT_SENT_WINDOW_CANCEL},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {200, 120}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 2, {340, 210}},
+
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 0, {30, 250}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 1, {200, 20}},
+        Ev{wf::touch::EVENT_TYPE_MOTION, 260, 2, {400, 220}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_UP, 300, 0, {50, 200}},
+    };
+    ProcessEvents(gm, {.type = ExpectResultType::COMPLETED_NON_CONSUMING}, events);
 }

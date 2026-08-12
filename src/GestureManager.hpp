@@ -15,6 +15,7 @@
 #include <hyprland/src/devices/ITouch.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
+#include <hyprland/src/protocols/core/Seat.hpp>
 #undef private
 
 enum class GestureEventType {
@@ -71,7 +72,7 @@ struct Cfg {
     }
 };
 
-class GestureManager : public IGestureManager {
+class GestureManager final : public IGestureManager {
   public:
     uint32_t long_press_next_trigger_time;
     std::vector<SP<SKeybind>> internalBinds;
@@ -97,8 +98,8 @@ class GestureManager : public IGestureManager {
 
   protected:
     SMonitorArea getMonitorArea() const override;
-    bool findCompletedGesture(const CompletedGestureEvent& gev) const override;
-    bool handleCompletedGesture(const CompletedGestureEvent& gev) override;
+    FindGestureResult findCompletedGesture(const CompletedGestureEvent& gev) const override;
+    FindGestureResult handleCompletedGesture(const CompletedGestureEvent& gev) override;
     void handleCancelledGesture() override;
 
     void debugLog(const std::string& msg) override;
@@ -118,7 +119,7 @@ class GestureManager : public IGestureManager {
     // used by trackpadGesture* functions
     wf::touch::point_t emulatedSwipePoint;
 
-    bool handleGestureBind(std::string bind, GestureEventType);
+    FindGestureResult handleGestureBind(std::string bind, GestureEventType);
 
     // converts wlr touch event positions (number between 0.0 to 1.0) to pixel position,
     // takes into consideration monitor size and offset
@@ -142,7 +143,7 @@ class GestureManager : public IGestureManager {
 
     void sendCancelEventsToWindows() override;
 
-    bool findGestureBind(std::string bind, GestureEventType type) const;
+    FindGestureResult findGestureBind(std::string bind, GestureEventType type) const;
 };
 
 inline std::unique_ptr<GestureManager> g_pGestureManager;

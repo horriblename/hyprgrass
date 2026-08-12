@@ -1,5 +1,5 @@
-#include "src/helpers/memory/Memory.hpp"
-#include "src/managers/input/trackpad/gestures/ITrackpadGesture.hpp"
+#include <hyprland/src/helpers/memory/Memory.hpp>
+#include <hyprland/src/managers/input/trackpad/gestures/ITrackpadGesture.hpp>
 
 class PulseGesture : public ITrackpadGesture {
   public:

@@ -1,6 +1,6 @@
 #include "pulse.hpp"
 #include "pulse/thread-mainloop.h"
-#include "src/debug/log/Logger.hpp"
+#include <hyprland/src/debug/log/Logger.hpp>
 
 #include <pulse/def.h>
 #include <pulse/error.h>
