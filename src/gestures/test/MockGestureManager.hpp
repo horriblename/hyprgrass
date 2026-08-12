@@ -48,6 +48,12 @@ class CMockGestureManager final : public IGestureManager {
         return CMockGestureManager(FindGestureResult::FOUND, true);
     }
 
+    // creates a gesture manager that executes gestures but does not consume
+    // them, i.e. touch events are still forwarded to windows
+    static CMockGestureManager newNonConsumingHandler() {
+        return CMockGestureManager(FindGestureResult::NON_CONSUMING, false);
+    }
+
     void resetTestResults() {
         triggered = false;
         cancelled = false;
