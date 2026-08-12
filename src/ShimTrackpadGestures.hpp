@@ -4,9 +4,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 #include <hyprland/src/config/ConfigManager.hpp>
-#include <hyprutils/string/ConstVarList.hpp>
 #include <hyprutils/string/VarList.hpp>
 
 #define private public
@@ -31,7 +31,11 @@ struct GesturePattern {
     }
 
     inline GestureDirection edgeOrigin() const {
-        return static_cast<GestureDirection>(this->fingersOrOrigin);
+        return static_cast<GestureDirection>(this->fingersOrOrigin >> MOD_MASK_SHIFT);
+    }
+
+    inline uint32_t edgeFingerCount() const {
+        return static_cast<uint32_t>(this->fingersOrOrigin & FINGERS_MASK);
     }
 
     static eTrackpadGestureDirection originFromFingers(size_t);
@@ -39,14 +43,14 @@ struct GesturePattern {
         CompletedGestureEvent gev{
             .type         = this->type,
             .direction    = toHyprgrassDirection(this->direction),
-            .finger_count = static_cast<uint32_t>(this->type == GestureType::EDGE_SWIPE ? 0 : this->fingers()),
+            .finger_count = static_cast<uint32_t>(this->type == GestureType::EDGE_SWIPE ? this->edgeFingerCount() : this->fingers()),
             .edge_origin  = this->type == GestureType::EDGE_SWIPE ? this->edgeOrigin() : 0,
         };
         return gev.to_string();
     }
 };
 
-std::expected<GesturePattern, std::string> parseGesturePattern(Hyprutils::String::CConstVarList& vars);
+std::expected<GesturePattern, std::string> parseGesturePattern(const std::string_view& s);
 
 struct ShimTrackpadGestures {
   public:

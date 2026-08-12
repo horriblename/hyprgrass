@@ -1,3 +1,4 @@
+#include <hyprland/src/protocols/core/Seat.hpp>
 #include <vector>
 
 // Probably not compatible with move semantics, I really don't know
@@ -18,3 +19,5 @@ template <class T> class VecSet {
   private:
     std::vector<T> set;
 };
+
+template class VecSet<Hyprutils::Memory::CWeakPointer<CWLTouchResource>>;

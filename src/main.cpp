@@ -158,7 +158,13 @@ int newBind(lua_State* L) {
         lua_getfield(L, 1, "pattern");
 
         if (lua_isstring(L, 2)) {
-            bind.key = lua_tostring(L, 2);
+            auto maybeGesture = parseGesturePattern(lua_tostring(L, 2));
+            if (!maybeGesture) {
+                return Config::Lua::Bindings::Internal::configError(
+                    L, std::format("hyprgrass.bind: in field \"pattern\": {}", maybeGesture.error())
+                );
+            }
+            bind.key = maybeGesture.value().to_string();
         } else {
             auto maybeGesture = gesturePatternFromTable(L, 2, false);
             if (!maybeGesture) {
@@ -251,7 +257,15 @@ std::expected<GesturePattern, std::string> gesturePatternFromTable(lua_State* L,
                     "invalid origin for an edge gesture, expected a single direction, got {}", originStrResult.value()
                 )
             );
-        fingersOrOrigin = toHyprgrassDirection(origin);
+
+        // default to 1 when unspecified
+        size_t edgeFingers = luaTableGetInt(L, index, "fingers");
+        if (edgeFingers == 0)
+            edgeFingers = 1;
+        else if (edgeFingers > FINGERS_MASK)
+            return std::unexpected("kind=edge: fingers is too large");
+
+        fingersOrOrigin = (static_cast<size_t>(toHyprgrassDirection(origin)) << MOD_MASK_SHIFT) | edgeFingers;
 
         const auto dirStrResult = luaTableGetString(L, index, "direction");
         if (!dirStrResult)
