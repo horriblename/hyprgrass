@@ -31,8 +31,6 @@
 // constexpr double SWIPE_THRESHOLD = 30.;
 constexpr int RESIZE_BORDER_GAP_INCREMENT = 10;
 
-template class VecSet<Hyprutils::Memory::CWeakPointer<CWLTouchResource>>;
-
 static std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(' ');
     if (std::string::npos == first) {
@@ -519,9 +517,9 @@ void GestureManager::trackpadGestureUpdate(uint32_t time) {
     const Vector2D delta    = pixelToTrackpadDistance(deltaPx);
 
     DragGestureEvent activeDrag = this->getActiveDragGesture().value();
-    uint32_t fingers = activeDrag.type == GestureType::EDGE_SWIPE
-                           ? (activeDrag.edge_origin << MOD_MASK_SHIFT) | (activeDrag.finger_count & FINGERS_MASK)
-                           : activeDrag.finger_count;
+    uint32_t fingers            = activeDrag.type == GestureType::EDGE_SWIPE
+                                      ? (activeDrag.edge_origin << MOD_MASK_SHIFT) | (activeDrag.finger_count & FINGERS_MASK)
+                                      : activeDrag.finger_count;
 
     this->emulatedSwipePoint = currentPoint;
 
