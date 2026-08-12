@@ -485,8 +485,8 @@ int newGesture(lua_State* L) {
         );
     } else if (startRef != LUA_NOREF) {
         result = handler->addGesture(
-            makeUnique<LuaTouchpadGesture>(startRef, updateRef, endRef), gesture.fingers(), gesture.direction, modMask,
-            deltaScale, disableInhibit
+            makeUnique<LuaTouchpadGesture>(gesture.type, startRef, updateRef, endRef), gesture.fingers(), gesture.direction,
+            modMask, deltaScale, disableInhibit
         );
     } else {
         if (action == "workspace")

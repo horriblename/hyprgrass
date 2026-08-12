@@ -168,6 +168,7 @@ for details):
 ```text
 # inherited from Hyprland
 <lua function>
+<live lua gestures>
 workspace
 move
 resize
@@ -178,6 +179,49 @@ float
 
 # exclusive for Hyprgrass, see below
 emulate_touchpad
+```
+
+#### Live Lua Gestures
+
+For live gestures, i.e. ones that react to the gesture state, pass a table
+instead of a lambda, which has start, update, and finish methods.
+
+The start and update methods are passed a table with the following fields:
+
+| Field    | Type    | Description                                                                                                                                                           |
+| -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| type     | string  | One of: `swipe`, `edge`, `longpress`                                                                                                                                  |
+| time_ms  | integer | The timestamp at which the event occurred                                                                                                                             |
+| fingers  | integer | Number of fingers                                                                                                                                                     |
+| delta.x  | float   | Horizontal motion relative to the last update. Right motion is positive, left is negative                                                                             |
+| delta.y  | float   | Vertical motion relative to the last update. Downwards motion is positive, upwards is negative                                                                        |
+| scale    | float   | The change in size of the finger arrangement, relative to the start of the gesture. Spread is positive, pinch is negative. Nil if the gesture type is not pinch       |
+| rotation | float   | The change in angle of the finger arrangement, relative to the last update. Clockwise is positive, counterclockwise is negative. Nil if the gesture type is not pinch |
+
+The start method additional has:
+
+- `pos: {x, y : float}`: the center point of the current positions of your
+  fingers, in pixels
+- `monitor: {width, height: float}`: size of the monitor where the gesture is
+  started on, in pixels
+
+The finish method is passed a table with the following fields:
+
+| Field                                                                          | Type    | Description type                                                         | string | Either swipe or pinch time_ms | integer | The |
+| ------------------------------------------------------------------------------ | ------- | ------------------------------------------------------------------------ | ------ | ----------------------------- | ------- | --- |
+| timestamp at which the even occurred, measured from when the system was booted |         |                                                                          |        |                               |         |     |
+| cancelled                                                                      | boolean | True if the gesture was ended abnormally by the backend. False otherwise |        |                               |         |     |
+
+Example:
+
+```lua
+hl.plugin.hyprgrass.gesture {
+    pattern = {...},
+    action = {
+        start = function()
+        end,
+    },
+}
 ```
 
 #### `emulate_touchpad` action
