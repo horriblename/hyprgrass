@@ -4,9 +4,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 #include <hyprland/src/config/ConfigManager.hpp>
-#include <hyprutils/string/ConstVarList.hpp>
 #include <hyprutils/string/VarList.hpp>
 
 #define private public
@@ -50,7 +50,7 @@ struct GesturePattern {
     }
 };
 
-std::expected<GesturePattern, std::string> parseGesturePattern(Hyprutils::String::CConstVarList& vars);
+std::expected<GesturePattern, std::string> parseGesturePattern(const std::string_view& s);
 
 struct ShimTrackpadGestures {
   public:
