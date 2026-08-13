@@ -285,6 +285,23 @@ TEST_CASE("Multi-finger Tap: finger moved too much") {
     ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
 }
 
+// As above, but moving along -y rather than +x.
+TEST_CASE("Multi-finger Tap: finger moved too much upward") {
+    log_start_of_test();
+    auto gm = CMockGestureManager::newCompletedGestureOnlyHandler();
+    gm.addMultiFingerTap(SWIPE_INCORRECT_DRAG_TOLERANCE, &SENSITIVITY, &LONG_PRESS_DELAY);
+
+    const std::vector<TouchEvent> events{
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}},
+        // 110px straight up, past the 100px threshold
+        Ev{wf::touch::EVENT_TYPE_MOTION, 120, 1, {500, 190}},
+    };
+
+    ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
+}
+
 TEST_CASE("Multi-finger Tap: non-consuming gesture does not send cancel to windows") {
     log_start_of_test();
     auto gm = CMockGestureManager::newNonConsumingHandler();
@@ -390,6 +407,24 @@ TEST_CASE("Long press and drag: cancelled due to too much movement") {
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
         Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}},
         Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {650, 290}},
+    };
+
+    ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
+}
+
+// The case above moves almost purely along +x, which any expression involving delta.x
+// catches. This one moves along -y, where the sign of the movement matters.
+TEST_CASE("Long press and drag: cancelled due to too much upward movement") {
+    log_start_of_test();
+    auto gm = CMockGestureManager::newDragHandler();
+    gm.addLongPress(SWIPE_THRESHOLD, &SENSITIVITY, &LONG_PRESS_DELAY);
+
+    const std::vector<TouchEvent> events{
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 100, 0, {450, 290}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 105, 1, {500, 300}},
+        Ev{wf::touch::EVENT_TYPE_TOUCH_DOWN, 110, 2, {550, 290}},
+        // 160px straight up, past the 150px threshold
+        Ev{wf::touch::EVENT_TYPE_MOTION, 200, 1, {500, 140}},
     };
 
     ProcessEvents(gm, {.type = ExpectResultType::CANCELLED}, events);
