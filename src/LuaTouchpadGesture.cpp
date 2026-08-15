@@ -1,9 +1,5 @@
 #include "LuaTouchpadGesture.hpp"
 
-static constexpr uint32_t TIMEOUT_MSEC = 80;
-// targeting 60 updates per second
-static constexpr uint32_t UPDATE_INTERVAL_MSEC = 1000 / 60;
-
 // pushes a lua table with monitor data onto the stack
 static void pushMonitorInfo(lua_State* L) {
     lua_createtable(L, 0, 2); // local monitor = {}
@@ -26,8 +22,7 @@ static void pushVec2(lua_State* L, const Vector2D& vec) {
 
 // pushes the fields common to the start and update tables onto the stack,
 // expecting the table to already be on top of the stack
-template <typename T>
-static void pushGestureInfo(lua_State* L, GestureType type, const T& e, double& lastRotation) {
+template <typename T> static void pushGestureInfo(lua_State* L, GestureType type, const T& e, double& lastRotation) {
     lua_pushstring(L, stringifyGestureType(type).c_str());
     lua_setfield(L, -2, "type"); // opt.type = "swipe"|"edge"|"longpress"|"pinch"
 
@@ -85,7 +80,9 @@ void LuaTouchpadGesture::begin(const STrackpadGestureBegin& e) {
     pushMonitorInfo(L);
     lua_setfield(L, -2, "monitor"); // opt.monitor = monitor
 
-    int result = mgr->guardedPCall(1, 0, 0, TIMEOUT_MSEC, "hyprgrass.gesture: start()");
+    int result = mgr->guardedPCall(
+        1, 0, 0, Config::Lua::CConfigManager::LUA_TIMEOUT_EVENT_CALLBACK_MS, "hyprgrass.gesture: start()"
+    );
     if (result != LUA_OK) {
         Log::logger->log(Log::ERR, "[hyprgrass] start function failed: {}", lua_tostring(L, -1));
     }
@@ -96,7 +93,7 @@ void LuaTouchpadGesture::update(const STrackpadGestureUpdate& e) {
         return;
 
     auto now = std::chrono::steady_clock::now();
-    if (now - last_updated < std::chrono::milliseconds{UPDATE_INTERVAL_MSEC})
+    if (now - last_updated < std::chrono::milliseconds{Config::Lua::CConfigManager::LUA_TIMEOUT_EVENT_CALLBACK_MS})
         return;
 
     last_updated = now;
@@ -112,7 +109,9 @@ void LuaTouchpadGesture::update(const STrackpadGestureUpdate& e) {
 
     pushGestureInfo(L, gestureType, e, lastRotation);
 
-    int result = mgr->guardedPCall(1, 0, 0, TIMEOUT_MSEC, "hyprgrass.gesture: update()");
+    int result = mgr->guardedPCall(
+        1, 0, 0, Config::Lua::CConfigManager::LUA_TIMEOUT_EVENT_CALLBACK_MS, "hyprgrass.gesture: update()"
+    );
     if (result != LUA_OK) {
         Log::logger->log(Log::ERR, "[hyprgrass] update function failed: {}", lua_tostring(L, -1));
     }
@@ -146,7 +145,9 @@ void LuaTouchpadGesture::end(const STrackpadGestureEnd& e) {
         lua_setfield(L, -2, "cancelled"); // opt.cancelled = (e.pinch->cancelled)
     }
 
-    int result = mgr->guardedPCall(1, 0, 0, TIMEOUT_MSEC, "hyprgrass.gesture: finish()");
+    int result = mgr->guardedPCall(
+        1, 0, 0, Config::Lua::CConfigManager::LUA_TIMEOUT_EVENT_CALLBACK_MS, "hyprgrass.gesture: finish()"
+    );
     if (result != LUA_OK) {
         Log::logger->log(Log::ERR, "[hyprgrass] finish function failed: {}", lua_tostring(L, -1));
     }

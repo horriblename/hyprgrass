@@ -23,9 +23,9 @@ class LuaTouchpadGesture : public ITrackpadGesture {
 
   private:
     GestureType gestureType;
-    int         startRef;
-    int         updateRef;
-    int         endRef;
+    int startRef;
+    int updateRef;
+    int endRef;
 
     // for computing the rotation delta between updates
     double lastRotation = 0;
