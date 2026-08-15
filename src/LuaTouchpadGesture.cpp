@@ -92,12 +92,6 @@ void LuaTouchpadGesture::update(const STrackpadGestureUpdate& e) {
     if (updateRef == LUA_NOREF)
         return;
 
-    auto now = std::chrono::steady_clock::now();
-    if (now - last_updated < std::chrono::milliseconds{Config::Lua::CConfigManager::LUA_TIMEOUT_EVENT_CALLBACK_MS})
-        return;
-
-    last_updated = now;
-
     auto mgr     = Config::Lua::mgr();
     lua_State* L = mgr->m_lua;
     int base     = lua_gettop(L);

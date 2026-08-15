@@ -29,6 +29,4 @@ class LuaTouchpadGesture : public ITrackpadGesture {
 
     // for computing the rotation delta between updates
     double lastRotation = 0;
-
-    std::chrono::steady_clock::time_point last_updated{};
 };
