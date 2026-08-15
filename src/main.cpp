@@ -380,7 +380,7 @@ int newGesture(lua_State* L) {
         return Config::Lua::Bindings::Internal::configError(L, "hyprgrass.gesture: {}", modResult.error());
     }
 
-    auto maybeMod             = modResult.value();
+    auto maybeMod = modResult.value();
     Input::ModifierMask modMask =
         maybeMod ? Keybinds::modMaskFromString(std::string{maybeMod.value()}) : Input::ModifierMask(0u);
 
@@ -485,8 +485,8 @@ int newGesture(lua_State* L) {
         );
     } else if (startRef != LUA_NOREF) {
         result = handler->addGesture(
-            makeUnique<LuaTouchpadGesture>(gesture.type, startRef, updateRef, endRef), gesture.fingers(), gesture.direction,
-            modMask, deltaScale, disableInhibit
+            makeUnique<LuaTouchpadGesture>(gesture.type, startRef, updateRef, endRef), gesture.fingers(),
+            gesture.direction, modMask, deltaScale, disableInhibit
         );
     } else {
         if (action == "workspace")
