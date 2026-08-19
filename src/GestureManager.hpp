@@ -13,7 +13,7 @@
 #include <hyprland/src/config/values/types/IntValue.hpp>
 #include <hyprland/src/config/values/types/StringValue.hpp>
 #include <hyprland/src/devices/ITouch.hpp>
-#include <hyprland/src/managers/KeybindManager.hpp>
+#include <hyprland/src/keybinds/Manager.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
 #include <hyprland/src/protocols/core/Seat.hpp>
 #undef private
@@ -22,6 +22,18 @@ enum class GestureEventType {
     DRAG_BEGIN,
     DRAG_END,
     COMPLETED, // CompletedGestureEvent
+};
+
+// compat adapter
+struct SKeybind {
+    std::string key;
+    std::string handler;
+    std::string arg;
+    std::string displayKey;
+    bool mouse        = false;
+    bool locked       = false;
+    bool nonConsuming = false;
+    uint32_t modmask  = 0;
 };
 
 struct Cfg {

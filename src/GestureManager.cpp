@@ -11,8 +11,11 @@
 #include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
 #include <hyprland/src/config/supplementary/propRefresher/PropRefresher.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
+#include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/fullscreen/FullscreenController.hpp>
+#include <hyprland/src/keybinds/Manager.hpp>
+#include <hyprland/src/layout/LayoutManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/UnifiedWorkspaceSwipeGesture.hpp>
 #include <hyprland/src/output/Monitor.hpp>
@@ -191,8 +194,9 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                         real.height + 2 * BORDER_GRAB_AREA
                     };
 
-                    bool notInRealWindow = !real.containsPoint(touchPos) || w->isInCurvedCorner(touchPos.x, touchPos.y);
-                    bool onTiledGap = !w->m_isFloating && !Fullscreen::controller()->isFullscreen(w) && notInRealWindow;
+                    bool notInRealWindow =
+                        !real.containsPoint(touchPos) || w->presentation().isInCurvedCorner(touchPos.x, touchPos.y);
+                    bool onTiledGap = !w->isFloating() && !Fullscreen::controller()->isFullscreen(w) && notInRealWindow;
                     bool inGrabArea = notInRealWindow && grab.containsPoint(touchPos);
 
                     if ((onTiledGap || inGrabArea) && !w->hasPopupAt(touchPos)) {
@@ -201,7 +205,8 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                             .button = 0,
                             .state  = WL_POINTER_BUTTON_STATE_PRESSED,
                         };
-                        g_pKeybindManager->resizeWithBorder(e);
+                        if (!g_layoutManager->dragController()->target())
+                            g_layoutManager->beginDragTarget(w->layoutTarget(), MBIND_RESIZE);
 
                         auto oldGapsIn           = *static_cast<Config::CCssGapData*>(PGAPSINDATA.ptr());
                         this->resizeOnBorderInfo = {
@@ -239,13 +244,30 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
     return false;
 }
 
+// Adapt new hyprland keybind type back to the old one (hacky compat for now)
+static std::vector<SP<SKeybind>> keybindsToSKeybinds() {
+    std::vector<SP<SKeybind>> binds;
+    for (const auto& k : Keybinds::mgr()->registry().binds())
+        binds.emplace_back(makeShared<SKeybind>(SKeybind{
+            .key          = k->metadata().displayKey,
+            .handler      = k->metadata().handler,
+            .arg          = k->metadata().argument,
+            .displayKey   = k->metadata().displayKey,
+            .mouse        = k->hasFlag(Keybinds::BIND_FLAG_MOUSE),
+            .locked       = k->hasFlag(Keybinds::BIND_FLAG_LOCKED),
+            .nonConsuming = k->hasFlag(Keybinds::BIND_FLAG_NON_CONSUMING),
+            .modmask      = static_cast<uint32_t>(k->modifierMask()),
+        }));
+    return binds;
+}
+
 FindGestureResult GestureManager::findGestureBind(std::string bind, GestureEventType type) const {
     Log::logger->log(Log::DEBUG, "[hyprgrass] Looking for binds matching: {}", bind);
 
     auto result = FindGestureResult::NONE;
 
-    auto allBinds   = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
-    const auto MODS = g_pInputManager->getModsFromAllKBs();
+    auto allBinds   = std::ranges::views::join(std::array{keybindsToSKeybinds(), this->internalBinds});
+    const auto MODS = static_cast<uint32_t>(g_pInputManager->getModsFromAllKBs());
 
     for (const auto& k : allBinds) {
         if (k->key != bind)
@@ -276,8 +298,8 @@ FindGestureResult GestureManager::handleGestureBind(std::string bind, GestureEve
     auto found = FindGestureResult::NONE;
     Log::logger->log(Log::DEBUG, "[hyprgrass] Looking for binds matching: {}", bind);
 
-    auto allBinds   = std::ranges::views::join(std::array{g_pKeybindManager->m_keybinds, this->internalBinds});
-    const auto MODS = g_pInputManager->getModsFromAllKBs();
+    auto allBinds   = std::ranges::views::join(std::array{keybindsToSKeybinds(), this->internalBinds});
+    const auto MODS = static_cast<uint32_t>(g_pInputManager->getModsFromAllKBs());
 
     for (const auto& k : allBinds) {
         if (k->key != bind)
@@ -393,7 +415,7 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
             return;
         case GestureType::LONG_PRESS:
             if (this->resizeOnBorderInfo.active) {
-                g_pKeybindManager->changeMouseBindMode(eMouseBindMode::MBIND_INVALID);
+                g_layoutManager->dragController()->dragEnd();
                 updateGapsIn(this->resizeOnBorderInfo.old_gaps_in);
                 this->resizeOnBorderInfo = {};
                 return;
