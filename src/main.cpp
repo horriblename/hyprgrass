@@ -12,8 +12,7 @@
 #include <hyprland/src/config/lua/bindings/LuaBindingsInternal.hpp>
 #include <hyprland/src/debug/log/Logger.hpp>
 #include <hyprland/src/event/EventBus.hpp>
-#include <hyprland/src/keybinds/Manager.hpp>
-#include <hyprland/src/keybinds/Resolver.hpp>
+#include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
@@ -137,7 +136,7 @@ int newBind(lua_State* L) {
             L, "hyprgrass.bind: expected a table { mod, pattern, dispatcher, args }"
         );
 
-    SKeybind bind{};
+    SHgKeybind bind{};
 
     // Parse the table structure
     {
@@ -149,7 +148,7 @@ int newBind(lua_State* L) {
                 return Config::Lua::Bindings::Internal::configError(L, "hyprgrass.bind: mod must be a string");
 
             const char* modStr = lua_tostring(L, -1);
-            bind.modmask       = static_cast<uint32_t>(Keybinds::modMaskFromString(modStr));
+            bind.modmask       = static_cast<uint32_t>(g_pKeybindManager->stringToModMask(modStr));
         }
     }
 
@@ -195,7 +194,7 @@ int newBind(lua_State* L) {
     bind.locked       = luaTableGetBool(L, 1, "locked");
     bind.nonConsuming = luaTableGetBool(L, 1, "non_consuming");
 
-    g_pGestureManager->internalBinds.emplace_back(makeShared<SKeybind>(bind));
+    g_pGestureManager->internalBinds.emplace_back(makeShared<SHgKeybind>(bind));
 
     return 0;
 }
@@ -366,8 +365,7 @@ int newGesture(lua_State* L) {
     }
 
     auto maybeMod             = modResult.value();
-    Input::ModifierMask modMask =
-        maybeMod ? Keybinds::modMaskFromString(std::string{maybeMod.value()}) : Input::ModifierMask(0u);
+    uint32_t modMask = maybeMod ? g_pKeybindManager->stringToModMask(std::string{maybeMod.value()}) : 0u;
 
     auto maybeScaleResult = luaTableMaybeGetFloat(L, 1, "scale");
     if (!maybeScaleResult) {

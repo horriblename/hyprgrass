@@ -11,10 +11,9 @@
 #include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
 #include <hyprland/src/config/supplementary/propRefresher/PropRefresher.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
-#include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/fullscreen/FullscreenController.hpp>
-#include <hyprland/src/keybinds/Manager.hpp>
+#include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/layout/LayoutManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/UnifiedWorkspaceSwipeGesture.hpp>
@@ -194,9 +193,8 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                         real.height + 2 * BORDER_GRAB_AREA
                     };
 
-                    bool notInRealWindow =
-                        !real.containsPoint(touchPos) || w->presentation().isInCurvedCorner(touchPos.x, touchPos.y);
-                    bool onTiledGap = !w->isFloating() && !Fullscreen::controller()->isFullscreen(w) && notInRealWindow;
+                    bool notInRealWindow = !real.containsPoint(touchPos) || w->isInCurvedCorner(touchPos.x, touchPos.y);
+                    bool onTiledGap = !w->m_isFloating && !Fullscreen::controller()->isFullscreen(w) && notInRealWindow;
                     bool inGrabArea = notInRealWindow && grab.containsPoint(touchPos);
 
                     if ((onTiledGap || inGrabArea) && !w->hasPopupAt(touchPos)) {
@@ -245,18 +243,18 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 }
 
 // Adapt new hyprland keybind type back to the old one (hacky compat for now)
-static std::vector<SP<SKeybind>> keybindsToSKeybinds() {
-    std::vector<SP<SKeybind>> binds;
-    for (const auto& k : Keybinds::mgr()->registry().binds())
-        binds.emplace_back(makeShared<SKeybind>(SKeybind{
-            .key          = k->metadata().displayKey,
-            .handler      = k->metadata().handler,
-            .arg          = k->metadata().argument,
-            .displayKey   = k->metadata().displayKey,
-            .mouse        = k->hasFlag(Keybinds::BIND_FLAG_MOUSE),
-            .locked       = k->hasFlag(Keybinds::BIND_FLAG_LOCKED),
-            .nonConsuming = k->hasFlag(Keybinds::BIND_FLAG_NON_CONSUMING),
-            .modmask      = static_cast<uint32_t>(k->modifierMask()),
+static std::vector<SP<SHgKeybind>> keybindsToSKeybinds() {
+    std::vector<SP<SHgKeybind>> binds;
+    for (const auto& k : g_pKeybindManager->m_keybinds)
+        binds.emplace_back(makeShared<SHgKeybind>(SHgKeybind{
+            .key          = k->displayKey,
+            .handler      = k->handler,
+            .arg          = k->arg,
+            .displayKey   = k->displayKey,
+            .mouse        = k->mouse,
+            .locked       = k->locked,
+            .nonConsuming = k->nonConsuming,
+            .modmask      = k->modmask,
         }));
     return binds;
 }
@@ -792,7 +790,7 @@ void GestureManager::touchBindDispatcher(std::string args) {
     const auto dispatcherArgs = trim(argsSplit[3]);
 
     this->internalBinds.emplace_back(
-        makeShared<SKeybind>(SKeybind{
+        makeShared<SHgKeybind>(SHgKeybind{
             .key     = key,
             .handler = dispatcher,
             .arg     = dispatcherArgs,

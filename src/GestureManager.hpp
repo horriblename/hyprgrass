@@ -13,7 +13,7 @@
 #include <hyprland/src/config/values/types/IntValue.hpp>
 #include <hyprland/src/config/values/types/StringValue.hpp>
 #include <hyprland/src/devices/ITouch.hpp>
-#include <hyprland/src/keybinds/Manager.hpp>
+#include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
 #include <hyprland/src/protocols/core/Seat.hpp>
 #undef private
@@ -25,7 +25,7 @@ enum class GestureEventType {
 };
 
 // compat adapter
-struct SKeybind {
+struct SHgKeybind {
     std::string key;
     std::string handler;
     std::string arg;
@@ -87,7 +87,7 @@ struct Cfg {
 class GestureManager final : public IGestureManager {
   public:
     uint32_t long_press_next_trigger_time;
-    std::vector<SP<SKeybind>> internalBinds;
+    std::vector<SP<SHgKeybind>> internalBinds;
 
     GestureManager();
     ~GestureManager();
