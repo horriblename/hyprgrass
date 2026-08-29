@@ -13,7 +13,7 @@
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
-#include <hyprland/src/keybinds/Resolver.hpp>
+#include <hyprland/src/managers/KeybindManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/version.h>
 
@@ -79,7 +79,7 @@ static Hyprlang::CParseResult gestureKeyword(const char* LHS, const char* RHS) {
     eTrackpadGestureDirection direction = g_pTrackpadGestures->dirForString(data[1]);
 
     int startDataIdx    = 2;
-    Input::ModifierMask modMask = Input::HL_MODIFIER_NONE;
+    uint32_t modMask = 0u;
     float deltaScale    = 1.F;
     bool disableInhibit = false;
 
@@ -98,7 +98,7 @@ static Hyprlang::CParseResult gestureKeyword(const char* LHS, const char* RHS) {
     while (true) {
 
         if (data[startDataIdx].starts_with("mod:")) {
-            modMask = Keybinds::modMaskFromString(std::string(data[startDataIdx].substr(4)));
+            modMask = g_pKeybindManager->stringToModMask(std::string(data[startDataIdx].substr(4)));
             startDataIdx++;
             continue;
         } else if (data[startDataIdx].starts_with("scale:")) {
