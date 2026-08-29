@@ -1,8 +1,8 @@
 #include "ShimTrackpadGestures.hpp"
-#include "debug/log/Logger.hpp"
 #include "gestures/Shared.hpp"
-#include "managers/input/trackpad/GestureTypes.hpp"
-#include "managers/input/trackpad/TrackpadGestures.hpp"
+#include <hyprland/src/debug/log/Logger.hpp>
+#include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>
+#include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
 #include <lua.h>
 #include <string>
 #include <string_view>
@@ -249,7 +249,7 @@ static void printGesture(GestureType type, const CTrackpadGestures::SGestureData
     }
 
     // TODO: pretty print this
-    Log::logger->log(Log::DEBUG, "| mod mask: {}", gesture.modMask);
+    Log::logger->log(Log::DEBUG, "| mod mask: {}", static_cast<uint32_t>(gesture.modMask));
     Log::logger->log(Log::DEBUG, "| scale: {}", gesture.deltaScale);
     Log::logger->log(Log::DEBUG, "| disable inhibit: {}", gesture.disableInhibit);
     Log::logger->log(Log::DEBUG, "|");

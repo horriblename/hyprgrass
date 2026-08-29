@@ -12,7 +12,8 @@
 #include <hyprland/src/config/lua/bindings/LuaBindingsInternal.hpp>
 #include <hyprland/src/debug/log/Logger.hpp>
 #include <hyprland/src/event/EventBus.hpp>
-#include <hyprland/src/managers/KeybindManager.hpp>
+#include <hyprland/src/keybinds/Manager.hpp>
+#include <hyprland/src/keybinds/Resolver.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
@@ -148,7 +149,7 @@ int newBind(lua_State* L) {
                 return Config::Lua::Bindings::Internal::configError(L, "hyprgrass.bind: mod must be a string");
 
             const char* modStr = lua_tostring(L, -1);
-            bind.modmask       = g_pKeybindManager->stringToModMask(modStr);
+            bind.modmask       = static_cast<uint32_t>(Keybinds::modMaskFromString(modStr));
         }
     }
 
@@ -364,8 +365,9 @@ int newGesture(lua_State* L) {
         return Config::Lua::Bindings::Internal::configError(L, "hyprgrass.gesture: {}", modResult.error());
     }
 
-    auto maybeMod    = modResult.value();
-    uint32_t modMask = maybeMod ? g_pKeybindManager->stringToModMask(std::string{maybeMod.value()}) : 0;
+    auto maybeMod             = modResult.value();
+    Input::ModifierMask modMask =
+        maybeMod ? Keybinds::modMaskFromString(std::string{maybeMod.value()}) : Input::ModifierMask(0u);
 
     auto maybeScaleResult = luaTableMaybeGetFloat(L, 1, "scale");
     if (!maybeScaleResult) {
@@ -530,7 +532,7 @@ SDispatchResult listInternalBinds(std::string) {
                 .edge_origin  = static_cast<uint32_t>(g->fingerCount),
             };
             Log::logger->log(Log::DEBUG, "[hyprgrass] | gesture: {}", gev.to_string());
-            Log::logger->log(Log::DEBUG, "[hyprgrass] |     modifiers: {}", g->modMask);
+            Log::logger->log(Log::DEBUG, "[hyprgrass] |     modifiers: {}", static_cast<uint32_t>(g->modMask));
             Log::logger->log(Log::DEBUG, "[hyprgrass] |     scaling: {}", g->deltaScale);
         }
     }
