@@ -108,8 +108,12 @@ class GestureManager final : public IGestureManager {
     // workaround
     void touchBindDispatcher(std::string args);
 
-  protected:
+    const wf::touch::gesture_state_t& getGestureState() const {
+        return this->m_sGestureState;
+    }
     SMonitorArea getMonitorArea() const override;
+
+  protected:
     FindGestureResult findCompletedGesture(const CompletedGestureEvent& gev) const override;
     FindGestureResult handleCompletedGesture(const CompletedGestureEvent& gev) override;
     void handleCancelledGesture() override;

@@ -29,6 +29,9 @@ A few things to keep in mind for your migration to Lua:
    ```
 
 3. Removed deprecated options.
+4. Removed hyprgrass-brightnessctl and hyprgrass-pulse plugins. Use the
+   corresponding Lua modules in extras/ instead, see the
+   [live gestures extras](./configuration.md#live-gesture-extras) section.
 
 ## Config options
 

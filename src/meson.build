@@ -12,6 +12,7 @@ if get_option('hyprgrass')
   shared_module('hyprgrass',
     'main.cpp',
     'GestureManager.cpp',
+    'LuaTouchpadGesture.cpp',
     'ShimTrackpadGestures.cpp',
     'VecSet.cpp',
     cpp_args: ['-DWLR_USE_UNSTABLE'],

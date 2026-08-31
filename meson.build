@@ -44,5 +44,4 @@ hyprland_deps = [
   dependency('lua')
 ]
 
-subdir('examples')
 subdir('src')
