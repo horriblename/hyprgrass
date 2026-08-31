@@ -313,7 +313,3 @@ hl.plugin.hyprgrass.gesture {
 ```hyprlang
 hyprgrass-gesture = longpress, 3, horizontal, workspace
 ```
-
-## Hyprgrass-pulse
-
-see [](../examples/hyprgrass-pulse/README.md)

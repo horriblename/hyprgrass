@@ -24,7 +24,7 @@
   in {
     packages = withPkgsFor (system: pkgs: rec {
       inherit (pkgs) wf-touch hyprland;
-      inherit (pkgs.hyprlandPlugins) hyprgrass hyprgrass-pulse hyprgrass-backlight;
+      inherit (pkgs.hyprlandPlugins) hyprgrass;
 
       default = hyprgrass;
       hyprgrassWithTests = hyprgrass.override {runTests = true;};
@@ -43,8 +43,6 @@
           (prev.hyprlandPlugins or {})
           // {
             hyprgrass = final.callPackage ./nix/default.nix {inherit tag commit;};
-            hyprgrass-pulse = final.callPackage ./nix/hyprgrass-pulse.nix {inherit tag commit;};
-            hyprgrass-backlight = final.callPackage ./nix/hyprgrass-backlight.nix {inherit tag commit;};
           };
       };
     };
@@ -53,13 +51,13 @@
       mkHyprgrassShell = withExtras:
         pkgs.mkShell.override {inherit (pkgs.hyprland) stdenv;} {
           shellHook = ''
-            meson setup build -Dbuildtype=debug -Dhyprgrass-pulse=true -Dhyprgrass-backlight=true --reconfigure
+            meson setup build -Dbuildtype=debug --reconfigure
             sed -e 's/c++23/c++2b/g' ./build/compile_commands.json > ./compile_commands.json
           '';
           hardeningDisable = ["fortify"];
           name = "hyprgrass-shell";
           nativeBuildInputs = with pkgs; [meson pkg-config ninja];
-          buildInputs = [pkgs.hyprland pkgs.pulseaudio pkgs.glibmm pkgs.udev];
+          buildInputs = [pkgs.hyprland];
           inputsFrom = [
             pkgs.hyprland
             pkgs.hyprlandPlugins.hyprgrass
