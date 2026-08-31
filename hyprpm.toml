@@ -80,8 +80,8 @@ description = "Hyprgrass extension to control audio volume in pulse-audio"
 author = "horriblename"
 output = "examples/hyprgrass-pulse/build/examples/hyprgrass-pulse/libhyprgrass-pulse.so"
 build = [
-    "meson setup examples/hyprgrass-pulse/build -Dhyprgrass=false -Dhyprgrass-pulse=true",
-    "ninja -C examples/hyprgrass-pulse/build",
+    "echo 'hyprgrass-pulse is deprecated, please see documentation for the lua-based replacement'",
+    "echo 1",
 ]
 
 [hyprgrass-backlight]
@@ -89,6 +89,6 @@ description = "Hyprgrass extension to control brightness of backlight"
 author = "horriblename"
 output = "examples/hyprgrass-backlight/build/examples/hyprgrass-backlight/libhyprgrass-backlight.so"
 build = [
-    "meson setup examples/hyprgrass-backlight/build -Dhyprgrass=false -Dhyprgrass-backlight=true",
-    "ninja -C examples/hyprgrass-backlight/build",
+    "echo 'hyprgrass-backlight is deprecated, please see documentation for the lua-based replacement'",
+    "echo 1",
 ]
