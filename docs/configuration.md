@@ -224,6 +224,42 @@ hl.plugin.hyprgrass.gesture {
 }
 ```
 
+##### Live Gesture Extras
+
+There are a couple of extra live gestures you can install/copy separately:
+
+- `extras/wpctl.lua`: Control volume with gestures, using `wpctl`
+- `extras/brightnessctl.lua`: Control brightness with gestures, using
+  `brightnessctl`
+
+To use them, copy the corresponding file (I'm using wpctl.lua as example below):
+
+1. Copy `extras/wpctl.lua` to
+   `~/.config/hypr/plugins/hyprgrass/extras/wpctl.lua`.
+
+   > [!NOTE]
+   > You can use `git` or whatever tool you wish to manage Lua plugins, just
+   > make sure to adjust `package.path` below to match your own
+
+2. Add this to your `hyprland.lua`:
+
+   ```lua
+   -- replace USER with your username
+   package.path = package.path .. "/home/USER/.config/hypr/?.lua;/home/USER/.config/hypr/?/init.lua"
+   if hl.plugin.hyprgrass then
+       local hg_wpctl = require("plugins.hyprgrass.extras.wpctl")
+       hl.plugin.hyprgrass.gesture({
+           pattern = {kind="edge", origin="right", direction="vertical"}
+           action = hg_wpctl.volume_action({
+               direction = "vertical",
+               flip = true,
+           })
+       })
+   end
+   ```
+
+See the corresponding Lua files for available arguments.
+
 #### `emulate_touchpad` action
 
 This action emulates touchpad gestures. It takes two additional arguements:
