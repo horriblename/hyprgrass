@@ -63,6 +63,7 @@ commit_pins = [
     ["5c9377c15f85c50648f35ca5a213754f95b93ca0", "36df29f57f94a77b4d5dcf91100f620a46663fa9"], # v0.56.1
     ["a9902ea65f461af868497c4e74fed798ade0b1b0", "cfb73bc5195e0a35ad77659fbd9c7169169a1550"], # legacy config dropped
     ["af0d014cb26f536d8cb7cab2b9d5784f69767c8a", "37d6f0ad4eeee01f8579da9a803a62208f4e11ae"], # Keybind and view refactors
+    ["efb50993780079460b0cbed1363e2166a2de1d9f", "8e605468cbf429791d61ddbfaeb14ff5e08fec3e"], # v0.56.2
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
