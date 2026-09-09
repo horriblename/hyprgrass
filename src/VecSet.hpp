@@ -1,5 +1,6 @@
 #pragma once
 
+#include <utility>
 #include <vector>
 
 // Probably not compatible with move semantics, I really don't know
@@ -36,10 +37,7 @@ template <class T> class VecSet {
     bool remove(const T x) {
         for (size_t i = 0; i < this->set.size(); i++) {
             if (this->set[i] == x) {
-                if (i != this->set.size() - 1) {
-                    this->set[i] = this->set.back();
-                }
-
+                std::swap(this->set[i], this->set.back());
                 this->set.pop_back();
                 return true;
             }
