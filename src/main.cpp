@@ -570,14 +570,14 @@ SDispatchResult listInternalBinds(std::string) {
         GestureType::LONG_PRESS,
         GestureType::EDGE_SWIPE,
     };
-    Log::logger->log(Log::DEBUG, "[hyprgrass] Listing internal binds:");
+    LOG(Log::DEBUG, "[hyprgrass] Listing internal binds:");
     for (const auto& bind : g_pGestureManager->internalBinds) {
-        Log::logger->log(Log::DEBUG, "[hyprgrass] | gesture: {}", bind->key);
-        Log::logger->log(Log::DEBUG, "[hyprgrass] |     dispatcher: {}", bind->handler);
-        Log::logger->log(Log::DEBUG, "[hyprgrass] |     arg: {}", bind->arg);
-        Log::logger->log(Log::DEBUG, "[hyprgrass] |     mouse: {}", bind->mouse);
-        Log::logger->log(Log::DEBUG, "[hyprgrass] |     locked: {}", bind->locked);
-        Log::logger->log(Log::DEBUG, "[hyprgrass] |");
+        LOG(Log::DEBUG, "[hyprgrass] | gesture: {}", bind->key);
+        LOG(Log::DEBUG, "[hyprgrass] |     dispatcher: {}", bind->handler);
+        LOG(Log::DEBUG, "[hyprgrass] |     arg: {}", bind->arg);
+        LOG(Log::DEBUG, "[hyprgrass] |     mouse: {}", bind->mouse);
+        LOG(Log::DEBUG, "[hyprgrass] |     locked: {}", bind->locked);
+        LOG(Log::DEBUG, "[hyprgrass] |");
     }
 
     for (const auto& type : dragGestureTypes) {
@@ -590,9 +590,9 @@ SDispatchResult listInternalBinds(std::string) {
                 .finger_count = static_cast<uint32_t>(g->fingerCount),
                 .edge_origin  = static_cast<uint32_t>(g->fingerCount),
             };
-            Log::logger->log(Log::DEBUG, "[hyprgrass] | gesture: {}", gev.to_string());
-            Log::logger->log(Log::DEBUG, "[hyprgrass] |     modifiers: {}", static_cast<uint32_t>(g->modMask));
-            Log::logger->log(Log::DEBUG, "[hyprgrass] |     scaling: {}", g->deltaScale);
+            LOG(Log::DEBUG, "[hyprgrass] | gesture: {}", gev.to_string());
+            LOG(Log::DEBUG, "[hyprgrass] |     modifiers: {}", static_cast<uint32_t>(g->modMask));
+            LOG(Log::DEBUG, "[hyprgrass] |     scaling: {}", g->deltaScale);
         }
     }
     return SDispatchResult{.success = true};
@@ -650,9 +650,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         HyprlandAPI::addNotification(
             PHANDLE, "Mismatched Hyprland version! check logs for details", CHyprColor(0.8, 0.7, 0.26, 1.0), 5000
         );
-        Log::logger->log(Log::ERR, "[hyprgrass] version mismatch!");
-        Log::logger->log(Log::ERR, "[hyprgrass] | hyprgrass was built against: {}", hlTargetVersion);
-        Log::logger->log(Log::ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion);
+        LOG(Log::ERR, "[hyprgrass] version mismatch!");
+        LOG(Log::ERR, "[hyprgrass] | hyprgrass was built against: {}", hlTargetVersion);
+        LOG(Log::ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion);
     }
 
     static auto P1 = Event::bus()->m_events.input.touch.down.listen(hkOnTouchDown);

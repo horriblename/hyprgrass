@@ -15,7 +15,7 @@ class EmulateTouchpadGesture : public ITrackpadGesture {
 
     void begin(const STrackpadGestureBegin& e) override {
         if (ShimTrackpadGestures::isPinch(this->direction) != ShimTrackpadGestures::isPinch(e.direction)) {
-            Log::logger->log(Log::ERR, "[hyprgrass] emulate_touchpad: inconsistent gesture isPinch values");
+            LOG(Log::ERR, "[hyprgrass] emulate_touchpad: inconsistent gesture isPinch values");
             return;
         }
 
@@ -37,7 +37,7 @@ class EmulateTouchpadGesture : public ITrackpadGesture {
 
     void update(const STrackpadGestureUpdate& e) override {
         if (ShimTrackpadGestures::isPinch(this->direction) != ShimTrackpadGestures::isPinch(e.direction)) {
-            Log::logger->log(Log::ERR, "[hyprgrass] emulate_touchpad: inconsistent gesture isPinch values");
+            LOG(Log::ERR, "[hyprgrass] emulate_touchpad: inconsistent gesture isPinch values");
             return;
         }
 
@@ -59,7 +59,7 @@ class EmulateTouchpadGesture : public ITrackpadGesture {
     }
     void end(const STrackpadGestureEnd& e) override {
         if (ShimTrackpadGestures::isPinch(this->direction) != ShimTrackpadGestures::isPinch(e.direction)) {
-            Log::logger->log(Log::ERR, "[hyprgrass] emulate_touchpad: inconsistent gesture isPinch values");
+            LOG(Log::ERR, "[hyprgrass] emulate_touchpad: inconsistent gesture isPinch values");
             return;
         }
 

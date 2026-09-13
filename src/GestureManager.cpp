@@ -81,7 +81,7 @@ static void updateGapsIn(const Config::CCssGapData& newGapsIn) {
 
     const auto it = luaMgr->m_configValues.find("general.gaps_in");
     if (it == luaMgr->m_configValues.end()) {
-        Log::logger->log(Log::ERR, "[hyprgrass] lua config 'general.gaps_in' not found");
+        LOG(Log::ERR, "[hyprgrass] lua config 'general.gaps_in' not found");
         return;
     }
 
@@ -132,7 +132,7 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
     static auto PBORDERGRABEXTEND = CConfigValue<Config::INTEGER>("general:extend_border_grab_area");
     static auto PGAPSINDATA       = CConfigValue<Config::IComplexConfigValue>("general:gaps_in");
 
-    Log::logger->log(Log::DEBUG, "[hyprgrass] Drag gesture begin: {}", gev.to_string());
+    LOG(Log::DEBUG, "[hyprgrass] Drag gesture begin: {}", gev.to_string());
 
     auto const workspace_swipe_edge_str = WORKSPACE_SWIPE_EDGE->value();
 
@@ -262,7 +262,7 @@ static std::vector<SP<SKeybind>> keybindsToSKeybinds() {
 }
 
 FindGestureResult GestureManager::findGestureBind(std::string bind, GestureEventType type) const {
-    Log::logger->log(Log::DEBUG, "[hyprgrass] Looking for binds matching: {}", bind);
+    LOG(Log::DEBUG, "[hyprgrass] Looking for binds matching: {}", bind);
 
     auto result = FindGestureResult::NONE;
 
@@ -296,7 +296,7 @@ FindGestureResult GestureManager::findGestureBind(std::string bind, GestureEvent
 // pressed only matters for mouse binds: only start of drag gestures should set it to true
 FindGestureResult GestureManager::handleGestureBind(std::string bind, GestureEventType type) {
     auto found = FindGestureResult::NONE;
-    Log::logger->log(Log::DEBUG, "[hyprgrass] Looking for binds matching: {}", bind);
+    LOG(Log::DEBUG, "[hyprgrass] Looking for binds matching: {}", bind);
 
     auto allBinds   = std::ranges::views::join(std::array{keybindsToSKeybinds(), this->internalBinds});
     const auto MODS = static_cast<uint32_t>(g_pInputManager->getModsFromAllKBs());
@@ -317,7 +317,7 @@ FindGestureResult GestureManager::handleGestureBind(std::string bind, GestureEve
         // Should never happen, as we check in the ConfigManager, but oh well
         const auto ref = Hyprutils::String::strToNumber<int>(k->arg);
         if (k->handler != "__lua" || !ref) {
-            Log::logger->log(Log::ERR, "Invalid handler in a keybind! (handler {} is not a lua function)", k->handler);
+            LOG(Log::ERR, "Invalid handler in a keybind! (handler {} is not a lua function)", k->handler);
             continue;
         }
 
@@ -327,7 +327,7 @@ FindGestureResult GestureManager::handleGestureBind(std::string bind, GestureEve
             case GestureEventType::COMPLETED:
                 // mouse dispatchers only trigger on drag begin/end
                 if (!k->mouse) {
-                    Log::logger->log(Log::DEBUG, "[hyprgrass] calling dispatcher ({})", bind);
+                    LOG(Log::DEBUG, "[hyprgrass] calling dispatcher ({})", bind);
                     luaMgr->callLuaFn(*ref);
                     found =
                         std::max(found, k->nonConsuming ? FindGestureResult::NON_CONSUMING : FindGestureResult::FOUND);
@@ -405,7 +405,7 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
         return;
     }
 
-    Log::logger->log(Log::DEBUG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
+    LOG(Log::DEBUG, "[hyprgrass] Drag gesture ended: {}", gev.to_string());
     switch (gev.type) {
         case GestureType::SWIPE:
             if (this->workspaceSwipeActive) {
@@ -618,7 +618,7 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     monitor = monitor ? monitor : Desktop::focusState()->monitor();
 
     if (!monitor) {
-        Log::logger->log(Log::ERR, "[hyprgrass] onTouchDown: could not find a monitor???");
+        LOG(Log::ERR, "[hyprgrass] onTouchDown: could not find a monitor???");
         return false;
     }
 
@@ -723,7 +723,7 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
 
 bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
     if (!this->m_lastTouchedMonitor) {
-        Log::logger->log(Log::ERR, "[hyprgrass] onTouchMove: where the fuck is my monitor");
+        LOG(Log::ERR, "[hyprgrass] onTouchMove: where the fuck is my monitor");
         return false;
     }
 
@@ -783,7 +783,7 @@ Vector2D GestureManager::pixelToTrackpadDistance(wf::touch::point_t distancePx) 
 void GestureManager::touchBindDispatcher(std::string args) {
     auto argsSplit = splitString(args, ',', 4);
     if (argsSplit.size() < 4) {
-        Log::logger->log(Log::ERR, "touchBind called with not enough args: {}", args);
+        LOG(Log::ERR, "touchBind called with not enough args: {}", args);
         return;
     }
     const auto _modifier      = trim(argsSplit[0]);
@@ -801,9 +801,9 @@ void GestureManager::touchBindDispatcher(std::string args) {
 }
 
 void GestureManager::debugLog(const std::string& msg) {
-    Log::logger->log(Log::DEBUG, "[hyprgrass] " + msg);
+    LOG(Log::DEBUG, "[hyprgrass] " + msg);
 }
 
 void hyprgrass_debug(const std::string& s) {
-    Log::logger->log(Log::DEBUG, "[hyprgrass] [debug] {}", s);
+    LOG(Log::DEBUG, "[hyprgrass] [debug] {}", s);
 }

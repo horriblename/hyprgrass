@@ -84,7 +84,7 @@ void LuaTouchpadGesture::begin(const STrackpadGestureBegin& e) {
         1, 0, 0, Config::Lua::CConfigManager::LUA_TIMEOUT_EVENT_CALLBACK_MS, "hyprgrass.gesture: start()"
     );
     if (result != LUA_OK) {
-        Log::logger->log(Log::ERR, "[hyprgrass] start function failed: {}", lua_tostring(L, -1));
+        LOG(Log::ERR, "[hyprgrass] start function failed: {}", lua_tostring(L, -1));
     }
 }
 
@@ -107,7 +107,7 @@ void LuaTouchpadGesture::update(const STrackpadGestureUpdate& e) {
         1, 0, 0, Config::Lua::CConfigManager::LUA_TIMEOUT_EVENT_CALLBACK_MS, "hyprgrass.gesture: update()"
     );
     if (result != LUA_OK) {
-        Log::logger->log(Log::ERR, "[hyprgrass] update function failed: {}", lua_tostring(L, -1));
+        LOG(Log::ERR, "[hyprgrass] update function failed: {}", lua_tostring(L, -1));
     }
 }
 
@@ -143,6 +143,6 @@ void LuaTouchpadGesture::end(const STrackpadGestureEnd& e) {
         1, 0, 0, Config::Lua::CConfigManager::LUA_TIMEOUT_EVENT_CALLBACK_MS, "hyprgrass.gesture: finish()"
     );
     if (result != LUA_OK) {
-        Log::logger->log(Log::ERR, "[hyprgrass] finish function failed: {}", lua_tostring(L, -1));
+        LOG(Log::ERR, "[hyprgrass] finish function failed: {}", lua_tostring(L, -1));
     }
 }
