@@ -225,38 +225,38 @@ static void printGesture(GestureType type, const CTrackpadGestures::SGestureData
     switch (type) {
         case GestureType::SWIPE: {
             std::string direction = stringifyDirection(toHyprgrassDirection(gesture.direction));
-            Log::logger->log(Log::DEBUG, "| kind: swipe, fingers: {}, direction: {}", gesture.fingerCount, direction);
+            LOG(Log::DEBUG, "| kind: swipe, fingers: {}, direction: {}", gesture.fingerCount, direction);
             break;
         }
         case GestureType::LONG_PRESS:
-            Log::logger->log(Log::DEBUG, "| kind: long_press, fingers: {}", gesture.fingerCount);
+            LOG(Log::DEBUG, "| kind: long_press, fingers: {}", gesture.fingerCount);
             break;
         case GestureType::EDGE_SWIPE: {
             std::string origin    = stringifyDirection(gesture.fingerCount >> MOD_MASK_SHIFT);
             uint32_t fingers      = gesture.fingerCount & FINGERS_MASK;
             std::string direction = stringifyDirection(toHyprgrassDirection(gesture.direction));
-            Log::logger->log(
+            LOG(
                 Log::DEBUG, "| kind: edge, origin: {}, fingers: {}, direction: {}", origin, fingers, direction
             );
             break;
         }
         case GestureType::PINCH:
-            Log::logger->log(Log::DEBUG, "| kind: long_press, fingers: {}", gesture.fingerCount);
+            LOG(Log::DEBUG, "| kind: long_press, fingers: {}", gesture.fingerCount);
             break;
         case GestureType::TAP:
-            Log::logger->log(Log::DEBUG, "| kind: tap, fingers: {}", gesture.fingerCount);
+            LOG(Log::DEBUG, "| kind: tap, fingers: {}", gesture.fingerCount);
             break;
     }
 
     // TODO: pretty print this
-    Log::logger->log(Log::DEBUG, "| mod mask: {}", static_cast<uint32_t>(gesture.modMask));
-    Log::logger->log(Log::DEBUG, "| scale: {}", gesture.deltaScale);
-    Log::logger->log(Log::DEBUG, "| disable inhibit: {}", gesture.disableInhibit);
-    Log::logger->log(Log::DEBUG, "|");
+    LOG(Log::DEBUG, "| mod mask: {}", static_cast<uint32_t>(gesture.modMask));
+    LOG(Log::DEBUG, "| scale: {}", gesture.deltaScale);
+    LOG(Log::DEBUG, "| disable inhibit: {}", gesture.disableInhibit);
+    LOG(Log::DEBUG, "|");
 }
 
 void ShimTrackpadGestures::listGestures() {
-    Log::logger->log(Log::DEBUG, "[hyprgrass] listing gestures:");
+    LOG(Log::DEBUG, "[hyprgrass] listing gestures:");
 
     const auto types = std::array{
         GestureType::SWIPE,
