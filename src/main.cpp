@@ -598,9 +598,16 @@ SDispatchResult listInternalBinds(std::string) {
     return SDispatchResult{.success = true};
 }
 
-std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchDownHook;
-std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchUpHook;
-std::shared_ptr<HOOK_CALLBACK_FN> g_pTouchMoveHook;
+// .listen() is [[nodiscard("Listener is unregistered when the ptr is lost")]]:
+// RAII, the listener stays registered only as long as the returned value
+// stays alive. These need to be real globals, reassigned by plain
+// assignment on every PLUGIN_INIT call, not `static auto` function-locals
+// (C++ only initializes those on the *first ever* call) -- a plugin
+// unload+reload cycle would otherwise silently skip re-registering them.
+CHyprSignalListener g_pPreReloadListener;
+CHyprSignalListener g_pTouchDownListener;
+CHyprSignalListener g_pTouchUpListener;
+CHyprSignalListener g_pTouchMoveListener;
 
 // Do NOT change this function.
 APICALL EXPORT std::string PLUGIN_API_VERSION() {
@@ -628,7 +635,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->sendCancel);
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->resizeOnBorder);
 
-    static auto P0 = Event::bus()->m_events.config.preReload.listen([&] { onPreConfigReload(); });
+    g_pPreReloadListener = Event::bus()->m_events.config.preReload.listen([&] { onPreConfigReload(); });
 
     HyprlandAPI::addDispatcherV2(PHANDLE, "touchBind", [&](std::string args) {
         HyprlandAPI::addNotification(
@@ -655,9 +662,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         Log::logger->log(Log::ERR, "[hyprgrass] | actual hyprland version: {}", hlVersion);
     }
 
-    static auto P1 = Event::bus()->m_events.input.touch.down.listen(hkOnTouchDown);
-    static auto P2 = Event::bus()->m_events.input.touch.up.listen(hkOnTouchUp);
-    static auto P3 = Event::bus()->m_events.input.touch.motion.listen(hkOnTouchMove);
+    g_pTouchDownListener = Event::bus()->m_events.input.touch.down.listen(hkOnTouchDown);
+    g_pTouchUpListener   = Event::bus()->m_events.input.touch.up.listen(hkOnTouchUp);
+    g_pTouchMoveListener = Event::bus()->m_events.input.touch.motion.listen(hkOnTouchMove);
 
     HyprlandAPI::reloadConfig();
 
@@ -670,4 +677,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 APICALL EXPORT void PLUGIN_EXIT() {
     g_unloading = true;
     clearHeldLuaRefs();
+
+    g_pPreReloadListener.reset();
+    g_pTouchDownListener.reset();
+    g_pTouchUpListener.reset();
+    g_pTouchMoveListener.reset();
 }
