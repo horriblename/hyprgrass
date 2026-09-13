@@ -200,11 +200,6 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
                     bool inGrabArea = notInRealWindow && grab.containsPoint(touchPos);
 
                     if ((onTiledGap || inGrabArea) && !w->hasPopupAt(touchPos)) {
-                        IPointer::SButtonEvent e = {
-                            .timeMs = 0, // HACK: they don't use this :p
-                            .button = 0,
-                            .state  = WL_POINTER_BUTTON_STATE_PRESSED,
-                        };
                         if (!g_layoutManager->dragController()->target())
                             g_layoutManager->beginDragTarget(w->layoutTarget(), MBIND_RESIZE);
 
