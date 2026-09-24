@@ -470,7 +470,7 @@ int newGesture(lua_State* L) {
         return Config::Lua::Bindings::Internal::configError(L, zoomLevelResult.error());
     std::string zoomLevel{zoomLevelResult.value().value_or("")};
 
-    auto modeResult = luaTableMaybeGetString(L, 1, "zoom_level");
+    auto modeResult = luaTableMaybeGetString(L, 1, "mode");
     if (!modeResult)
         return Config::Lua::Bindings::Internal::configError(L, modeResult.error());
     std::string mode{modeResult.value().value_or("")};
