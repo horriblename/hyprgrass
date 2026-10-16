@@ -31,9 +31,6 @@ glm
 # build dependencies
 meson
 ninja
-
-# extra dependencies for hyprgrass-pulse
-libpulseaudio # Note: Arch Linux users should use 'libpulse'
 ```
 
 ### Install via hyprpm
@@ -43,9 +40,6 @@ First, install all [dependencies](#dependencies). Then, run these commands:
 ```bash
 hyprpm add https://github.com/horriblename/hyprgrass
 hyprpm enable hyprgrass
-
-# optional integration with pulse-audio, see examples/hyprgrass-pulse/README.md
-hyprpm enable hyprgrass-pulse
 ```
 
 You can add `exec-once = hyprpm reload -n` to your hyprland config to have
@@ -71,7 +65,8 @@ meson compile -Cbuild
 hyprctl plugin load "$PWD/build/src/libhyprgrass.so"
 ```
 
-Attach your crash logs (in `~/.cache/hypr/hyprlandCrashReport{pid}.txt`) when you report a crash.
+Attach your crash logs (in `~/.cache/hypr/hyprlandCrashReport{pid}.txt`) when
+you report a crash.
 
 ### Manual compilation
 
@@ -83,7 +78,6 @@ ninja -C build
 On the `meson setup` step you can pass these options:
 
 - `-Dbuildtype=debug` for debug builds
-- `-Dhyprgrass-pulse=true` to enable building hyprgrass-pulse
 
 ### Install via nix
 
