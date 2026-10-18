@@ -41,11 +41,6 @@ struct SKeybind {
 };
 
 struct Cfg {
-    // hack to get a C str pointer, we're gonna get rid of all this once hyprlang is dead so I don't really care how
-    // ugly it is
-    std::string workspaceSwipeFingersName, longPressDelayName, edgeMarginName, workspaceSwipeEdgeName, sensitivityName,
-        sendCancelName, resizeOnBorderName;
-
     SP<Config::Values::CIntValue> workspaceSwipeFingers, longPressDelay, edgeMargin;
     SP<Config::Values::CStringValue> workspaceSwipeEdge;
     SP<Config::Values::CFloatValue> sensitivity;
@@ -55,37 +50,27 @@ struct Cfg {
     using STR   = Config::Values::CStringValue;
     using FLOAT = Config::Values::CFloatValue;
     using BOOL  = Config::Values::CBoolValue;
-    Cfg(std::string pluginName)
-        : workspaceSwipeFingersName{key(pluginName, "workspace_swipe_fingers")},
-          longPressDelayName{key(pluginName, "long_press_delay")}, edgeMarginName{key(pluginName, "edge_margin")},
-          workspaceSwipeEdgeName{key(pluginName, "workspace_swipe_edge")},
-          sensitivityName{key(pluginName, "sensitivity")}, sendCancelName{key(pluginName, "debug:send_cancel")},
-          resizeOnBorderName{key(pluginName, "resize_on_border_long_press")},
-          // config options
+    Cfg()
+        : // config options
           workspaceSwipeFingers{makeShared<INT>(
-              workspaceSwipeFingersName.data(), "Number of fingers to trigger workspace swipe",
-              pluginName == "hyprgrass" ? -1 : 3
+              "plugin:hyprgrass:workspace_swipe_fingers", "Number of fingers to trigger workspace swipe", -1
           )},
-          longPressDelay{makeShared<INT>(longPressDelayName.data(), "Long press delay in milliseconds", 400)},
+          longPressDelay{makeShared<INT>("plugin:hyprgrass:long_press_delay", "Long press delay in milliseconds", 400)},
           edgeMargin{makeShared<INT>(
-              edgeMarginName.data(), "Distance from edge of screen to consider for edge gestures, in pixels", 10
+              "plugin:hyprgrass:edge_margin", "Distance from edge of screen to consider for edge gestures, in pixels",
+              10
           )},
           workspaceSwipeEdge{makeShared<STR>(
-              workspaceSwipeEdgeName.data(), "Edge to swipe from to trigger workspace swipe",
-              pluginName == "hyprgrass" ? "" : "d"
+              "plugin:hyprgrass:workspace_swipe_edge", "Edge to swipe from to trigger workspace swipe", ""
           )},
-          sensitivity{makeShared<FLOAT>(sensitivityName.data(), "Gesture sensitivity", 1.0)},
+          sensitivity{makeShared<FLOAT>("plugin:hyprgrass:sensitivity", "Gesture sensitivity", 1.0)},
           sendCancel{makeShared<BOOL>(
-              sendCancelName.data(), "Whether to send cancel events to windows on gesture activation", true
+              "plugin:hyprgrass:debug:send_cancel", "Whether to send cancel events to windows on gesture activation",
+              true
           )},
-          resizeOnBorder{
-              makeShared<BOOL>(resizeOnBorderName.data(), "Resize window by pressing and holding on borders", true)
-          } {}
-
-  private:
-    static constexpr std::string key(std::string pluginName, std::string key) {
-        return std::format("plugin:{}:{}", pluginName, key);
-    }
+          resizeOnBorder{makeShared<BOOL>(
+              "plugin:hyprgrass:resize_on_border_long_press", "Resize window by pressing and holding on borders", true
+          )} {}
 };
 
 class GestureManager final : public IGestureManager {
@@ -108,9 +93,6 @@ class GestureManager final : public IGestureManager {
     bool onTouchMove(ITouch::SMotionEvent e);
 
     void onLongPressTimeout(uint32_t time_msec);
-
-    // workaround
-    void touchBindDispatcher(std::string args);
 
     const wf::touch::gesture_state_t& getGestureState() const {
         return this->m_sGestureState;

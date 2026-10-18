@@ -52,7 +52,7 @@
         pkgs.mkShell.override {inherit (pkgs.hyprland) stdenv;} {
           shellHook = ''
             meson setup build -Dbuildtype=debug --reconfigure
-            sed -e 's/c++23/c++2b/g' ./build/compile_commands.json > ./compile_commands.json
+            ln -srf build/compile_commands.json .
           '';
           hardeningDisable = ["fortify"];
           name = "hyprgrass-shell";

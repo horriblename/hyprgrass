@@ -54,6 +54,7 @@ extern "C" {
 
 const CHyprColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
 const CHyprColor error_color   = {204. / 255.0, 2. / 255.0, 2. / 255.0, 1.0};
+const CHyprColor warn_color    = {0xE9 / 255.f, 0xD5 / 255.f, 0x02 / 255.f, 1.0};
 
 static bool g_unloading = false;
 
@@ -595,7 +596,7 @@ APICALL EXPORT std::string PLUGIN_API_VERSION() {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
-    g_config = makeUnique<Cfg>("hyprgrass");
+    g_config = makeUnique<Cfg>();
     HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "bind", newBind);
     HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "gesture", newGesture);
     HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "debug_binds", [](lua_State*) {
@@ -613,17 +614,18 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->sendCancel);
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->resizeOnBorder);
 
-    static auto P0 = Event::bus()->m_events.config.preReload.listen([&] { onPreConfigReload(); });
-
-    HyprlandAPI::addDispatcherV2(PHANDLE, "touchBind", [&](std::string args) {
-        HyprlandAPI::addNotification(
-            PHANDLE, "[hyprgrass] touchBind dispatcher deprecated, use the hyprgrass-bind keyword instead",
-            CHyprColor(0.8, 0.2, 0.2, 1.0), 5000
-        );
-        g_pGestureManager->touchBindDispatcher(args);
-        return SDispatchResult{
-            .success = true,
-        };
+    static auto P0          = Event::bus()->m_events.config.preReload.listen([&] { onPreConfigReload(); });
+    static auto HOOK_RELOAD = Event::bus()->m_events.config.reloaded.listen([&] {
+        if (g_config->workspaceSwipeFingers->value() != -1) {
+            HyprlandAPI::addNotification(
+                PHANDLE, "config: plugin.hyprgrass.workspace_swipe_fingers is deprecated", warn_color, 5000
+            );
+        }
+        if (g_config->workspaceSwipeEdge->value() != "") {
+            HyprlandAPI::addNotification(
+                PHANDLE, "config: plugin.hyprgrass.workspace_swipe_edge is deprecated", warn_color, 5000
+            );
+        }
     });
 
     HyprlandAPI::addDispatcherV2(PHANDLE, "hyprgrass:debug:binds", listInternalBinds);
