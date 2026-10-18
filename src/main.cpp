@@ -595,7 +595,7 @@ APICALL EXPORT std::string PLUGIN_API_VERSION() {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
-    g_config = makeUnique<Cfg>("hyprgrass");
+    g_config = makeUnique<Cfg>();
     HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "bind", newBind);
     HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "gesture", newGesture);
     HyprlandAPI::addLuaFunction(PHANDLE, "hyprgrass", "debug_binds", [](lua_State*) {
@@ -614,17 +614,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->resizeOnBorder);
 
     static auto P0 = Event::bus()->m_events.config.preReload.listen([&] { onPreConfigReload(); });
-
-    HyprlandAPI::addDispatcherV2(PHANDLE, "touchBind", [&](std::string args) {
-        HyprlandAPI::addNotification(
-            PHANDLE, "[hyprgrass] touchBind dispatcher deprecated, use the hyprgrass-bind keyword instead",
-            CHyprColor(0.8, 0.2, 0.2, 1.0), 5000
-        );
-        g_pGestureManager->touchBindDispatcher(args);
-        return SDispatchResult{
-            .success = true,
-        };
-    });
 
     HyprlandAPI::addDispatcherV2(PHANDLE, "hyprgrass:debug:binds", listInternalBinds);
 

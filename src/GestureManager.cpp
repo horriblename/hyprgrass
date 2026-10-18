@@ -1,5 +1,6 @@
 #include "GestureManager.hpp"
 #include "HyprLogger.hpp"
+#include "config/lua/LuaRef.hpp"
 #include "gestures/Gestures.hpp"
 
 #define private public
@@ -12,10 +13,10 @@
 #include <hyprland/src/config/supplementary/propRefresher/PropRefresher.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
-#include <hyprland/src/managers/SeatManager.hpp>
-#include <hyprland/src/managers/fullscreen/FullscreenController.hpp>
 #include <hyprland/src/keybinds/Manager.hpp>
 #include <hyprland/src/layout/LayoutManager.hpp>
+#include <hyprland/src/managers/SeatManager.hpp>
+#include <hyprland/src/managers/fullscreen/FullscreenController.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/UnifiedWorkspaceSwipeGesture.hpp>
 #include <hyprland/src/output/Monitor.hpp>
@@ -31,41 +32,7 @@
 #include <ranges>
 #include <vector>
 
-// constexpr double SWIPE_THRESHOLD = 30.;
 constexpr int RESIZE_BORDER_GAP_INCREMENT = 10;
-
-static std::string trim(const std::string& str) {
-    size_t first = str.find_first_not_of(' ');
-    if (std::string::npos == first) {
-        return str;
-    }
-    size_t last = str.find_last_not_of(' ');
-    return str.substr(first, (last - first + 1));
-}
-
-static std::vector<std::string> splitString(const std::string& s, char delimiter, int numSubstrings) {
-    std::vector<std::string> substrings;
-    auto split_view = std::ranges::views::split(s, delimiter);
-    auto iter       = split_view.begin();
-
-    for (int i = 0; i < numSubstrings - 1 && iter != split_view.end(); ++i, ++iter) {
-        std::string substring;
-        for (char c : *iter) {
-            substring.push_back(c);
-        }
-        substrings.push_back(substring);
-    }
-
-    if (iter != split_view.end()) {
-        std::string rest;
-        for (char c : *iter) {
-            rest.push_back(c);
-        }
-        substrings.push_back(rest);
-    }
-
-    return substrings;
-}
 
 static int handleLongPressTimer(void* data) {
     const auto gesture_manager = (GestureManager*)data;
@@ -243,16 +210,18 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 static std::vector<SP<SKeybind>> keybindsToSKeybinds() {
     std::vector<SP<SKeybind>> binds;
     for (const auto& k : Keybinds::mgr()->registry().binds())
-        binds.emplace_back(makeShared<SKeybind>(SKeybind{
-            .key          = k->metadata().displayKey,
-            .handler      = k->metadata().handler,
-            .arg          = k->metadata().argument,
-            .displayKey   = k->metadata().displayKey,
-            .mouse        = k->hasFlag(Keybinds::BIND_FLAG_MOUSE),
-            .locked       = k->hasFlag(Keybinds::BIND_FLAG_LOCKED),
-            .nonConsuming = k->hasFlag(Keybinds::BIND_FLAG_NON_CONSUMING),
-            .modmask      = static_cast<uint32_t>(k->modifierMask()),
-        }));
+        binds.emplace_back(
+            makeShared<SKeybind>(SKeybind{
+                .key          = k->metadata().displayKey,
+                .handler      = k->metadata().handler,
+                .arg          = k->metadata().argument,
+                .displayKey   = k->metadata().displayKey,
+                .mouse        = k->hasFlag(Keybinds::BIND_FLAG_MOUSE),
+                .locked       = k->hasFlag(Keybinds::BIND_FLAG_LOCKED),
+                .nonConsuming = k->hasFlag(Keybinds::BIND_FLAG_NON_CONSUMING),
+                .modmask      = static_cast<uint32_t>(k->modifierMask()),
+            })
+        );
     return binds;
 }
 
@@ -772,26 +741,6 @@ Vector2D GestureManager::pixelToTrackpadDistance(wf::touch::point_t distancePx) 
     const auto delta_percent = distancePx / wf::touch::point_t(monArea.w, monArea.h);
 
     return Vector2D(delta_percent.x * SWIPEDISTANCE, delta_percent.y * SWIPEDISTANCE);
-}
-
-void GestureManager::touchBindDispatcher(std::string args) {
-    auto argsSplit = splitString(args, ',', 4);
-    if (argsSplit.size() < 4) {
-        LOG(Log::ERR, "touchBind called with not enough args: {}", args);
-        return;
-    }
-    const auto _modifier      = trim(argsSplit[0]);
-    const auto key            = trim(argsSplit[1]);
-    const auto dispatcher     = trim(argsSplit[2]);
-    const auto dispatcherArgs = trim(argsSplit[3]);
-
-    this->internalBinds.emplace_back(
-        makeShared<SKeybind>(SKeybind{
-            .key     = key,
-            .handler = dispatcher,
-            .arg     = dispatcherArgs,
-        })
-    );
 }
 
 void GestureManager::debugLog(const std::string& msg) {
