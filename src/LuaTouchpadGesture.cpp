@@ -50,15 +50,13 @@ template <typename T> static void pushGestureInfo(lua_State* L, GestureType type
 }
 
 void LuaTouchpadGesture::begin(const STrackpadGestureBegin& e) {
-    if (startRef == LUA_NOREF)
-        return;
-
     auto mgr     = Config::Lua::mgr();
     lua_State* L = mgr->m_lua;
     int base     = lua_gettop(L);
     Hyprutils::Utils::CScopeGuard x([=] { lua_settop(L, base); });
 
-    lua_rawgeti(L, LUA_REGISTRYINDEX, this->startRef);
+    if (!startFn.push())
+        return;
 
     lua_createtable(L, 0, 8); // local opt = {}
 
@@ -89,15 +87,13 @@ void LuaTouchpadGesture::begin(const STrackpadGestureBegin& e) {
 }
 
 void LuaTouchpadGesture::update(const STrackpadGestureUpdate& e) {
-    if (updateRef == LUA_NOREF)
-        return;
-
     auto mgr     = Config::Lua::mgr();
     lua_State* L = mgr->m_lua;
     int base     = lua_gettop(L);
     Hyprutils::Utils::CScopeGuard x([=] { lua_settop(L, base); });
 
-    lua_rawgeti(L, LUA_REGISTRYINDEX, this->updateRef);
+    if (!updateFn.push())
+        return;
 
     lua_createtable(L, 0, 6); // local opt = {}
 
@@ -112,15 +108,13 @@ void LuaTouchpadGesture::update(const STrackpadGestureUpdate& e) {
 }
 
 void LuaTouchpadGesture::end(const STrackpadGestureEnd& e) {
-    if (endRef == LUA_NOREF)
-        return;
-
     auto mgr     = Config::Lua::mgr();
     lua_State* L = mgr->m_lua;
     int base     = lua_gettop(L);
     Hyprutils::Utils::CScopeGuard x([=] { lua_settop(L, base); });
 
-    lua_rawgeti(L, LUA_REGISTRYINDEX, this->endRef);
+    if (!endFn.push())
+        return;
 
     lua_createtable(L, 0, 3); // local opt = {}
 

@@ -310,8 +310,7 @@ FindGestureResult GestureManager::handleGestureBind(std::string bind, GestureEve
             continue;
 
         // Should never happen, as we check in the ConfigManager, but oh well
-        const auto ref = Hyprutils::String::strToNumber<int>(k->arg);
-        if (k->handler != "__lua" || !ref) {
+        if (k->handler != "__lua" || !k->luaFn.state()) {
             LOG(Log::ERR, "Invalid handler in a keybind! (handler {} is not a lua function)", k->handler);
             continue;
         }
@@ -323,7 +322,7 @@ FindGestureResult GestureManager::handleGestureBind(std::string bind, GestureEve
                 // mouse dispatchers only trigger on drag begin/end
                 if (!k->mouse) {
                     LOG(Log::DEBUG, "[hyprgrass] calling dispatcher ({})", bind);
-                    luaMgr->callLuaFn(*ref);
+                    luaMgr->callLuaFnBind(k->luaFn);
                     found =
                         std::max(found, k->nonConsuming ? FindGestureResult::NON_CONSUMING : FindGestureResult::FOUND);
                 }
@@ -340,7 +339,7 @@ FindGestureResult GestureManager::handleGestureBind(std::string bind, GestureEve
                 // yes this is how the lua dispatcher detects key press state
                 Config::Actions::state()->m_passPressed = static_cast<int>(pressed);
 
-                luaMgr->callLuaFn(*ref);
+                luaMgr->callLuaFnBind(k->luaFn);
 
                 Config::Actions::state()->m_passPressed = -1;
 
