@@ -12,8 +12,10 @@ extern "C" {
 
 class LuaTouchpadGesture : public ITrackpadGesture {
   public:
-    LuaTouchpadGesture(GestureType gestureType, int startRef, int updateRef, int endRef)
-        : gestureType(gestureType), startRef(startRef), updateRef(updateRef), endRef(endRef) {}
+    LuaTouchpadGesture(
+        GestureType gestureType, Config::Lua::CLuaRef&& start, Config::Lua::CLuaRef&& update, Config::Lua::CLuaRef&& end
+    )
+        : gestureType(gestureType), startFn(std::move(start)), updateFn(std::move(update)), endFn(std::move(end)) {}
 
     void begin(const STrackpadGestureBegin& e) override;
 
@@ -23,9 +25,9 @@ class LuaTouchpadGesture : public ITrackpadGesture {
 
   private:
     GestureType gestureType;
-    int startRef;
-    int updateRef;
-    int endRef;
+    Config::Lua::CLuaRef startFn;
+    Config::Lua::CLuaRef updateFn;
+    Config::Lua::CLuaRef endFn;
 
     // for computing the rotation delta between updates
     double lastRotation = 0;

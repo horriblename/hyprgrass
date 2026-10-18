@@ -8,6 +8,8 @@
 
 #define private public
 #include <hyprland/src/config/ConfigValue.hpp>
+#include <hyprland/src/config/lua/ConfigManager.hpp>
+#include <hyprland/src/config/lua/LuaRef.hpp>
 #include <hyprland/src/config/values/types/BoolValue.hpp>
 #include <hyprland/src/config/values/types/FloatValue.hpp>
 #include <hyprland/src/config/values/types/IntValue.hpp>
@@ -29,6 +31,8 @@ struct SKeybind {
     std::string key;
     std::string handler;
     std::string arg;
+    // only set for handler == "__lua": the dispatcher function to call
+    Config::Lua::CLuaRef luaFn;
     std::string displayKey;
     bool mouse        = false;
     bool locked       = false;

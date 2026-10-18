@@ -55,21 +55,7 @@ extern "C" {
 const CHyprColor s_pluginColor = {0x61 / 255.0f, 0xAF / 255.0f, 0xEF / 255.0f, 1.0f};
 const CHyprColor error_color   = {204. / 255.0, 2. / 255.0, 2. / 255.0, 1.0};
 
-static std::vector<int> heldLuaRefs{};
 static bool g_unloading = false;
-
-void clearHeldLuaRefs() {
-    // TODO: should I just move this into GestureManager/LuaTouchpadGesture? :/
-    if (Config::mgr()->type() == Config::CONFIG_LUA) {
-        lua_State* L = Config::Lua::mgr()->m_lua;
-
-        for (const auto& r : heldLuaRefs) {
-            luaL_unref(L, LUA_REGISTRYINDEX, r);
-        }
-
-        heldLuaRefs.clear();
-    }
-}
 
 void hkOnTouchDown(ITouch::SDownEvent ev, Event::SCallbackInfo& cbinfo) {
     cbinfo.cancelled = g_pGestureManager->onTouchDown(ev);
@@ -202,15 +188,17 @@ int newBind(lua_State* L) {
         );
     }
 
-    int ref      = luaL_ref(L, LUA_REGISTRYINDEX);
+    // the dispatcher function is at the top of the stack
+    bind.luaFn = Config::Lua::CLuaRef{Config::Lua::mgr()->luaStateLifetime(), L, -1};
+    lua_pop(L, 1);
+
     bind.handler = "__lua";
-    bind.arg     = std::to_string(ref);
 
     bind.mouse        = luaTableGetBool(L, 1, "mouse");
     bind.locked       = luaTableGetBool(L, 1, "locked");
     bind.nonConsuming = luaTableGetBool(L, 1, "non_consuming");
 
-    g_pGestureManager->internalBinds.emplace_back(makeShared<SKeybind>(bind));
+    g_pGestureManager->internalBinds.emplace_back(makeShared<SKeybind>(std::move(bind)));
 
     return 0;
 }
@@ -395,10 +383,9 @@ int newGesture(lua_State* L) {
         );
     }
 
-    int functionRef         = LUA_NOREF;
-    int startRef            = LUA_NOREF;
-    int updateRef           = LUA_NOREF;
-    int endRef              = LUA_NOREF;
+    auto LUA_LIFETIME = Config::Lua::mgr()->luaStateLifetime();
+
+    Config::Lua::CLuaRef functionFn, startFn, updateFn, endFn;
     std::string_view action = "";
     {
         Hyprutils::Utils::CScopeGuard x([L] { lua_pop(L, 1); });
@@ -407,9 +394,7 @@ int newGesture(lua_State* L) {
         if (lua_isstring(L, -1)) {
             action = lua_tostring(L, -1);
         } else if (lua_isfunction(L, -1)) {
-            lua_pushvalue(L, -1);
-            functionRef = luaL_ref(L, LUA_REGISTRYINDEX);
-            heldLuaRefs.push_back(functionRef);
+            functionFn = Config::Lua::CLuaRef{LUA_LIFETIME, L, -1};
         } else if (lua_istable(L, -1)) {
             lua_getfield(L, -1, "start");
             if (!(lua_isfunction(L, -1))) {
@@ -418,13 +403,13 @@ int newGesture(lua_State* L) {
                     L, "hyprgrass.gesture: action table must have a start function"
                 );
             }
-            startRef = luaL_ref(L, LUA_REGISTRYINDEX);
-            heldLuaRefs.push_back(functionRef);
+            startFn = Config::Lua::CLuaRef{LUA_LIFETIME, L, -1};
+            lua_pop(L, 1); // CLuaRef does not pop the value it references
 
             lua_getfield(L, -1, "update");
             if ((lua_isfunction(L, -1))) {
-                updateRef = luaL_ref(L, LUA_REGISTRYINDEX);
-                heldLuaRefs.push_back(functionRef);
+                updateFn = Config::Lua::CLuaRef{LUA_LIFETIME, L, -1};
+                lua_pop(L, 1);
             } else {
                 if (!lua_isnil(L, -1)) {
                     return Config::Lua::Bindings::Internal::configError(
@@ -436,8 +421,8 @@ int newGesture(lua_State* L) {
 
             lua_getfield(L, -1, "finish");
             if (lua_isfunction(L, -1)) {
-                endRef = luaL_ref(L, LUA_REGISTRYINDEX);
-                heldLuaRefs.push_back(functionRef);
+                endFn = Config::Lua::CLuaRef{LUA_LIFETIME, L, -1};
+                lua_pop(L, 1);
             } else {
                 if (!lua_isnil(L, -1)) {
                     return Config::Lua::Bindings::Internal::configError(
@@ -447,7 +432,7 @@ int newGesture(lua_State* L) {
                 lua_pop(L, 1);
             }
         } else if (Config::Lua::Bindings::Internal::pushDispatcherFunction(L, -1)) {
-            functionRef = luaL_ref(L, LUA_REGISTRYINDEX);
+            functionFn = Config::Lua::CLuaRef{LUA_LIFETIME, L, -1};
             lua_pop(L, 1);
         } else {
             return Config::Lua::Bindings::Internal::configError(
@@ -478,15 +463,15 @@ int newGesture(lua_State* L) {
     // TODO: impl
     const bool disableInhibit = false;
 
-    if (functionRef != LUA_NOREF) {
+    if (functionFn.state()) {
         result = handler->addGesture(
-            makeUnique<CLuaFunctionGesture>(functionRef), gesture.fingers(), gesture.direction, modMask, deltaScale,
-            disableInhibit
+            makeUnique<CLuaFunctionGesture>(std::move(functionFn)), gesture.fingers(), gesture.direction, modMask,
+            deltaScale, disableInhibit
         );
-    } else if (startRef != LUA_NOREF) {
+    } else if (startFn.state()) {
         result = handler->addGesture(
-            makeUnique<LuaTouchpadGesture>(gesture.type, startRef, updateRef, endRef), gesture.fingers(),
-            gesture.direction, modMask, deltaScale, disableInhibit
+            makeUnique<LuaTouchpadGesture>(gesture.type, std::move(startFn), std::move(updateFn), std::move(endFn)),
+            gesture.fingers(), gesture.direction, modMask, deltaScale, disableInhibit
         );
     } else {
         if (action == "workspace")
@@ -669,5 +654,4 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
 APICALL EXPORT void PLUGIN_EXIT() {
     g_unloading = true;
-    clearHeldLuaRefs();
 }
