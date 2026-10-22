@@ -65,6 +65,7 @@ commit_pins = [
     ["af0d014cb26f536d8cb7cab2b9d5784f69767c8a", "37d6f0ad4eeee01f8579da9a803a62208f4e11ae"], # Keybind and view refactors
     ["efb50993780079460b0cbed1363e2166a2de1d9f", "8e605468cbf429791d61ddbfaeb14ff5e08fec3e"], # v0.56.2
     ["59177602ffd75d81e8995e0456057e2d086a01c8", "faa097c0d1ed3db4f44377f6bbb9568004bd4b52"], # Logger changes
+    ["55e9805d7f4a17452b803b56da5fb184c54c5dd5", "6ce5ea46bce2545281ced6a08101fc8d9f0226c7"], # lua fn calls changes
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 
