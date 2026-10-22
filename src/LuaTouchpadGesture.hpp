@@ -7,6 +7,7 @@ extern "C" {
 #include "GestureManager.hpp"
 #define private public
 #include "config/lua/ConfigManager.hpp"
+#include "config/lua/LuaCaller.hpp"
 #include "src/managers/input/trackpad/gestures/ITrackpadGesture.hpp"
 #undef private
 

@@ -8,6 +8,7 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/config/lua/ConfigManager.hpp>
+#include <hyprland/src/config/lua/LuaCaller.hpp>
 #include <hyprland/src/config/shared/actions/ConfigActions.hpp>
 #include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
 #include <hyprland/src/config/supplementary/propRefresher/PropRefresher.hpp>
@@ -291,7 +292,7 @@ FindGestureResult GestureManager::handleGestureBind(std::string bind, GestureEve
                 // mouse dispatchers only trigger on drag begin/end
                 if (!k->mouse) {
                     LOG(Log::DEBUG, "[hyprgrass] calling dispatcher ({})", bind);
-                    luaMgr->callLuaFnBind(k->luaFn);
+                    (void)luaMgr->caller().call(k->luaFn, Config::Lua::CLuaCaller::LUA_TIMEOUT_KEYBIND_CALLBACK_MS, "hyprgrass bind callback");
                     found =
                         std::max(found, k->nonConsuming ? FindGestureResult::NON_CONSUMING : FindGestureResult::FOUND);
                 }
@@ -308,7 +309,7 @@ FindGestureResult GestureManager::handleGestureBind(std::string bind, GestureEve
                 // yes this is how the lua dispatcher detects key press state
                 Config::Actions::state()->m_passPressed = static_cast<int>(pressed);
 
-                luaMgr->callLuaFnBind(k->luaFn);
+                (void)luaMgr->caller().call(k->luaFn, Config::Lua::CLuaCaller::LUA_TIMEOUT_KEYBIND_CALLBACK_MS, "hyprgrass bind callback");
 
                 Config::Actions::state()->m_passPressed = -1;
 
