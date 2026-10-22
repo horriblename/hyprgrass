@@ -51,7 +51,7 @@ template <typename T> static void pushGestureInfo(lua_State* L, GestureType type
 
 void LuaTouchpadGesture::begin(const STrackpadGestureBegin& e) {
     auto mgr     = Config::Lua::mgr();
-    lua_State* L = mgr->m_lua;
+    lua_State* L = mgr->caller().state();
     int base     = lua_gettop(L);
     Hyprutils::Utils::CScopeGuard x([=] { lua_settop(L, base); });
 
@@ -78,8 +78,8 @@ void LuaTouchpadGesture::begin(const STrackpadGestureBegin& e) {
     pushMonitorInfo(L);
     lua_setfield(L, -2, "monitor"); // opt.monitor = monitor
 
-    int result = mgr->guardedPCall(
-        1, 0, 0, Config::Lua::CConfigManager::LUA_TIMEOUT_EVENT_CALLBACK_MS, "hyprgrass.gesture: start()"
+    int result = mgr->caller().guardedPCall(
+        L, 1, 0, 0, Config::Lua::CLuaCaller::LUA_TIMEOUT_EVENT_CALLBACK_MS, "hyprgrass.gesture: start()"
     );
     if (result != LUA_OK) {
         LOG(Log::ERR, "[hyprgrass] start function failed: {}", lua_tostring(L, -1));
@@ -88,7 +88,7 @@ void LuaTouchpadGesture::begin(const STrackpadGestureBegin& e) {
 
 void LuaTouchpadGesture::update(const STrackpadGestureUpdate& e) {
     auto mgr     = Config::Lua::mgr();
-    lua_State* L = mgr->m_lua;
+    lua_State* L = mgr->caller().state();
     int base     = lua_gettop(L);
     Hyprutils::Utils::CScopeGuard x([=] { lua_settop(L, base); });
 
@@ -99,8 +99,8 @@ void LuaTouchpadGesture::update(const STrackpadGestureUpdate& e) {
 
     pushGestureInfo(L, gestureType, e, lastRotation);
 
-    int result = mgr->guardedPCall(
-        1, 0, 0, Config::Lua::CConfigManager::LUA_TIMEOUT_EVENT_CALLBACK_MS, "hyprgrass.gesture: update()"
+    int result = mgr->caller().guardedPCall(
+        L, 1, 0, 0, Config::Lua::CLuaCaller::LUA_TIMEOUT_EVENT_CALLBACK_MS, "hyprgrass.gesture: update()"
     );
     if (result != LUA_OK) {
         LOG(Log::ERR, "[hyprgrass] update function failed: {}", lua_tostring(L, -1));
@@ -109,7 +109,7 @@ void LuaTouchpadGesture::update(const STrackpadGestureUpdate& e) {
 
 void LuaTouchpadGesture::end(const STrackpadGestureEnd& e) {
     auto mgr     = Config::Lua::mgr();
-    lua_State* L = mgr->m_lua;
+    lua_State* L = mgr->caller().state();
     int base     = lua_gettop(L);
     Hyprutils::Utils::CScopeGuard x([=] { lua_settop(L, base); });
 
@@ -133,8 +133,8 @@ void LuaTouchpadGesture::end(const STrackpadGestureEnd& e) {
         lua_setfield(L, -2, "cancelled"); // opt.cancelled = (e.pinch->cancelled)
     }
 
-    int result = mgr->guardedPCall(
-        1, 0, 0, Config::Lua::CConfigManager::LUA_TIMEOUT_EVENT_CALLBACK_MS, "hyprgrass.gesture: finish()"
+    int result = mgr->caller().guardedPCall(
+        L, 1, 0, 0, Config::Lua::CLuaCaller::LUA_TIMEOUT_EVENT_CALLBACK_MS, "hyprgrass.gesture: finish()"
     );
     if (result != LUA_OK) {
         LOG(Log::ERR, "[hyprgrass] finish function failed: {}", lua_tostring(L, -1));
