@@ -25,10 +25,39 @@ hl.config({
 
             -- in pixels, the distance from the edge that is considered an edge
             edge_margin = 10,
+
+            -- keep the fingers of a gesture from reaching the window under them,
+            -- see "Holding touches" below
+            hold_touches = false,
+
+            -- on windows that ignore touch, one finger works as the pointer:
+            -- a drag scrolls and a tap clicks. Needs hold_touches
+            touch_as_pointer = false,
         }
     }
 })
 ```
+
+### Holding touches
+
+Hyprgrass cancels a touch once it recognizes a gesture, so until then the window sees
+its first fingers. Most apps ignore a cancelled touch, but some already act on the start
+of it: the YouTube player reacts to swipes this way.
+
+With `hold_touches`, a new touch on a window waits before being delivered:
+
+- Three or more fingers belong to the compositor: the window sees nothing, even if no
+  gesture follows.
+- One finger is delivered after up to 40 ms, or at once if it lifts or moves 12 px.
+- Two fingers wait for a two-finger long press, so a long press stays invisible too. They
+  are delivered if they lift, move 12 px, or outlast `long_press_delay` by 100 ms.
+
+Touches on Overlay and Top layer surfaces and on the lock screen are not held.
+
+Some clients, such as Kitty, never ask for touch input, so touches on them do nothing.
+With `touch_as_pointer`, one finger on such a window works as the pointer: past 12 px a
+drag sends scroll events, otherwise lifting the finger is a left click. A second finger
+ends this, so gestures keep working.
 
 ### Other options
 
