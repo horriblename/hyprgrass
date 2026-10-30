@@ -44,7 +44,7 @@ struct Cfg {
     SP<Config::Values::CIntValue> workspaceSwipeFingers, longPressDelay, edgeMargin;
     SP<Config::Values::CStringValue> workspaceSwipeEdge;
     SP<Config::Values::CFloatValue> sensitivity;
-    SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder, holdTouches;
+    SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder, holdTouches, touchAsPointer;
 
     using INT   = Config::Values::CIntValue;
     using STR   = Config::Values::CStringValue;
@@ -72,8 +72,10 @@ struct Cfg {
               "plugin:hyprgrass:resize_on_border_long_press", "Resize window by pressing and holding on borders", true
           )},
           holdTouches{makeShared<BOOL>(
-              "plugin:hyprgrass:hold_touches", "Hold back new touches so the fingers of a gesture never reach the window",
-              false
+              "plugin:hyprgrass:hold_touches", "Keep the fingers of a gesture away from the window", false
+          )},
+          touchAsPointer{makeShared<BOOL>(
+              "plugin:hyprgrass:touch_as_pointer", "One finger works as the pointer on clients without touch", false
           )} {}
 };
 
@@ -129,10 +131,19 @@ class GestureManager final : public IGestureManager {
     bool touchesDelivered     = false;
     bool replayingHeldTouches = false;
 
+    // A client without wl_touch, Kitty among them, would lose every touch: one finger stands in for the
+    // pointer on it, a drag scrolling and a tap clicking.
+    bool emulatingPointer = false;
+    bool scrolling        = false;
+    wf::touch::point_t scrollPoint;
+
     bool shouldHoldTouches(const Vector2D& pos) const;
+    bool clientIgnoresTouch(const Vector2D& pos) const;
+    void scrollPointer(uint32_t time, const wf::touch::point_t& to);
+    void clickPointer(uint32_t time);
     bool holdTouchDown(const ITouch::SDownEvent& ev, bool first, bool block);
     bool holdTouchMove(const ITouch::SMotionEvent& ev, bool block);
-    bool holdTouchUp(bool block);
+    bool holdTouchUp(uint32_t time, bool block);
     void claimTouches();
     void releaseHeldTouches();
     bool forwardTouchUp(ITouch::SUpEvent ev);
