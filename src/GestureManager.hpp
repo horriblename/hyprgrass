@@ -44,7 +44,7 @@ struct Cfg {
     SP<Config::Values::CIntValue> workspaceSwipeFingers, longPressDelay, edgeMargin;
     SP<Config::Values::CStringValue> workspaceSwipeEdge;
     SP<Config::Values::CFloatValue> sensitivity;
-    SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder;
+    SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder, holdTouches;
 
     using INT   = Config::Values::CIntValue;
     using STR   = Config::Values::CStringValue;
@@ -70,6 +70,10 @@ struct Cfg {
           )},
           resizeOnBorder{makeShared<BOOL>(
               "plugin:hyprgrass:resize_on_border_long_press", "Resize window by pressing and holding on borders", true
+          )},
+          holdTouches{makeShared<BOOL>(
+              "plugin:hyprgrass:hold_touches", "Hold back new touches so the fingers of a gesture never reach the window",
+              false
           )} {}
 };
 
@@ -94,6 +98,8 @@ class GestureManager final : public IGestureManager {
 
     void onLongPressTimeout(uint32_t time_msec);
 
+    void onHoldTimeout();
+
     const wf::touch::gesture_state_t& getGestureState() const {
         return this->m_sGestureState;
     }
@@ -111,6 +117,26 @@ class GestureManager final : public IGestureManager {
     PHLMONITOR m_lastTouchedMonitor;
     SMonitorArea m_monitorArea;
     wl_event_source* long_press_timer;
+
+    // A new touch on a window is held back until it is clearly not a multi-finger gesture, so the window
+    // never sees the fingers of one: three or more claim the sequence, one or two are replayed once they
+    // lift, move past a tap or outlast the hold.
+    wl_event_source* holdTimer;
+    std::vector<ITouch::SDownEvent> heldTouches;
+    bool holdingTouches       = false;
+    bool holdExtended         = false;
+    bool touchesClaimed       = false;
+    bool touchesDelivered     = false;
+    bool replayingHeldTouches = false;
+
+    bool shouldHoldTouches(const Vector2D& pos) const;
+    bool holdTouchDown(const ITouch::SDownEvent& ev, bool first, bool block);
+    bool holdTouchMove(const ITouch::SMotionEvent& ev, bool block);
+    bool holdTouchUp(bool block);
+    void claimTouches();
+    void releaseHeldTouches();
+    bool forwardTouchUp(ITouch::SUpEvent ev);
+
     struct {
         bool active = false;
         Config::CCssGapData old_gaps_in;

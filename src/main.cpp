@@ -613,6 +613,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->sensitivity);
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->sendCancel);
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->resizeOnBorder);
+    HyprlandAPI::addConfigValueV2(PHANDLE, g_config->holdTouches);
 
     static auto P0          = Event::bus()->m_events.config.preReload.listen([&] { onPreConfigReload(); });
     static auto HOOK_RELOAD = Event::bus()->m_events.config.reloaded.listen([&] {

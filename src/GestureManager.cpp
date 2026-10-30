@@ -13,6 +13,7 @@
 #include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
 #include <hyprland/src/config/supplementary/propRefresher/PropRefresher.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
+#include <hyprland/src/desktop/state/ViewState.hpp>
 #include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
 #include <hyprland/src/keybinds/Manager.hpp>
 #include <hyprland/src/layout/LayoutManager.hpp>
@@ -20,6 +21,7 @@
 #include <hyprland/src/managers/fullscreen/FullscreenController.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/UnifiedWorkspaceSwipeGesture.hpp>
+#include <hyprland/protocols/wlr-layer-shell-unstable-v1.hpp>
 #include <hyprland/src/output/Monitor.hpp>
 #include <hyprland/src/plugins/PluginSystem.hpp>
 #include <hyprland/src/pointer/PointerController.hpp>
@@ -30,6 +32,7 @@
 #include <hyprutils/string/Numeric.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <ranges>
 #include <vector>
 
@@ -39,6 +42,16 @@ static int handleLongPressTimer(void* data) {
     const auto gesture_manager = (GestureManager*)data;
     gesture_manager->onLongPressTimeout(gesture_manager->long_press_next_trigger_time);
 
+    return 0;
+}
+
+// The fingers of a gesture land within about 25 ms of each other; a touch that moves this far (logical px)
+// first is a scroll or a pinch, not a gesture waiting for more fingers.
+constexpr static uint32_t HOLD_MS   = 40;
+constexpr static double   HOLD_SLOP = 12;
+
+static int handleHoldTimer(void* data) {
+    ((GestureManager*)data)->onHoldTimeout();
     return 0;
 }
 
@@ -78,10 +91,12 @@ GestureManager::GestureManager() : IGestureManager(std::make_unique<HyprLogger>(
     this->addPinchGesture(PINCH_THRESHOLD, sensitivity, longPressDelay);
 
     this->long_press_timer = wl_event_loop_add_timer(g_pCompositor->m_wlEventLoop, handleLongPressTimer, this);
+    this->holdTimer        = wl_event_loop_add_timer(g_pCompositor->m_wlEventLoop, handleHoldTimer, this);
 }
 
 GestureManager::~GestureManager() {
     wl_event_source_remove(this->long_press_timer);
+    wl_event_source_remove(this->holdTimer);
 }
 
 FindGestureResult GestureManager::findCompletedGesture(const CompletedGestureEvent& gev) const {
@@ -561,7 +576,8 @@ void GestureManager::stopLongPressTimer() {
 void GestureManager::sendCancelEventsToWindows() {
     static auto const SEND_CANCEL = g_config->sendCancel;
 
-    if (!SEND_CANCEL->value()) {
+    // Nothing of this sequence reached a window, and the resources may still list an earlier one.
+    if (!SEND_CANCEL->value() || !this->touchesDelivered) {
         return;
     }
 
@@ -576,6 +592,11 @@ void GestureManager::sendCancelEventsToWindows() {
 // @return whether or not to inhibit further actions
 bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     static auto const SEND_CANCEL = g_config->sendCancel;
+
+    // Held touches replayed to the window: already part of the gesture state.
+    if (this->replayingHeldTouches) {
+        return false;
+    }
 
     auto monitor =
         State::monitorState()->query().name(!ev.device->m_boundOutput.empty() ? ev.device->m_boundOutput : "").run();
@@ -601,7 +622,8 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
 
     g_pInputManager->refocus();
 
-    if (this->m_sGestureState.fingers.size() == 0) {
+    const bool first = this->m_sGestureState.fingers.size() == 0;
+    if (first) {
         this->touchedResources.clear();
         this->activeTrackpadGesture = nullptr;
     }
@@ -635,10 +657,23 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         .pos    = pos,
     };
 
-    return IGestureManager::onTouchDown(gesture_event);
+    const bool block = IGestureManager::onTouchDown(gesture_event);
+    return this->holdTouchDown(ev, first, block);
 }
 
 bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
+    if (this->replayingHeldTouches) {
+        return false;
+    }
+
+    // While touches are held the compositor still points at the surface of an earlier sequence, which
+    // forwardTouchUp checks: only a recognised gesture decides.
+    const bool holding = this->holdingTouches;
+    const bool block   = this->forwardTouchUp(ev);
+    return this->holdTouchUp(holding ? this->eventForwardingInhibited() : block);
+}
+
+bool GestureManager::forwardTouchUp(ITouch::SUpEvent ev) {
     static auto const SEND_CANCEL = g_config->sendCancel;
 
     wf::touch::point_t lift_off_pos;
@@ -686,6 +721,10 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
 }
 
 bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
+    if (this->replayingHeldTouches) {
+        return false;
+    }
+
     if (!this->m_lastTouchedMonitor) {
         LOG(Log::ERR, "[hyprgrass] onTouchMove: where the fuck is my monitor");
         return false;
@@ -700,7 +739,199 @@ bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
         .pos    = pos,
     };
 
-    return IGestureManager::onTouchMove(gesture_event) != FindGestureResult::NONE;
+    const bool block = IGestureManager::onTouchMove(gesture_event) != FindGestureResult::NONE;
+    return this->holdTouchMove(ev, block);
+}
+
+// Touches on shell surfaces (Overlay and Top layers: keyboard, dock, bar, panels) and on the lock screen
+// do not wait: they handle a cancel themselves and keep their latency. Hit-tested at the touch point, since
+// the pointer focus may still describe an earlier position.
+bool GestureManager::shouldHoldTouches(const Vector2D& pos) const {
+    if (g_pSessionLockManager->isSessionLocked() || !this->m_lastTouchedMonitor) {
+        return false;
+    }
+
+    const auto& hit = Desktop::viewState()->hitTest();
+    Vector2D local;
+    PHLLS found;
+    if (hit.layerPopupSurfaceAt(pos, this->m_lastTouchedMonitor, &local, &found)) {
+        return false;
+    }
+
+    auto& layers = this->m_lastTouchedMonitor->m_layerSurfaceLayers;
+    for (const auto layer : {ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, ZWLR_LAYER_SHELL_V1_LAYER_TOP}) {
+        if (hit.layerSurfaceAt(pos, &layers[layer], &local, &found)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// @return whether this touch down should be blocked from forwarding to the client
+bool GestureManager::holdTouchDown(const ITouch::SDownEvent& ev, bool first, bool block) {
+    static auto const HOLD_TOUCHES = g_config->holdTouches;
+
+    if (!HOLD_TOUCHES->value()) {
+        this->touchesDelivered = true;
+        return block;
+    }
+
+    if (first) {
+        this->heldTouches.clear();
+        this->holdExtended   = false;
+        this->touchesClaimed = false;
+        const auto monitor   = this->m_lastTouchedMonitor;
+        const auto global    = monitor ? monitor->m_position + ev.pos * monitor->m_size : Vector2D{};
+        this->holdingTouches = !block && this->shouldHoldTouches(global);
+        this->touchesDelivered = !this->holdingTouches;
+        if (!this->holdingTouches) {
+            return block;
+        }
+
+        this->heldTouches.push_back(ev);
+        wl_event_source_timer_update(this->holdTimer, HOLD_MS);
+        return true;
+    }
+
+    if (this->touchesClaimed) {
+        return true;
+    }
+
+    // Three fingers are a gesture: the window never gets them, or gets a cancel for those it already has.
+    if (block || this->m_sGestureState.fingers.size() >= 3) {
+        this->claimTouches();
+        return true;
+    }
+
+    if (this->holdingTouches) {
+        this->heldTouches.push_back(ev);
+        return true;
+    }
+
+    return false;
+}
+
+// @return whether this touch motion should be blocked from forwarding to the client
+bool GestureManager::holdTouchMove(const ITouch::SMotionEvent& ev, bool block) {
+    if (this->touchesClaimed) {
+        return true;
+    }
+
+    if (!this->holdingTouches) {
+        return block;
+    }
+
+    if (block) {
+        this->claimTouches();
+        return true;
+    }
+
+    const auto held =
+        std::ranges::find_if(this->heldTouches, [&](const auto& down) { return down.touchID == ev.touchID; });
+    if (held == this->heldTouches.end()) {
+        return true;
+    }
+
+    const auto from = this->wlrTouchEventPositionAsPixels(held->pos.x, held->pos.y);
+    const auto to   = this->wlrTouchEventPositionAsPixels(ev.pos.x, ev.pos.y);
+    if (std::hypot(to.x - from.x, to.y - from.y) < HOLD_SLOP) {
+        return true;
+    }
+
+    this->releaseHeldTouches();
+    return false;
+}
+
+// @return whether this touch up should be blocked from forwarding to the client
+bool GestureManager::holdTouchUp(bool block) {
+    bool result = block;
+    if (this->touchesClaimed) {
+        result = true;
+    } else if (this->holdingTouches) {
+        if (block) {
+            this->claimTouches();
+            result = true;
+        } else {
+            // A lift ends a tap or a short touch: the window gets it whole.
+            this->releaseHeldTouches();
+            result = false;
+        }
+    }
+
+    if (this->m_sGestureState.fingers.empty()) {
+        wl_event_source_timer_update(this->holdTimer, 0);
+        this->heldTouches.clear();
+        this->holdingTouches = false;
+        this->touchesClaimed = false;
+    }
+
+    return result;
+}
+
+void GestureManager::onHoldTimeout() {
+    static auto const LONG_PRESS_DELAY = g_config->longPressDelay;
+
+    if (!this->holdingTouches) {
+        return;
+    }
+
+    if (this->eventForwardingInhibited()) {
+        this->claimTouches();
+        return;
+    }
+
+    // Two fingers wait for a pinch or scroll (movement), a lift or the two-finger long press; past the long
+    // press delay they belong to the window after all.
+    if (this->m_sGestureState.fingers.size() >= 2 && !this->holdExtended) {
+        this->holdExtended = true;
+        const auto rest = std::max<int64_t>(1, *LONG_PRESS_DELAY->m_val.ptr() + 100 - HOLD_MS);
+        wl_event_source_timer_update(this->holdTimer, rest);
+        return;
+    }
+
+    this->releaseHeldTouches();
+}
+
+// The rest of the sequence belongs to the compositor; touches already delivered are cancelled.
+void GestureManager::claimTouches() {
+    wl_event_source_timer_update(this->holdTimer, 0);
+    this->heldTouches.clear();
+    this->holdingTouches = false;
+    this->touchesClaimed = true;
+    this->sendCancelEventsToWindows();
+}
+
+void GestureManager::releaseHeldTouches() {
+    wl_event_source_timer_update(this->holdTimer, 0);
+    this->holdingTouches   = false;
+    this->touchesDelivered = true;
+
+    const auto held            = std::move(this->heldTouches);
+    this->heldTouches          = {};
+    this->replayingHeldTouches = true;
+    for (const auto& down : held) {
+        g_pInputManager->onTouchDown(down);
+    }
+    this->replayingHeldTouches = false;
+
+    if (held.empty()) {
+        return;
+    }
+
+    g_pSeatManager->sendTouchFrame();
+
+    // A gesture recognised later (a two-finger long press) cancels the window like any touched surface.
+    const auto surface = g_pInputManager->m_touchData.touchFocusSurface;
+    if (!surface || !surface->client()) {
+        return;
+    }
+
+    if (const auto seat = g_pSeatManager->seatResourceForClient(surface->client())) {
+        for (const auto& touch : seat->m_touches) {
+            this->touchedResources.insert(touch);
+        }
+    }
 }
 
 SMonitorArea GestureManager::getMonitorArea() const {
