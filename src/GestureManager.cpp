@@ -13,6 +13,7 @@
 #include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
 #include <hyprland/src/config/supplementary/propRefresher/PropRefresher.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
+#include <hyprland/src/desktop/state/ViewState.hpp>
 #include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
 #include <hyprland/src/keybinds/Manager.hpp>
 #include <hyprland/src/layout/LayoutManager.hpp>
@@ -27,13 +28,19 @@
 #include <hyprland/src/state/MonitorState.hpp>
 #undef private
 
+#include <hyprland/protocols/wlr-layer-shell-unstable-v1.hpp>
 #include <hyprutils/string/Numeric.hpp>
 
 #include <algorithm>
+#include <cmath>
+#include <linux/input-event-codes.h>
 #include <ranges>
 #include <vector>
 
 constexpr int RESIZE_BORDER_GAP_INCREMENT = 10;
+
+// Past this distance (logical px) a finger scrolls; short of it, lifting is a click.
+constexpr static double POINTER_SLOP = 12;
 
 static int handleLongPressTimer(void* data) {
     const auto gesture_manager = (GestureManager*)data;
@@ -575,7 +582,8 @@ void GestureManager::sendCancelEventsToWindows() {
 
 // @return whether or not to inhibit further actions
 bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
-    static auto const SEND_CANCEL = g_config->sendCancel;
+    static auto const SEND_CANCEL      = g_config->sendCancel;
+    static auto const TOUCH_AS_POINTER = g_config->touchAsPointer;
 
     auto monitor =
         State::monitorState()->query().name(!ev.device->m_boundOutput.empty() ? ev.device->m_boundOutput : "").run();
@@ -592,16 +600,17 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     const auto& monitorSize = this->m_lastTouchedMonitor->m_size;
     this->m_monitorArea     = SMonitorArea{monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
 
-    Pointer::pointerController()->warpTo(
-        Vector2D{
-            monitorPos.x + ev.pos.x * monitorSize.x,
-            monitorPos.y + ev.pos.y * monitorSize.y,
-        }
-    );
+    const Vector2D global = {
+        monitorPos.x + ev.pos.x * monitorSize.x,
+        monitorPos.y + ev.pos.y * monitorSize.y,
+    };
+
+    Pointer::pointerController()->warpTo(global);
 
     g_pInputManager->refocus();
 
-    if (this->m_sGestureState.fingers.size() == 0) {
+    const bool first = this->m_sGestureState.fingers.size() == 0;
+    if (first) {
         this->touchedResources.clear();
         this->activeTrackpadGesture = nullptr;
     }
@@ -635,7 +644,17 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         .pos    = pos,
     };
 
-    return IGestureManager::onTouchDown(gesture_event);
+    const bool block = IGestureManager::onTouchDown(gesture_event);
+
+    if (first) {
+        this->emulatingPointer = TOUCH_AS_POINTER->value() && !block && this->clientIgnoresTouch(global);
+        this->pointerAnchor    = pos;
+    } else {
+        // A second finger is a gesture, or a pinch for a client that cannot see it anyway.
+        this->stopPointerEmulation(ev.timeMs);
+    }
+
+    return block;
 }
 
 bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
@@ -656,6 +675,13 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
     };
 
     const auto BLOCK = IGestureManager::onTouchUp(gesture_event);
+
+    const bool click = this->emulatingPointer && !this->scrollingPointer && !BLOCK;
+    this->stopPointerEmulation(ev.timeMs);
+    if (click) {
+        this->clickPointer(ev.timeMs);
+    }
+
     if (SEND_CANCEL->value()) {
         const auto surface = g_pInputManager->m_touchData.touchFocusSurface;
 
@@ -700,7 +726,91 @@ bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
         .pos    = pos,
     };
 
-    return IGestureManager::onTouchMove(gesture_event) != FindGestureResult::NONE;
+    const bool block = IGestureManager::onTouchMove(gesture_event) != FindGestureResult::NONE;
+
+    if (block) {
+        this->stopPointerEmulation(ev.timeMs);
+    } else if (this->emulatingPointer) {
+        this->movePointerEmulation(ev.timeMs, pos);
+    }
+
+    return block;
+}
+
+// Hit-tested at the touch point: the pointer focus may still describe an earlier position, and a shell surface or
+// the lock screen may cover the window.
+bool GestureManager::clientIgnoresTouch(const Vector2D& pos) const {
+    if (g_pSessionLockManager->isSessionLocked() || !this->m_lastTouchedMonitor) {
+        return false;
+    }
+
+    const auto& hit = Desktop::viewState()->hitTest();
+    Vector2D local;
+    PHLLS found;
+    if (hit.layerPopupSurfaceAt(pos, this->m_lastTouchedMonitor, &local, &found)) {
+        return false;
+    }
+
+    auto& layers = this->m_lastTouchedMonitor->m_layerSurfaceLayers;
+    for (const auto layer : {ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, ZWLR_LAYER_SHELL_V1_LAYER_TOP}) {
+        if (hit.layerSurfaceAt(pos, &layers[layer], &local, &found)) {
+            return false;
+        }
+    }
+
+    const auto window = hit.windowAt(
+        pos, Desktop::View::RESERVED_EXTENTS | Desktop::View::INPUT_EXTENTS | Desktop::View::ALLOW_FLOATING
+    );
+    const auto surface = window ? window->wlSurface()->resource() : nullptr;
+    const auto seat    = surface ? g_pSeatManager->seatResourceForClient(surface->client()) : nullptr;
+
+    return seat && seat->m_touches.empty();
+}
+
+void GestureManager::movePointerEmulation(uint32_t time, const wf::touch::point_t& to) {
+    if (!this->scrollingPointer) {
+        // From here on, so the content does not jump by the slop.
+        if (std::hypot(to.x - this->pointerAnchor.x, to.y - this->pointerAnchor.y) >= POINTER_SLOP) {
+            this->scrollingPointer = true;
+            this->pointerAnchor    = to;
+        }
+        return;
+    }
+
+    // A value of 0 would be an axis stop, and a drag can be purely sideways.
+    if (to.y == this->pointerAnchor.y) {
+        return;
+    }
+
+    // Content follows the finger, as on any touch surface.
+    g_pSeatManager->sendPointerAxis(
+        time, WL_POINTER_AXIS_VERTICAL_SCROLL, this->pointerAnchor.y - to.y, 0, 0, WL_POINTER_AXIS_SOURCE_FINGER,
+        WL_POINTER_AXIS_RELATIVE_DIRECTION_IDENTICAL
+    );
+    g_pSeatManager->sendPointerFrame();
+    this->pointerAnchor = to;
+}
+
+// The pointer is already there: every touch warps it.
+void GestureManager::clickPointer(uint32_t time) {
+    g_pSeatManager->sendPointerButton(time, BTN_LEFT, WL_POINTER_BUTTON_STATE_PRESSED);
+    g_pSeatManager->sendPointerFrame();
+    g_pSeatManager->sendPointerButton(time, BTN_LEFT, WL_POINTER_BUTTON_STATE_RELEASED);
+    g_pSeatManager->sendPointerFrame();
+}
+
+void GestureManager::stopPointerEmulation(uint32_t time) {
+    if (this->scrollingPointer) {
+        // A value of 0 is the axis stop that a finger source owes the client.
+        g_pSeatManager->sendPointerAxis(
+            time, WL_POINTER_AXIS_VERTICAL_SCROLL, 0, 0, 0, WL_POINTER_AXIS_SOURCE_FINGER,
+            WL_POINTER_AXIS_RELATIVE_DIRECTION_IDENTICAL
+        );
+        g_pSeatManager->sendPointerFrame();
+    }
+
+    this->emulatingPointer = false;
+    this->scrollingPointer = false;
 }
 
 SMonitorArea GestureManager::getMonitorArea() const {

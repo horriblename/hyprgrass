@@ -25,10 +25,21 @@ hl.config({
 
             -- in pixels, the distance from the edge that is considered an edge
             edge_margin = 10,
+
+            -- one finger works as the pointer on clients without touch support
+            touch_as_pointer = false,
         }
     }
 })
 ```
+
+### Touch as pointer
+
+Some clients, such as Kitty, never ask for touch input, so touches on them do nothing.
+With `touch_as_pointer`, one finger on such a window works as the pointer: past 12 px a
+drag sends scroll events, otherwise lifting the finger is a left click. A second finger
+ends this, so gestures keep working. Shell surfaces on the Overlay and Top layers and the
+lock screen are left alone.
 
 ### Other options
 

@@ -44,7 +44,7 @@ struct Cfg {
     SP<Config::Values::CIntValue> workspaceSwipeFingers, longPressDelay, edgeMargin;
     SP<Config::Values::CStringValue> workspaceSwipeEdge;
     SP<Config::Values::CFloatValue> sensitivity;
-    SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder;
+    SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder, touchAsPointer;
 
     using INT   = Config::Values::CIntValue;
     using STR   = Config::Values::CStringValue;
@@ -70,6 +70,9 @@ struct Cfg {
           )},
           resizeOnBorder{makeShared<BOOL>(
               "plugin:hyprgrass:resize_on_border_long_press", "Resize window by pressing and holding on borders", true
+          )},
+          touchAsPointer{makeShared<BOOL>(
+              "plugin:hyprgrass:touch_as_pointer", "One finger works as the pointer on clients without touch", false
           )} {}
 };
 
@@ -111,6 +114,16 @@ class GestureManager final : public IGestureManager {
     PHLMONITOR m_lastTouchedMonitor;
     SMonitorArea m_monitorArea;
     wl_event_source* long_press_timer;
+
+    // One finger on a client that never asked for wl_touch.
+    bool emulatingPointer = false;
+    bool scrollingPointer = false;
+    wf::touch::point_t pointerAnchor;
+
+    bool clientIgnoresTouch(const Vector2D& pos) const;
+    void movePointerEmulation(uint32_t time, const wf::touch::point_t& to);
+    void clickPointer(uint32_t time);
+    void stopPointerEmulation(uint32_t time);
     struct {
         bool active = false;
         Config::CCssGapData old_gaps_in;
