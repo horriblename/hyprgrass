@@ -41,7 +41,7 @@ struct SKeybind {
 };
 
 struct Cfg {
-    SP<Config::Values::CIntValue> workspaceSwipeFingers, longPressDelay, edgeMargin;
+    SP<Config::Values::CIntValue> workspaceSwipeFingers, longPressDelay, edgeMargin, holdTouchesDelay;
     SP<Config::Values::CStringValue> workspaceSwipeEdge;
     SP<Config::Values::CFloatValue> sensitivity;
     SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder, holdTouches;
@@ -74,6 +74,9 @@ struct Cfg {
           holdTouches{makeShared<BOOL>(
               "plugin:hyprgrass:hold_touches", "Hold back new touches so the fingers of a gesture never reach the window",
               false
+          )},
+          holdTouchesDelay{makeShared<INT>(
+              "plugin:hyprgrass:hold_touches_delay", "How long a new touch waits for more fingers, in milliseconds", 40
           )} {}
 };
 

@@ -45,10 +45,13 @@ static int handleLongPressTimer(void* data) {
     return 0;
 }
 
-// The fingers of a gesture land within about 25 ms of each other; a touch that moves this far (logical px)
-// first is a scroll or a pinch, not a gesture waiting for more fingers.
-constexpr static uint32_t HOLD_MS   = 40;
-constexpr static double   HOLD_SLOP = 12;
+// A touch that moves this far (logical px) first is a scroll or a pinch, not a gesture waiting for more fingers.
+constexpr static double HOLD_SLOP = 12;
+
+// A timer set to 0 is disarmed, and the touch would wait until it lifts.
+static int64_t holdDelay() {
+    return std::max<int64_t>(1, g_config->holdTouchesDelay->value());
+}
 
 static int handleHoldTimer(void* data) {
     ((GestureManager*)data)->onHoldTimeout();
@@ -743,9 +746,9 @@ bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
     return this->holdTouchMove(ev, block);
 }
 
-// Touches on shell surfaces (Overlay and Top layers: keyboard, dock, bar, panels) and on the lock screen
-// do not wait: they handle a cancel themselves and keep their latency. Hit-tested at the touch point, since
-// the pointer focus may still describe an earlier position.
+// Touches on shell surfaces (Overlay and Top layers: keyboard, dock, bar, panels) and on the lock screen do not
+// wait: they keep their latency, and fast typing on an on-screen keyboard can overlap like a gesture. Hit-tested
+// at the touch point, since the pointer focus may still describe an earlier position.
 bool GestureManager::shouldHoldTouches(const Vector2D& pos) const {
     if (g_pSessionLockManager->isSessionLocked() || !this->m_lastTouchedMonitor) {
         return false;
@@ -790,7 +793,7 @@ bool GestureManager::holdTouchDown(const ITouch::SDownEvent& ev, bool first, boo
         }
 
         this->heldTouches.push_back(ev);
-        wl_event_source_timer_update(this->holdTimer, HOLD_MS);
+        wl_event_source_timer_update(this->holdTimer, holdDelay());
         return true;
     }
 
@@ -885,7 +888,7 @@ void GestureManager::onHoldTimeout() {
     // press delay they belong to the window after all.
     if (this->m_sGestureState.fingers.size() >= 2 && !this->holdExtended) {
         this->holdExtended = true;
-        const auto rest = std::max<int64_t>(1, *LONG_PRESS_DELAY->m_val.ptr() + 100 - HOLD_MS);
+        const auto rest = std::max<int64_t>(1, *LONG_PRESS_DELAY->m_val.ptr() + 100 - holdDelay());
         wl_event_source_timer_update(this->holdTimer, rest);
         return;
     }
