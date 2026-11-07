@@ -60,6 +60,9 @@ struct Cfg {
               "plugin:hyprgrass:edge_margin", "Distance from edge of screen to consider for edge gestures, in pixels",
               10
           )},
+          holdTouchesDelay{makeShared<INT>(
+              "plugin:hyprgrass:hold_touches_delay", "How long a new touch waits for more fingers, in milliseconds", 40
+          )},
           workspaceSwipeEdge{makeShared<STR>(
               "plugin:hyprgrass:workspace_swipe_edge", "Edge to swipe from to trigger workspace swipe", ""
           )},
@@ -72,11 +75,8 @@ struct Cfg {
               "plugin:hyprgrass:resize_on_border_long_press", "Resize window by pressing and holding on borders", true
           )},
           holdTouches{makeShared<BOOL>(
-              "plugin:hyprgrass:hold_touches", "Hold back new touches so the fingers of a gesture never reach the window",
-              false
-          )},
-          holdTouchesDelay{makeShared<INT>(
-              "plugin:hyprgrass:hold_touches_delay", "How long a new touch waits for more fingers, in milliseconds", 40
+              "plugin:hyprgrass:hold_touches",
+              "Hold back new touches so the fingers of a gesture never reach the window", false
           )} {}
 };
 
@@ -126,11 +126,31 @@ class GestureManager final : public IGestureManager {
     // lift, move past a tap or outlast the hold.
     wl_event_source* holdTimer;
     std::vector<ITouch::SDownEvent> heldTouches;
-    bool holdingTouches       = false;
-    bool holdExtended         = false;
-    bool touchesClaimed       = false;
-    bool touchesDelivered     = false;
-    bool replayingHeldTouches = false;
+
+    // State of the hold_touches machinery for the current touch sequence.
+    // "held" touches are kept back from the window; "delivered" touches have
+    // reached it; "claimed" means a gesture took over the sequence.
+    enum class HoldState {
+        DELIVERED,           // touches forwarded to the window normally
+        UNDELIVERED,         // idle after an undelivered claim/hold; window never got them
+        HOLDING,             // touches held back, waiting to decide
+        HOLDING_EXTENDED,    // held, extended wait for two-finger pinch/scroll/long press
+        CLAIMED_DELIVERED,   // gesture claimed the sequence after the window saw touches (cancel sent)
+        CLAIMED_UNDELIVERED, // gesture claimed the sequence before the window saw touches
+        REPLAYING,           // held touches being replayed to the window
+    };
+    HoldState holdState = HoldState::DELIVERED;
+
+    bool isHolding() const {
+        return holdState == HoldState::HOLDING || holdState == HoldState::HOLDING_EXTENDED;
+    }
+    bool isClaimed() const {
+        return holdState == HoldState::CLAIMED_DELIVERED || holdState == HoldState::CLAIMED_UNDELIVERED;
+    }
+    bool isDelivered() const {
+        return holdState == HoldState::DELIVERED || holdState == HoldState::CLAIMED_DELIVERED ||
+               holdState == HoldState::REPLAYING;
+    }
 
     bool shouldHoldTouches(const Vector2D& pos) const;
     bool holdTouchDown(const ITouch::SDownEvent& ev, bool first, bool block);

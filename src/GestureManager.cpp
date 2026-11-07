@@ -1,9 +1,11 @@
 #include "GestureManager.hpp"
 #include "HyprLogger.hpp"
 #include "config/lua/LuaRef.hpp"
+#include "debug/log/Logger.hpp"
 #include "gestures/Gestures.hpp"
 
 #define private public
+#include <hyprland/protocols/wlr-layer-shell-unstable-v1.hpp>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
@@ -21,7 +23,6 @@
 #include <hyprland/src/managers/fullscreen/FullscreenController.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/UnifiedWorkspaceSwipeGesture.hpp>
-#include <hyprland/protocols/wlr-layer-shell-unstable-v1.hpp>
 #include <hyprland/src/output/Monitor.hpp>
 #include <hyprland/src/plugins/PluginSystem.hpp>
 #include <hyprland/src/pointer/PointerController.hpp>
@@ -52,7 +53,6 @@ constexpr static double HOLD_SLOP = 12;
 static int64_t holdDelay() {
     return std::max<int64_t>(1, g_config->holdTouchesDelay->value());
 }
-
 static int handleHoldTimer(void* data) {
     ((GestureManager*)data)->onHoldTimeout();
     return 0;
@@ -588,7 +588,7 @@ void GestureManager::sendCancelEventsToWindows() {
     static auto const SEND_CANCEL = g_config->sendCancel;
 
     // Nothing of this sequence reached a window, and the resources may still list an earlier one.
-    if (!SEND_CANCEL->value() || !this->touchesDelivered) {
+    if (!SEND_CANCEL->value() || !this->isDelivered()) {
         return;
     }
 
@@ -605,7 +605,7 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     static auto const SEND_CANCEL = g_config->sendCancel;
 
     // Held touches replayed to the window: already part of the gesture state.
-    if (this->replayingHeldTouches) {
+    if (this->holdState == HoldState::REPLAYING) {
         return false;
     }
 
@@ -673,13 +673,13 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
 }
 
 bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
-    if (this->replayingHeldTouches) {
+    if (this->holdState == HoldState::REPLAYING) {
         return false;
     }
 
     // While touches are held the compositor still points at the surface of an earlier sequence, which
     // forwardTouchUp checks: only a recognised gesture decides.
-    const bool holding = this->holdingTouches;
+    const bool holding = this->isHolding();
     const bool block   = this->forwardTouchUp(ev);
     return this->holdTouchUp(holding ? this->eventForwardingInhibited() : block);
 }
@@ -732,7 +732,7 @@ bool GestureManager::forwardTouchUp(ITouch::SUpEvent ev) {
 }
 
 bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
-    if (this->replayingHeldTouches) {
+    if (this->holdState == HoldState::REPLAYING) {
         return false;
     }
 
@@ -784,19 +784,17 @@ bool GestureManager::holdTouchDown(const ITouch::SDownEvent& ev, bool first, boo
     static auto const HOLD_TOUCHES = g_config->holdTouches;
 
     if (!HOLD_TOUCHES->value()) {
-        this->touchesDelivered = true;
+        this->holdState = HoldState::DELIVERED;
         return block;
     }
 
     if (first) {
         this->heldTouches.clear();
-        this->holdExtended   = false;
-        this->touchesClaimed = false;
-        const auto monitor   = this->m_lastTouchedMonitor;
-        const auto global    = monitor ? monitor->m_position + ev.pos * monitor->m_size : Vector2D{};
-        this->holdingTouches = !block && this->shouldHoldTouches(global);
-        this->touchesDelivered = !this->holdingTouches;
-        if (!this->holdingTouches) {
+        const auto monitor    = this->m_lastTouchedMonitor;
+        const auto global     = monitor ? monitor->m_position + ev.pos * monitor->m_size : Vector2D{};
+        const bool shouldHold = !block && this->shouldHoldTouches(global);
+        this->holdState       = shouldHold ? HoldState::HOLDING : HoldState::DELIVERED;
+        if (!shouldHold) {
             return block;
         }
 
@@ -805,7 +803,7 @@ bool GestureManager::holdTouchDown(const ITouch::SDownEvent& ev, bool first, boo
         return true;
     }
 
-    if (this->touchesClaimed) {
+    if (this->isClaimed()) {
         return true;
     }
 
@@ -815,7 +813,7 @@ bool GestureManager::holdTouchDown(const ITouch::SDownEvent& ev, bool first, boo
         return true;
     }
 
-    if (this->holdingTouches) {
+    if (this->isHolding()) {
         this->heldTouches.push_back(ev);
         return true;
     }
@@ -825,11 +823,11 @@ bool GestureManager::holdTouchDown(const ITouch::SDownEvent& ev, bool first, boo
 
 // @return whether this touch motion should be blocked from forwarding to the client
 bool GestureManager::holdTouchMove(const ITouch::SMotionEvent& ev, bool block) {
-    if (this->touchesClaimed) {
+    if (this->isClaimed()) {
         return true;
     }
 
-    if (!this->holdingTouches) {
+    if (!this->isHolding()) {
         return block;
     }
 
@@ -857,9 +855,9 @@ bool GestureManager::holdTouchMove(const ITouch::SMotionEvent& ev, bool block) {
 // @return whether this touch up should be blocked from forwarding to the client
 bool GestureManager::holdTouchUp(bool block) {
     bool result = block;
-    if (this->touchesClaimed) {
+    if (this->isClaimed()) {
         result = true;
-    } else if (this->holdingTouches) {
+    } else if (this->isHolding()) {
         if (block) {
             this->claimTouches();
             result = true;
@@ -873,8 +871,11 @@ bool GestureManager::holdTouchUp(bool block) {
     if (this->m_sGestureState.fingers.empty()) {
         wl_event_source_timer_update(this->holdTimer, 0);
         this->heldTouches.clear();
-        this->holdingTouches = false;
-        this->touchesClaimed = false;
+        if (this->isDelivered()) {
+            this->holdState = HoldState::DELIVERED;
+        } else {
+            this->holdState = HoldState::UNDELIVERED;
+        }
     }
 
     return result;
@@ -883,7 +884,7 @@ bool GestureManager::holdTouchUp(bool block) {
 void GestureManager::onHoldTimeout() {
     static auto const LONG_PRESS_DELAY = g_config->longPressDelay;
 
-    if (!this->holdingTouches) {
+    if (!this->isHolding()) {
         return;
     }
 
@@ -894,8 +895,8 @@ void GestureManager::onHoldTimeout() {
 
     // Two fingers wait for a pinch or scroll (movement), a lift or the two-finger long press; past the long
     // press delay they belong to the window after all.
-    if (this->m_sGestureState.fingers.size() >= 2 && !this->holdExtended) {
-        this->holdExtended = true;
+    if (this->m_sGestureState.fingers.size() >= 2 && this->holdState == HoldState::HOLDING) {
+        this->holdState = HoldState::HOLDING_EXTENDED;
         const auto rest = std::max<int64_t>(1, *LONG_PRESS_DELAY->m_val.ptr() + 100 - holdDelay());
         wl_event_source_timer_update(this->holdTimer, rest);
         return;
@@ -908,23 +909,20 @@ void GestureManager::onHoldTimeout() {
 void GestureManager::claimTouches() {
     wl_event_source_timer_update(this->holdTimer, 0);
     this->heldTouches.clear();
-    this->holdingTouches = false;
-    this->touchesClaimed = true;
+    this->holdState = this->isDelivered() ? HoldState::CLAIMED_DELIVERED : HoldState::CLAIMED_UNDELIVERED;
     this->sendCancelEventsToWindows();
 }
 
 void GestureManager::releaseHeldTouches() {
     wl_event_source_timer_update(this->holdTimer, 0);
-    this->holdingTouches   = false;
-    this->touchesDelivered = true;
+    this->holdState = HoldState::REPLAYING;
 
-    const auto held            = std::move(this->heldTouches);
-    this->heldTouches          = {};
-    this->replayingHeldTouches = true;
+    const auto held   = std::move(this->heldTouches);
+    this->heldTouches = {};
     for (const auto& down : held) {
         g_pInputManager->onTouchDown(down);
     }
-    this->replayingHeldTouches = false;
+    this->holdState = HoldState::DELIVERED;
 
     if (held.empty()) {
         return;
