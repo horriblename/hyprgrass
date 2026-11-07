@@ -60,7 +60,7 @@ class IGestureManager {
     }
 
     // indicates whether events should be blocked from forwarding to client
-    // windows/surfaces
+    // windows/surfaces. This also means a gesture is detected.
     bool eventForwardingInhibited() const {
         return inhibitTouchEvents;
     };
