@@ -129,7 +129,8 @@ class GestureManager final : public IGestureManager {
 
     // State of the hold_touches machinery for the current touch sequence.
     // "held" touches are kept back from the window; "delivered" touches have
-    // reached it; "claimed" means a gesture took over the sequence.
+    // reached it; "claimed" means we took over the sequence, and will not be
+    // sent to the window.
     enum class HoldState {
         DELIVERED,           // touches forwarded to the window normally
         UNDELIVERED,         // idle after an undelivered claim/hold; window never got them

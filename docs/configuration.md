@@ -26,8 +26,9 @@ hl.config({
             -- in pixels, the distance from the edge that is considered an edge
             edge_margin = 10,
 
-            -- keep the fingers of a gesture from reaching the window under them,
-            -- see "Holding touches" below
+            -- Delay sending touch events to apps for a short duration, or
+            -- until we know for sure it's not a Hyprgrass gesture. See 
+            -- the "Holding touches" section
             hold_touches = true,
             hold_touches_delay = 40,
         }
