@@ -616,19 +616,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->holdTouches);
     HyprlandAPI::addConfigValueV2(PHANDLE, g_config->holdTouchesDelay);
 
-    static auto P0          = Event::bus()->m_events.config.preReload.listen([&] { onPreConfigReload(); });
-    static auto HOOK_RELOAD = Event::bus()->m_events.config.reloaded.listen([&] {
-        if (g_config->workspaceSwipeFingers->value() != -1) {
-            HyprlandAPI::addNotification(
-                PHANDLE, "config: plugin.hyprgrass.workspace_swipe_fingers is deprecated", warn_color, 5000
-            );
-        }
-        if (g_config->workspaceSwipeEdge->value() != "") {
-            HyprlandAPI::addNotification(
-                PHANDLE, "config: plugin.hyprgrass.workspace_swipe_edge is deprecated", warn_color, 5000
-            );
-        }
-    });
+    static auto P0 = Event::bus()->m_events.config.preReload.listen([&] { onPreConfigReload(); });
 
     HyprlandAPI::addDispatcherV2(PHANDLE, "hyprgrass:debug:binds", listInternalBinds);
 
