@@ -106,9 +106,7 @@ FindGestureResult GestureManager::handleCompletedGesture(const CompletedGestureE
 }
 
 bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
-    static auto const WORKSPACE_SWIPE_FINGERS = g_config->workspaceSwipeFingers;
-    static auto const WORKSPACE_SWIPE_EDGE    = g_config->workspaceSwipeEdge;
-    static auto const RESIZE_LONG_PRESS       = g_config->resizeOnBorder;
+    static auto const RESIZE_LONG_PRESS = g_config->resizeOnBorder;
 
     static auto PBORDERSIZE       = CConfigValue<Config::INTEGER>("general:border_size");
     static auto PBORDERGRABEXTEND = CConfigValue<Config::INTEGER>("general:extend_border_grab_area");
@@ -116,42 +114,10 @@ bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
 
     LOG(Log::DEBUG, "[hyprgrass] Drag gesture begin: {}", gev.to_string());
 
-    auto const workspace_swipe_edge_str = WORKSPACE_SWIPE_EDGE->value();
-
     switch (gev.type) {
-        case GestureType::SWIPE: {
-            if (this->trackpadGestureBegin(gev))
-                return true;
-
-            if (WORKSPACE_SWIPE_FINGERS->value() != gev.finger_count) {
-                return false;
-            }
-
-            if (this->handleWorkspaceSwipe(gev.direction))
-                return true;
-
-            return false;
-        }
-
-        case GestureType::EDGE_SWIPE: {
-            if (workspace_swipe_edge_str == "l" && gev.edge_origin == GESTURE_DIRECTION_LEFT) {
-                return this->handleWorkspaceSwipe(gev.direction);
-            }
-            if (workspace_swipe_edge_str == "r" && gev.edge_origin == GESTURE_DIRECTION_RIGHT) {
-                return this->handleWorkspaceSwipe(gev.direction);
-            }
-            if (workspace_swipe_edge_str == "u" && gev.edge_origin == GESTURE_DIRECTION_UP) {
-                return this->handleWorkspaceSwipe(gev.direction);
-            }
-            if (workspace_swipe_edge_str == "d" && gev.edge_origin == GESTURE_DIRECTION_DOWN) {
-                return this->handleWorkspaceSwipe(gev.direction);
-            }
-
-            if (this->trackpadGestureBegin(gev))
-                return true;
-
-            return false;
-        }
+        case GestureType::SWIPE:
+        case GestureType::EDGE_SWIPE:
+            return this->trackpadGestureBegin(gev);
 
         case GestureType::LONG_PRESS:
             if (g_pSessionLockManager->isSessionLocked()) {
@@ -433,29 +399,6 @@ void GestureManager::handleDragGestureEnd(const DragGestureEvent& gev) {
             // tap does not trigger drag
             break;
     }
-}
-
-bool GestureManager::handleWorkspaceSwipe(const GestureDirection direction) {
-    const bool VERTANIMS =
-        Desktop::focusState()->monitor()->m_activeWorkspace->m_renderOffset->getConfig()->pValues->internalStyle ==
-            "slidevert" ||
-        Desktop::focusState()
-            ->monitor()
-            ->m_activeWorkspace->m_renderOffset->getConfig()
-            ->pValues->internalStyle.starts_with("slidevert");
-
-    const auto horizontal           = GESTURE_DIRECTION_LEFT | GESTURE_DIRECTION_RIGHT;
-    const auto vertical             = GESTURE_DIRECTION_UP | GESTURE_DIRECTION_DOWN;
-    const auto workspace_directions = VERTANIMS ? vertical : horizontal;
-    const auto anti_directions      = VERTANIMS ? horizontal : vertical;
-
-    if (direction & workspace_directions && !(direction & anti_directions)) {
-        this->workspaceSwipeActive = true;
-        g_pUnifiedWorkspaceSwipe->begin();
-        return true;
-    }
-
-    return false;
 }
 
 void GestureManager::updateWorkspaceSwipe() {
