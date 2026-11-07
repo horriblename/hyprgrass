@@ -41,24 +41,31 @@ struct SKeybind {
 };
 
 struct Cfg {
-    SP<Config::Values::CIntValue> workspaceSwipeFingers, longPressDelay, edgeMargin;
+    SP<Config::Values::CIntValue> workspaceSwipeFingers, longPressDelay, edgeMargin, holdTouchesDelay;
     SP<Config::Values::CStringValue> workspaceSwipeEdge;
     SP<Config::Values::CFloatValue> sensitivity;
-    SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder;
+    SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder, holdTouches;
 
-    using INT   = Config::Values::CIntValue;
-    using STR   = Config::Values::CStringValue;
-    using FLOAT = Config::Values::CFloatValue;
-    using BOOL  = Config::Values::CBoolValue;
+    using INT              = Config::Values::CIntValue;
+    using STR              = Config::Values::CStringValue;
+    using FLOAT            = Config::Values::CFloatValue;
+    using BOOL             = Config::Values::CBoolValue;
+    using SIntValueOptions = Config::Values::SIntValueOptions;
     Cfg()
         : // config options
           workspaceSwipeFingers{makeShared<INT>(
               "plugin:hyprgrass:workspace_swipe_fingers", "Number of fingers to trigger workspace swipe", -1
           )},
-          longPressDelay{makeShared<INT>("plugin:hyprgrass:long_press_delay", "Long press delay in milliseconds", 400)},
+          longPressDelay{makeShared<INT>(
+              "plugin:hyprgrass:long_press_delay", "Long press delay in milliseconds", 400, SIntValueOptions{.min = 1}
+          )},
           edgeMargin{makeShared<INT>(
               "plugin:hyprgrass:edge_margin", "Distance from edge of screen to consider for edge gestures, in pixels",
               10
+          )},
+          holdTouchesDelay{makeShared<INT>(
+              "plugin:hyprgrass:hold_touches_delay", "How long a new touch waits for more fingers, in milliseconds", 40,
+              SIntValueOptions{.min = 1}
           )},
           workspaceSwipeEdge{makeShared<STR>(
               "plugin:hyprgrass:workspace_swipe_edge", "Edge to swipe from to trigger workspace swipe", ""
@@ -70,6 +77,10 @@ struct Cfg {
           )},
           resizeOnBorder{makeShared<BOOL>(
               "plugin:hyprgrass:resize_on_border_long_press", "Resize window by pressing and holding on borders", true
+          )},
+          holdTouches{makeShared<BOOL>(
+              "plugin:hyprgrass:hold_touches",
+              "Hold back new touches so the fingers of a gesture never reach the window", true
           )} {}
 };
 
@@ -94,6 +105,8 @@ class GestureManager final : public IGestureManager {
 
     void onLongPressTimeout(uint32_t time_msec);
 
+    void onHoldTimeout();
+
     const wf::touch::gesture_state_t& getGestureState() const {
         return this->m_sGestureState;
     }
@@ -111,6 +124,46 @@ class GestureManager final : public IGestureManager {
     PHLMONITOR m_lastTouchedMonitor;
     SMonitorArea m_monitorArea;
     wl_event_source* long_press_timer;
+
+    // A new touch on a window is held back until it is clearly not a multi-finger gesture, so the window
+    // never sees the fingers of one: three or more claim the sequence, one or two are replayed once they
+    // lift, move past a tap or outlast the hold.
+    wl_event_source* holdTimer;
+    std::vector<ITouch::SDownEvent> heldTouches;
+
+    // State of the hold_touches machinery for the current touch sequence.
+    // "held" touches are kept back from the window; "delivered" touches have
+    // reached it; "claimed" means we took over the sequence, and will not be
+    // sent to the window.
+    enum class HoldState {
+        DELIVERED,           // touches forwarded to the window normally
+        UNDELIVERED,         // idle after an undelivered claim/hold; window never got them
+        HOLDING,             // touches held back, waiting to decide
+        CLAIMED_DELIVERED,   // gesture claimed the sequence after the window saw touches (cancel sent)
+        CLAIMED_UNDELIVERED, // gesture claimed the sequence before the window saw touches
+        REPLAYING,           // held touches being replayed to the window
+    };
+    HoldState holdState = HoldState::DELIVERED;
+
+    bool isHolding() const {
+        return holdState == HoldState::HOLDING;
+    }
+    bool isClaimed() const {
+        return holdState == HoldState::CLAIMED_DELIVERED || holdState == HoldState::CLAIMED_UNDELIVERED;
+    }
+    bool isDelivered() const {
+        return holdState == HoldState::DELIVERED || holdState == HoldState::CLAIMED_DELIVERED ||
+               holdState == HoldState::REPLAYING;
+    }
+
+    bool shouldHoldTouches(const Vector2D& pos) const;
+    bool holdTouchDown(const ITouch::SDownEvent& ev, bool first, bool block);
+    bool holdTouchMove(const ITouch::SMotionEvent& ev, bool block);
+    bool holdTouchUp(bool block);
+    void claimTouches();
+    void releaseHeldTouches();
+    bool forwardTouchUp(ITouch::SUpEvent ev);
+
     struct {
         bool active = false;
         Config::CCssGapData old_gaps_in;

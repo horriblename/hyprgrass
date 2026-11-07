@@ -25,10 +25,29 @@ hl.config({
 
             -- in pixels, the distance from the edge that is considered an edge
             edge_margin = 10,
+
+            -- Delay sending touch events to apps for a short duration, or
+            -- until we know for sure it's not a Hyprgrass gesture. See 
+            -- the "Holding touches" section
+            hold_touches = true,
+            hold_touches_delay = 40,
         }
     }
 })
 ```
+
+### Holding touches
+
+Many apps don't handle `wl_touch.cancel` events properly, so by default
+Hyprgrass will delay sending touch events to windows for a short duration (see
+`hold_touches_delay`), or until we are sure it's definitely not a Hyprgrass
+gesture. To disable this completely set `hold_touches` to false.
+
+Caveats:
+
+- Three or more fingers within a short duration is always considered a Hyprgrass
+  gesture and never sent to the window.
+- Touches on Overlay and Top layer surfaces and on the lock screen are not held.
 
 ### Other options
 
