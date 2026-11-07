@@ -571,14 +571,12 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     const auto& monitorSize = this->m_lastTouchedMonitor->m_size;
     this->m_monitorArea     = SMonitorArea{monitorPos.x, monitorPos.y, monitorSize.x, monitorSize.y};
 
-    Pointer::pointerController()->warpTo(
+    g_pInputManager->refocus(
         Vector2D{
             monitorPos.x + ev.pos.x * monitorSize.x,
             monitorPos.y + ev.pos.y * monitorSize.y,
         }
     );
-
-    g_pInputManager->refocus();
 
     const bool first = this->m_sGestureState.fingers.size() == 0;
     if (first) {
