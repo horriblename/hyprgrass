@@ -43,7 +43,7 @@ struct SKeybind {
 struct Cfg {
     SP<Config::Values::CIntValue> longPressDelay, edgeMargin, holdTouchesDelay;
     SP<Config::Values::CFloatValue> sensitivity;
-    SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder, holdTouches;
+    SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder, holdTouches, touchAsPointer;
 
     using INT              = Config::Values::CIntValue;
     using FLOAT            = Config::Values::CFloatValue;
@@ -73,6 +73,9 @@ struct Cfg {
           holdTouches{makeShared<BOOL>(
               "plugin:hyprgrass:hold_touches",
               "Hold back new touches so the fingers of a gesture never reach the window", true
+          )},
+          touchAsPointer{makeShared<BOOL>(
+              "plugin:hyprgrass:touch_as_pointer", "One finger works as the pointer on clients without touch", false
           )} {}
 };
 
@@ -155,6 +158,16 @@ class GestureManager final : public IGestureManager {
     void claimTouches();
     void releaseHeldTouches();
     bool forwardTouchUp(ITouch::SUpEvent ev);
+
+    // One finger on a client that never asked for wl_touch.
+    bool emulatingPointer = false;
+    bool scrollingPointer = false;
+    wf::touch::point_t pointerAnchor;
+
+    bool clientIgnoresTouch(const Vector2D& pos) const;
+    void movePointerEmulation(uint32_t time, const wf::touch::point_t& to);
+    void clickPointer(uint32_t time);
+    void stopPointerEmulation(uint32_t time);
 
     struct {
         bool active = false;

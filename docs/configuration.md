@@ -31,6 +31,9 @@ hl.config({
             -- the "Holding touches" section
             hold_touches = true,
             hold_touches_delay = 40,
+
+            -- one finger works as the pointer on clients without touch support
+            touch_as_pointer = false,
         }
     }
 })
@@ -48,6 +51,14 @@ Caveats:
 - Three or more fingers within a short duration is always considered a Hyprgrass
   gesture and never sent to the window.
 - Touches on Overlay and Top layer surfaces and on the lock screen are not held.
+
+### Touch as pointer
+
+Some clients, such as Kitty, never ask for touch input, so touches on them do nothing.
+With `touch_as_pointer`, one finger on such a window works as the pointer: past 12 px a
+drag sends scroll events, otherwise lifting the finger is a left click. A second finger
+ends this, so gestures keep working. Shell surfaces on the Overlay and Top layers and the
+lock screen are left alone.
 
 ### Other options
 
