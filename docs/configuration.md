@@ -28,7 +28,7 @@ hl.config({
 
             -- keep the fingers of a gesture from reaching the window under them,
             -- see "Holding touches" below
-            hold_touches = false,
+            hold_touches = true,
             hold_touches_delay = 40,
         }
     }
@@ -37,20 +37,16 @@ hl.config({
 
 ### Holding touches
 
-Hyprgrass cancels a touch once it recognizes a gesture, so until then the window sees
-its first fingers. Most apps ignore a cancelled touch, but some already act on the start
-of it: the YouTube player reacts to swipes this way.
+Many apps don't handle `wl_touch.cancel` events properly, so by default
+Hyprgrass will delay sending touch events to windows for a short duration (see
+`hold_touches_delay`), or until we are sure it's definitely not a Hyprgrass
+gesture. To disable this completely set `hold_touches` to false.
 
-With `hold_touches`, a new touch on a window waits before being delivered:
+Caveats:
 
-- Three or more fingers belong to the compositor: the window sees nothing, even if no
-  gesture follows.
-- One finger is delivered after `hold_touches_delay` (40 ms by default), or at once if it
-  lifts or moves 12 px.
-- Two fingers wait for a two-finger long press, so a long press stays invisible too. They
-  are delivered if they lift, move 12 px, or outlast `long_press_delay` by 100 ms.
-
-Touches on Overlay and Top layer surfaces and on the lock screen are not held.
+- Three or more fingers within a short duration is always considered a Hyprgrass
+  gesture and never sent to the window.
+- Touches on Overlay and Top layer surfaces and on the lock screen are not held.
 
 ### Other options
 

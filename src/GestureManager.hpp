@@ -76,7 +76,7 @@ struct Cfg {
           )},
           holdTouches{makeShared<BOOL>(
               "plugin:hyprgrass:hold_touches",
-              "Hold back new touches so the fingers of a gesture never reach the window", false
+              "Hold back new touches so the fingers of a gesture never reach the window", true
           )} {}
 };
 
