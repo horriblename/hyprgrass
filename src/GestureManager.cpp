@@ -347,7 +347,15 @@ FindGestureResult GestureManager::handleGestureBind(std::string bind, GestureEve
     return found;
 }
 
-void GestureManager::handleCancelledGesture() {}
+void GestureManager::handleCancelledGesture() {
+    if (this->isHolding()) {
+        if (this->eventForwardingInhibited()) {
+            this->claimTouches();
+        } else {
+            this->releaseHeldTouches();
+        }
+    }
+}
 
 void GestureManager::dragGestureUpdate(const wf::touch::gesture_event_t& ev) {
     if (!this->getActiveDragGesture().has_value()) {
@@ -893,12 +901,10 @@ void GestureManager::onHoldTimeout() {
         return;
     }
 
-    // Two fingers wait for a pinch or scroll (movement), a lift or the two-finger long press; past the long
-    // press delay they belong to the window after all.
-    if (this->m_sGestureState.fingers.size() >= 2 && this->holdState == HoldState::HOLDING) {
-        this->holdState = HoldState::HOLDING_EXTENDED;
-        const auto rest = std::max<int64_t>(1, *LONG_PRESS_DELAY->m_val.ptr() + 100 - holdDelay());
-        wl_event_source_timer_update(this->holdTimer, rest);
+    // Two fingers: defer the decision to the long-press timer (handleLongPressTimer), which resolves
+    // the touch as either a claim (long press / gesture) or a normal delivery. Only fall back to releasing
+    // here when the long-press delay is too short to outlive the initial hold.
+    if (this->m_sGestureState.fingers.size() == 2 && *LONG_PRESS_DELAY->m_val.ptr() > holdDelay()) {
         return;
     }
 
@@ -948,20 +954,26 @@ SMonitorArea GestureManager::getMonitorArea() const {
 }
 
 void GestureManager::onLongPressTimeout(uint32_t time_msec) {
-    if (this->m_sGestureState.fingers.empty()) {
-        return;
+    if (!this->m_sGestureState.fingers.empty()) {
+        const auto finger = this->m_sGestureState.fingers.begin();
+
+        const wf::touch::gesture_event_t touch_event = {
+            .type   = wf::touch::EVENT_TYPE_MOTION,
+            .time   = time_msec,
+            .finger = finger->first,
+            .pos    = finger->second.current,
+        };
+
+        IGestureManager::onTouchMove(touch_event);
     }
 
-    const auto finger = this->m_sGestureState.fingers.begin();
-
-    const wf::touch::gesture_event_t touch_event = {
-        .type   = wf::touch::EVENT_TYPE_MOTION,
-        .time   = time_msec,
-        .finger = finger->first,
-        .pos    = finger->second.current,
-    };
-
-    IGestureManager::onTouchMove(touch_event);
+    if (this->isHolding()) {
+        if (this->eventForwardingInhibited()) {
+            this->claimTouches();
+        } else {
+            this->releaseHeldTouches();
+        }
+    }
 }
 
 wf::touch::point_t GestureManager::wlrTouchEventPositionAsPixels(double x, double y) const {

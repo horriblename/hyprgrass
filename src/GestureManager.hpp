@@ -134,7 +134,6 @@ class GestureManager final : public IGestureManager {
         DELIVERED,           // touches forwarded to the window normally
         UNDELIVERED,         // idle after an undelivered claim/hold; window never got them
         HOLDING,             // touches held back, waiting to decide
-        HOLDING_EXTENDED,    // held, extended wait for two-finger pinch/scroll/long press
         CLAIMED_DELIVERED,   // gesture claimed the sequence after the window saw touches (cancel sent)
         CLAIMED_UNDELIVERED, // gesture claimed the sequence before the window saw touches
         REPLAYING,           // held touches being replayed to the window
@@ -142,7 +141,7 @@ class GestureManager final : public IGestureManager {
     HoldState holdState = HoldState::DELIVERED;
 
     bool isHolding() const {
-        return holdState == HoldState::HOLDING || holdState == HoldState::HOLDING_EXTENDED;
+        return holdState == HoldState::HOLDING;
     }
     bool isClaimed() const {
         return holdState == HoldState::CLAIMED_DELIVERED || holdState == HoldState::CLAIMED_UNDELIVERED;
