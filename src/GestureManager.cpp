@@ -49,10 +49,6 @@ static int handleLongPressTimer(void* data) {
 // A touch that moves this far (logical px) first is a scroll or a pinch, not a gesture waiting for more fingers.
 constexpr static double HOLD_SLOP = 12;
 
-// A timer set to 0 is disarmed, and the touch would wait until it lifts.
-static int64_t holdDelay() {
-    return std::max<int64_t>(1, g_config->holdTouchesDelay->value());
-}
 static int handleHoldTimer(void* data) {
     ((GestureManager*)data)->onHoldTimeout();
     return 0;
@@ -790,6 +786,7 @@ bool GestureManager::shouldHoldTouches(const Vector2D& pos) const {
 // @return whether this touch down should be blocked from forwarding to the client
 bool GestureManager::holdTouchDown(const ITouch::SDownEvent& ev, bool first, bool block) {
     static auto const HOLD_TOUCHES = g_config->holdTouches;
+    static auto const HOLD_DELAY   = g_config->holdTouchesDelay;
 
     if (!HOLD_TOUCHES->value()) {
         this->holdState = HoldState::DELIVERED;
@@ -807,7 +804,7 @@ bool GestureManager::holdTouchDown(const ITouch::SDownEvent& ev, bool first, boo
         }
 
         this->heldTouches.push_back(ev);
-        wl_event_source_timer_update(this->holdTimer, holdDelay());
+        wl_event_source_timer_update(this->holdTimer, HOLD_DELAY->value());
         return true;
     }
 
@@ -891,6 +888,7 @@ bool GestureManager::holdTouchUp(bool block) {
 
 void GestureManager::onHoldTimeout() {
     static auto const LONG_PRESS_DELAY = g_config->longPressDelay;
+    static auto const HOLD_DELAY       = g_config->holdTouchesDelay;
 
     if (!this->isHolding()) {
         return;
@@ -904,7 +902,7 @@ void GestureManager::onHoldTimeout() {
     // Two fingers: defer the decision to the long-press timer (handleLongPressTimer), which resolves
     // the touch as either a claim (long press / gesture) or a normal delivery. Only fall back to releasing
     // here when the long-press delay is too short to outlive the initial hold.
-    if (this->m_sGestureState.fingers.size() == 2 && *LONG_PRESS_DELAY->m_val.ptr() > holdDelay()) {
+    if (this->m_sGestureState.fingers.size() == 2 && *LONG_PRESS_DELAY->m_val.ptr() > HOLD_DELAY->value()) {
         return;
     }
 

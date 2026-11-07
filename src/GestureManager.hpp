@@ -46,22 +46,26 @@ struct Cfg {
     SP<Config::Values::CFloatValue> sensitivity;
     SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder, holdTouches;
 
-    using INT   = Config::Values::CIntValue;
-    using STR   = Config::Values::CStringValue;
-    using FLOAT = Config::Values::CFloatValue;
-    using BOOL  = Config::Values::CBoolValue;
+    using INT              = Config::Values::CIntValue;
+    using STR              = Config::Values::CStringValue;
+    using FLOAT            = Config::Values::CFloatValue;
+    using BOOL             = Config::Values::CBoolValue;
+    using SIntValueOptions = Config::Values::SIntValueOptions;
     Cfg()
         : // config options
           workspaceSwipeFingers{makeShared<INT>(
               "plugin:hyprgrass:workspace_swipe_fingers", "Number of fingers to trigger workspace swipe", -1
           )},
-          longPressDelay{makeShared<INT>("plugin:hyprgrass:long_press_delay", "Long press delay in milliseconds", 400)},
+          longPressDelay{makeShared<INT>(
+              "plugin:hyprgrass:long_press_delay", "Long press delay in milliseconds", 400, SIntValueOptions{.min = 1}
+          )},
           edgeMargin{makeShared<INT>(
               "plugin:hyprgrass:edge_margin", "Distance from edge of screen to consider for edge gestures, in pixels",
               10
           )},
           holdTouchesDelay{makeShared<INT>(
-              "plugin:hyprgrass:hold_touches_delay", "How long a new touch waits for more fingers, in milliseconds", 40
+              "plugin:hyprgrass:hold_touches_delay", "How long a new touch waits for more fingers, in milliseconds", 40,
+              SIntValueOptions{.min = 1}
           )},
           workspaceSwipeEdge{makeShared<STR>(
               "plugin:hyprgrass:workspace_swipe_edge", "Edge to swipe from to trigger workspace swipe", ""
