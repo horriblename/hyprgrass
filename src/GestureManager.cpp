@@ -16,6 +16,7 @@
 #include <hyprland/src/config/supplementary/propRefresher/PropRefresher.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/desktop/state/ViewState.hpp>
+#include <hyprland/src/desktop/view/LayerSurface.hpp>
 #include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
 #include <hyprland/src/keybinds/Manager.hpp>
 #include <hyprland/src/layout/LayoutManager.hpp>
@@ -547,12 +548,46 @@ void GestureManager::sendCancelEventsToWindows() {
     }
 }
 
+// Listen on the device: Hyprland 0.57.2 does not emit the event-bus touch.cancel
+// event. Hardware cancel ends one seat slot, unlike the client-side wl_touch.cancel.
+void GestureManager::watchBypassedDevice(const SP<ITouch>& device) {
+    std::erase_if(this->bypassedDevices, [](const auto& watched) { return watched.device.expired(); });
+    if (std::ranges::any_of(this->bypassedDevices, [&](const auto& watched) { return watched.device == device; }))
+        return;
+
+    const auto token = device.get();
+    this->bypassedDevices.push_back(BypassedDevice{
+        .device  = device,
+        .cancel  = device->m_touchEvents.cancel.listen([this, token](ITouch::SCancelEvent ev) {
+            this->touchBypass.cancel(ev.touchID, token);
+        }),
+        .destroy = device->m_events.destroy.listen([this, token] { this->touchBypass.removeDevice(token); }),
+    });
+}
+
+void GestureManager::beginTouchBypass() {
+    this->stopLongPressTimer();
+    wl_event_source_timer_update(this->holdTimer, 0);
+    this->heldTouches.clear();
+    this->touchedResources.clear();
+    this->holdState = HoldState::DELIVERED;
+}
+
 // @return whether or not to inhibit further actions
 bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     static auto const SEND_CANCEL = g_config->sendCancel;
 
     // Held touches replayed to the window: already part of the gesture state.
     if (this->holdState == HoldState::REPLAYING) {
+        return false;
+    }
+
+    if (!ev.device)
+        return false;
+
+    // Do not hit-test additional fingers or change route after a config reload.
+    if (this->touchBypass.down(ev.touchID, ev.device.get(), false, false)) {
+        this->watchBypassedDevice(ev.device);
         return false;
     }
 
@@ -578,7 +613,18 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         }
     );
 
-    const bool first = this->m_sGestureState.fingers.size() == 0;
+    const bool first = this->m_sGestureState.fingers.empty();
+    // refocus above resolves the same surface Hyprland will use for this down,
+    // including input regions, stacking and layer popups. Never exempt a lock touch.
+    const auto layer    = g_pInputManager->m_foundLSToFocus.lock();
+    const bool excluded = first && !g_pSessionLockManager->isSessionLocked() && layer &&
+                          matchesLayerNamespace(g_config->excludedLayerNamespaces->value(), layer->m_namespace);
+    if (this->touchBypass.down(ev.touchID, ev.device.get(), first, excluded)) {
+        this->beginTouchBypass();
+        this->watchBypassedDevice(ev.device);
+        return false;
+    }
+
     if (first) {
         this->touchedResources.clear();
         this->activeTrackpadGesture = nullptr;
@@ -618,6 +664,9 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
 }
 
 bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
+    if (this->touchBypass.up(ev.touchID))
+        return false;
+
     if (this->holdState == HoldState::REPLAYING) {
         return false;
     }
@@ -677,6 +726,10 @@ bool GestureManager::forwardTouchUp(ITouch::SUpEvent ev) {
 }
 
 bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
+    // Ignore late motion after cancellation as well as all bypassed contacts.
+    if (this->touchBypass.active() || !this->m_sGestureState.fingers.contains(ev.touchID))
+        return false;
+
     if (this->holdState == HoldState::REPLAYING) {
         return false;
     }

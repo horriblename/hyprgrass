@@ -2,6 +2,7 @@
 #include "./gestures/Gestures.hpp"
 #include "ShimTrackpadGestures.hpp"
 #include "VecSet.hpp"
+#include "gestures/TouchSequence.hpp"
 
 #include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
@@ -45,6 +46,8 @@ struct Cfg {
     SP<Config::Values::CFloatValue> sensitivity;
     SP<Config::Values::CBoolValue> sendCancel, resizeOnBorder, holdTouches;
 
+    SP<Config::Values::CStringValue> excludedLayerNamespaces;
+
     using INT              = Config::Values::CIntValue;
     using FLOAT            = Config::Values::CFloatValue;
     using BOOL             = Config::Values::CBoolValue;
@@ -73,6 +76,10 @@ struct Cfg {
           holdTouches{makeShared<BOOL>(
               "plugin:hyprgrass:hold_touches",
               "Hold back new touches so the fingers of a gesture never reach the window", true
+          )},
+          excludedLayerNamespaces{makeShared<Config::Values::CStringValue>(
+              "plugin:hyprgrass:excluded_layer_namespaces",
+              "Comma-separated layer-shell namespaces whose touch sequences bypass gesture recognition", ""
           )} {}
 };
 
@@ -112,6 +119,16 @@ class GestureManager final : public IGestureManager {
     void debugLog(const std::string& msg) override;
 
   private:
+    TouchSequenceBypass touchBypass;
+    struct BypassedDevice {
+        WP<ITouch> device;
+        CHyprSignalListener cancel;
+        CHyprSignalListener destroy;
+    };
+    std::vector<BypassedDevice> bypassedDevices;
+    void watchBypassedDevice(const SP<ITouch>& device);
+    void beginTouchBypass();
+
     VecSet<CWeakPointer<CWLTouchResource>> touchedResources;
     PHLMONITOR m_lastTouchedMonitor;
     SMonitorArea m_monitorArea;

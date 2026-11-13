@@ -31,6 +31,10 @@ hl.config({
             -- the "Holding touches" section
             hold_touches = true,
             hold_touches_delay = 40,
+
+            -- Comma-separated layer-shell namespaces to leave to their clients.
+            -- Empty by default; for example: "osk, waybar, control-panel"
+            excluded_layer_namespaces = "",
         }
     }
 })
@@ -48,6 +52,50 @@ Caveats:
 - Three or more fingers within a short duration is always considered a Hyprgrass
   gesture and never sent to the window.
 - Touches on Overlay and Top layer surfaces and on the lock screen are not held.
+
+### Excluding layer-shell surfaces
+
+Set `plugin.hyprgrass.excluded_layer_namespaces` to a comma-separated string of
+layer-shell namespaces, for example `"osk, waybar, control-panel"`. Names are
+case-sensitive exact matches, not regular expressions or application titles.
+Whitespace around each entry and empty entries are ignored. The default `""`
+excludes nothing and preserves existing gesture behavior. Use `hyprctl layers`
+to find the namespaces of your keyboards, panels, launchers or other layer-shell
+apps. This option does not match ordinary windows by class or title.
+
+For a keyboard using the namespace `osk`, add this to your existing config:
+
+```lua
+hl.config({
+    plugin = {
+        hyprgrass = {
+            excluded_layer_namespaces = "osk",
+        },
+    },
+})
+```
+
+When the first finger lands on a matching layer surface (including its popups),
+the entire touch sequence bypasses Hyprgrass. Hyprland resolves the surface at
+the touch position using its normal stacking and input regions, on any layer.
+Hyprgrass does not delay these events, recognize gestures, or send client touch
+cancellation for that sequence. This allows, for example, holding a keyboard's
+Backspace key until release without triggering a window drag or border resize.
+Unlike the top/overlay exception to `hold_touches`, this also disables recognition.
+
+The decision lasts until all fingers lift or receive a hardware cancellation.
+Moving outside the surface, hiding it, or reloading the exclusion list does not
+change an active sequence's route. Additional fingers, including fingers on
+other surfaces or touch devices, join the same bypassed sequence. You cannot
+hold a key and independently start a Hyprgrass gesture with another finger.
+Unplugging a touch device removes its contacts without ending contacts on other
+devices. Touch IDs follow Hyprland's seat-wide libinput slots.
+
+A sequence starting elsewhere retains normal gestures even if a later finger
+lands on an excluded surface. Window dragging and border resizing elsewhere
+keep their existing settings and bindings. New sequences on the lock screen
+are not excluded. This setting only bypasses Hyprgrass; it does not change
+Hyprland's own touch handling or another plugin's behavior.
 
 ### Other options
 

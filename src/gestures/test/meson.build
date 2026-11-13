@@ -10,6 +10,7 @@ if doctest.found()
   test_exe = executable('test-gestures',
     'MockGestureManager.cpp',
     'test.cpp',
+    'TouchSequence.cpp',
     link_with: gestures,
     dependencies: [
       wftouch,
