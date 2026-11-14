@@ -69,6 +69,7 @@ commit_pins = [
     ["0aa6745f705f2c4b0a5004eb019ef76e5bbdb426", "8ca1af717d5b4ea1215a781df52bcef02d7b15e6"], # v0.57.0
     ["acc1aa0bfd4bd575dcb0f76c35ccf12b660a1ab9", "355ee6e6e95bdfdf051d8f23eba4973ae6a21bd7"], # v0.57.1
     ["11cbc6c577b84ffb1edf4df3fc5b6128c3ae6947", "50e166017adc294c0c780c123022deebe99a4b05"], # v0.57.2
+    ["0767f6347a69607638a4f93b3cd613af15a121e0", "907e8d3c25e09bc35eb48ffba74d815ccc467a53"], # Hyprlang removal
     ## DO NOT EDIT THIS LINE: for auto pin script ##
 ]
 

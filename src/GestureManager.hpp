@@ -7,15 +7,11 @@
 #include <hyprutils/memory/SharedPtr.hpp>
 
 #define private public
-#include <hyprland/src/config/ConfigValue.hpp>
-#include <hyprland/src/config/lua/ConfigManager.hpp>
 #include <hyprland/src/config/lua/LuaRef.hpp>
 #include <hyprland/src/config/values/types/BoolValue.hpp>
 #include <hyprland/src/config/values/types/FloatValue.hpp>
 #include <hyprland/src/config/values/types/IntValue.hpp>
-#include <hyprland/src/config/values/types/StringValue.hpp>
 #include <hyprland/src/devices/ITouch.hpp>
-#include <hyprland/src/keybinds/Manager.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
 #include <hyprland/src/protocols/core/Seat.hpp>
 #undef private

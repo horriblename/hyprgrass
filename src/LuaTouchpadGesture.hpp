@@ -1,6 +1,5 @@
 #include <hyprutils/utils/ScopeGuard.hpp>
 extern "C" {
-#include <lauxlib.h>
 #include <lua.h>
 }
 

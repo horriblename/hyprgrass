@@ -3,7 +3,6 @@
 #include "CompletedGesture.hpp"
 #include "DragGesture.hpp"
 #include "Shared.hpp"
-#include <glm/glm.hpp>
 #include <memory>
 #include <optional>
 #include <utility>

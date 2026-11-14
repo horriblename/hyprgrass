@@ -7,7 +7,6 @@
 #include <string_view>
 
 #include <hyprland/src/config/ConfigManager.hpp>
-#include <hyprutils/string/VarList.hpp>
 
 #define private public
 #include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>

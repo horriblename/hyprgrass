@@ -3,7 +3,7 @@
 #include <hyprland/src/debug/log/Logger.hpp>
 #include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
-#include <lua.h>
+#include <charconv>
 #include <string>
 #include <string_view>
 #include <vector>
