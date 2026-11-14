@@ -1,8 +1,5 @@
 #include "GestureManager.hpp"
 #include "HyprLogger.hpp"
-#include "config/lua/LuaRef.hpp"
-#include "debug/log/Logger.hpp"
-#include "gestures/Gestures.hpp"
 
 #define private public
 #include <hyprland/protocols/wlr-layer-shell-unstable-v1.hpp>
@@ -13,7 +10,6 @@
 #include <hyprland/src/config/lua/LuaCaller.hpp>
 #include <hyprland/src/config/shared/actions/ConfigActions.hpp>
 #include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
-#include <hyprland/src/config/supplementary/propRefresher/PropRefresher.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/desktop/state/ViewState.hpp>
 #include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
@@ -24,13 +20,10 @@
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/UnifiedWorkspaceSwipeGesture.hpp>
 #include <hyprland/src/output/Monitor.hpp>
-#include <hyprland/src/plugins/PluginSystem.hpp>
 #include <hyprland/src/pointer/PointerController.hpp>
 #include <hyprland/src/protocols/core/Compositor.hpp>
 #include <hyprland/src/state/MonitorState.hpp>
 #undef private
-
-#include <hyprutils/string/Numeric.hpp>
 
 #include <algorithm>
 #include <cmath>

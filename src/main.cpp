@@ -1,22 +1,16 @@
 #include "EmulateTouchpadGesture.hpp"
 #include "GestureManager.hpp"
 #include "LuaTouchpadGesture.hpp"
-#include "gestures/CompletedGesture.hpp"
-#include "gestures/DragGesture.hpp"
 #include "globals.hpp"
 #include "version.hpp"
-#include <vector>
 
 #define private public
-#include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/SharedDefs.hpp>
-#include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/config/lua/bindings/LuaBindingsInternal.hpp>
 #include <hyprland/src/debug/log/Logger.hpp>
 #include <hyprland/src/event/EventBus.hpp>
 #include <hyprland/src/keybinds/Manager.hpp>
 #include <hyprland/src/keybinds/Resolver.hpp>
-#include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/input/trackpad/GestureTypes.hpp>
 #include <hyprland/src/managers/input/trackpad/TrackpadGestures.hpp>
 #include <hyprland/src/managers/input/trackpad/gestures/CloseGesture.hpp>
@@ -34,7 +28,6 @@
 
 #include <hyprutils/memory/SharedPtr.hpp>
 #include <hyprutils/memory/UniquePtr.hpp>
-#include <hyprutils/string/ConstVarList.hpp>
 #include <hyprutils/utils/ScopeGuard.hpp>
 #undef private
 
@@ -47,7 +40,6 @@
 #include <string_view>
 
 extern "C" {
-#include <lauxlib.h>
 #include <lua.h>
 }
 
