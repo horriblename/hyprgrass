@@ -2,6 +2,7 @@
 #include "./gestures/Gestures.hpp"
 #include "ShimTrackpadGestures.hpp"
 #include "VecSet.hpp"
+#include <optional>
 
 #include <hyprland/src/config/shared/complex/ComplexDataTypes.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
@@ -162,7 +163,8 @@ class GestureManager final : public IGestureManager {
     // used by trackpadGesture* functions
     wf::touch::point_t emulatedSwipePoint;
 
-    FindGestureResult handleGestureBind(std::string bind, GestureEventType);
+    FindGestureResult
+    handleGestureBind(std::string bind, GestureEventType, std::optional<Vector2D> tapPos = std::nullopt);
 
     // converts wlr touch event positions (number between 0.0 to 1.0) to pixel position,
     // takes into consideration monitor size and offset

@@ -80,7 +80,7 @@ hl.plugin.hyprgrass.bind {
     action : function
     -- optional flags
     locked : boolean?,
-    mouse : boolean?, -- currently only works with longpress
+    mouse : boolean?, -- longpress (mouse dispatchers), tap (moves the pointer under the fingers first)
     non_consuming : boolean?, 
 }
 ```

@@ -95,7 +95,12 @@ FindGestureResult GestureManager::findCompletedGesture(const CompletedGestureEve
     return this->findGestureBind(gev.to_string(), GestureEventType::COMPLETED);
 }
 FindGestureResult GestureManager::handleCompletedGesture(const CompletedGestureEvent& gev) {
-    return this->handleGestureBind(gev.to_string(), GestureEventType::COMPLETED);
+    std::optional<Vector2D> tapPos;
+    if (gev.type == GestureType::TAP && !this->m_sGestureState.fingers.empty()) {
+        const auto pos = this->m_sGestureState.get_center().current;
+        tapPos         = Vector2D(pos.x, pos.y);
+    }
+    return this->handleGestureBind(gev.to_string(), GestureEventType::COMPLETED, tapPos);
 }
 
 bool GestureManager::handleDragGesture(const DragGestureEvent& gev) {
@@ -232,7 +237,8 @@ FindGestureResult GestureManager::findGestureBind(std::string bind, GestureEvent
 
 // bind is the name of the gesture event.
 // pressed only matters for mouse binds: only start of drag gestures should set it to true
-FindGestureResult GestureManager::handleGestureBind(std::string bind, GestureEventType type) {
+FindGestureResult
+GestureManager::handleGestureBind(std::string bind, GestureEventType type, std::optional<Vector2D> tapPos) {
     auto found = FindGestureResult::NONE;
     LOG(Log::DEBUG, "[hyprgrass] Looking for binds matching: {}", bind);
 
@@ -262,8 +268,14 @@ FindGestureResult GestureManager::handleGestureBind(std::string bind, GestureEve
 
         switch (type) {
             case GestureEventType::COMPLETED:
-                // mouse dispatchers only trigger on drag begin/end
-                if (!k->mouse) {
+                // mouse binds on a tap: like the long press, bring the pointer under the fingers first,
+                // so the action (e.g. a click) happens where the user touched
+                if (k->mouse && tapPos) {
+                    Pointer::pointerController()->warpTo(*tapPos);
+                    g_pInputManager->simulateMouseMovement();
+                }
+                // other mouse dispatchers only trigger on drag begin/end
+                if (!k->mouse || tapPos) {
                     LOG(Log::DEBUG, "[hyprgrass] calling dispatcher ({})", bind);
                     auto res = luaMgr->caller().call(
                         k->luaFn, Config::Lua::CLuaCaller::LUA_TIMEOUT_KEYBIND_CALLBACK_MS, "hyprgrass bind callback"
