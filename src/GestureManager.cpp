@@ -532,6 +532,16 @@ void GestureManager::sendCancelEventsToWindows() {
         return;
     }
 
+    // onTouchDown runs before Hyprland updates the touch focus, so it may have recorded the previous
+    // sequence's surface instead of the one being touched. Add the currently focused one too.
+    if (const auto surface = g_pInputManager->m_touchData.touchFocusSurface; surface && surface->client()) {
+        if (const auto seat = g_pSeatManager->seatResourceForClient(surface->client())) {
+            for (const auto& touch : seat->m_touches) {
+                this->touchedResources.insert(touch);
+            }
+        }
+    }
+
     for (const auto& touch : this->touchedResources.all()) {
         const auto t = touch.lock();
         if (t.get()) {
