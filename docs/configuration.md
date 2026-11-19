@@ -91,7 +91,7 @@ hl.plugin.hyprgrass.bind {
 1. Only a single specific `direction` (left/right/up/down) is accepted
 2. 2 additional kinds:
    - `{kind="tap", fingers = n}`
-   - `{kind="pinch", fingers = n, direction="pinchin" | "pinchout"}`
+   - `{kind="pinch", fingers = n, direction="zoomin" | "zoomout"}`
 
 #### hyprgrass-bind Examples
 
@@ -125,7 +125,7 @@ hl.plugin.hyprgrass.bind {
 }
 
 hl.plugin.hyprgrass.bind {
-    pattern = {kind = "pinch", fingers = 3, direction = "pinchin"}
+    pattern = {kind = "pinch", fingers = 3, direction = "zoomin"}
     action = hl.dsp.exec_cmd("foot"),
 }
 ```
