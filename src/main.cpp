@@ -306,14 +306,14 @@ std::expected<GesturePattern, std::string> gesturePatternFromTable(lua_State* L,
             return std::unexpected{std::format("kind=pinch: field \"direction\" must be a valid direction string")};
         direction = g_pTrackpadGestures->dirForString(dirStrResult.value());
         if (!hgGesture && !ShimTrackpadGestures::isSinglePinchDirection(direction)) {
-            return std::unexpected("kind=pinch: direction must be pinchin/pinchout");
+            return std::unexpected("kind=pinch: direction must be zoomin/zoomout");
         }
 
         if (!ShimTrackpadGestures::isPinch(direction)) {
             if (hgGesture) {
-                return std::unexpected("kind=pinch: direction must be pinch/pinchin/pinchout");
+                return std::unexpected("kind=pinch: direction must be pinch/zoomin/zoomout");
             } else {
-                return std::unexpected("kind=pinch: direction must be pinchin/pinchout");
+                return std::unexpected("kind=pinch: direction must be zoomin/zoomout");
             }
         }
 

@@ -69,7 +69,7 @@ hl.plugin.hyprgrass.bind {
 -- edge:u:d    => {kind="edge", origin="up", direction="down"}
 -- longpress:3 => {kind="longpress", fingers=3}
 -- tap:3       => {kind="tap", fingers=3}
--- pinch:3:i   => {kind="pinch", fingers=3, direction="pinchin"}
+-- pinch:3:i   => {kind="pinch", fingers=3, direction="zoomin"}
 ```
 
 ## hyprgrass-gesture
