@@ -144,6 +144,8 @@ class GestureManager final : public IGestureManager {
                holdState == HoldState::REPLAYING;
     }
 
+    void rememberTouchedResources(const SP<CWLSurfaceResource>& surface);
+
     bool shouldHoldTouches(const Vector2D& pos) const;
     bool holdTouchDown(const ITouch::SDownEvent& ev, bool first, bool block);
     bool holdTouchMove(const ITouch::SMotionEvent& ev, bool block);
