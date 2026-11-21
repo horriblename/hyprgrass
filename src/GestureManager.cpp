@@ -524,6 +524,17 @@ void GestureManager::stopLongPressTimer() {
     wl_event_source_timer_update(this->long_press_timer, 0);
 }
 
+void GestureManager::rememberTouchedResources(const SP<CWLSurfaceResource>& surface) {
+    if (!surface || !surface->client())
+        return;
+
+    if (const auto seat = g_pSeatManager->seatResourceForClient(surface->client())) {
+        for (const auto& touch : seat->m_touches) {
+            this->touchedResources.insert(touch);
+        }
+    }
+}
+
 void GestureManager::sendCancelEventsToWindows() {
     static auto const SEND_CANCEL = g_config->sendCancel;
 
@@ -595,19 +606,7 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
     // Remember which surfaces were touched, to later send cancel events. Only touches that reached a
     // window need tracking, i.e. only save if we're delivering this event normally (HoldState::DELIVERED)
     if (!eventForwardingInhibited() && SEND_CANCEL->value() && this->holdState == HoldState::DELIVERED) {
-        const auto surface = g_pInputManager->m_foundSurfaceToFocus.lock();
-        if (surface && surface->client()) {
-            wl_client* client = surface->client();
-
-            SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
-
-            if (seat) {
-                auto touches = seat.get()->m_touches;
-                for (const auto& touch : touches) {
-                    this->touchedResources.insert(touch);
-                }
-            }
-        }
+        this->rememberTouchedResources(g_pInputManager->m_foundSurfaceToFocus.lock());
     }
 
     return block;
@@ -839,6 +838,9 @@ void GestureManager::releaseHeldTouches() {
     this->heldTouches = {};
     for (const auto& down : held) {
         g_pInputManager->onTouchDown(down);
+        // In non-replaying situations this is handled in this->onTouchDown but here
+        // we just let HL's focusing do it's job instead of duplicating the work
+        this->rememberTouchedResources(g_pInputManager->m_touchData.touchFocusSurface.lock());
     }
     this->holdState = HoldState::DELIVERED;
 
@@ -847,19 +849,6 @@ void GestureManager::releaseHeldTouches() {
     }
 
     g_pSeatManager->sendTouchFrame();
-
-    // Replaying the held downs above made the compositor resolve the current touch focus.
-    // A gesture recognised later (a two-finger long press) cancels the window like any touched surface.
-    const auto surface = g_pInputManager->m_touchData.touchFocusSurface;
-    if (!surface || !surface->client()) {
-        return;
-    }
-
-    if (const auto seat = g_pSeatManager->seatResourceForClient(surface->client())) {
-        for (const auto& touch : seat->m_touches) {
-            this->touchedResources.insert(touch);
-        }
-    }
 }
 
 SMonitorArea GestureManager::getMonitorArea() const {
