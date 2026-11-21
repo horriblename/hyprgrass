@@ -577,23 +577,6 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         this->activeTrackpadGesture = nullptr;
     }
 
-    if (!eventForwardingInhibited() && SEND_CANCEL->value() && g_pInputManager->m_touchData.touchFocusSurface) {
-        // remember which surfaces were touched, to later send cancel events
-        const auto surface = g_pInputManager->m_touchData.touchFocusSurface;
-
-        wl_client* client = surface.get()->client();
-        if (client) {
-            SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
-
-            if (seat) {
-                auto touches = seat.get()->m_touches;
-                for (const auto& touch : touches) {
-                    this->touchedResources.insert(touch);
-                }
-            }
-        }
-    }
-
     // NOTE @wlr_touch_down_event.x and y uses a number between 0 and 1 to
     // represent "how many percent of screen" whereas
     // @wf::touch::gesture_event_t uses PIXELS as unit
@@ -606,8 +589,28 @@ bool GestureManager::onTouchDown(ITouch::SDownEvent ev) {
         .pos    = pos,
     };
 
-    const bool block = IGestureManager::onTouchDown(gesture_event);
-    return this->holdTouchDown(ev, first, block);
+    bool block = IGestureManager::onTouchDown(gesture_event);
+    block      = this->holdTouchDown(ev, first, block);
+
+    // Remember which surfaces were touched, to later send cancel events. Only touches that reached a
+    // window need tracking, i.e. only save if we're delivering this event normally (HoldState::DELIVERED)
+    if (!eventForwardingInhibited() && SEND_CANCEL->value() && this->holdState == HoldState::DELIVERED) {
+        const auto surface = g_pInputManager->m_foundSurfaceToFocus.lock();
+        if (surface && surface->client()) {
+            wl_client* client = surface->client();
+
+            SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
+
+            if (seat) {
+                auto touches = seat.get()->m_touches;
+                for (const auto& touch : touches) {
+                    this->touchedResources.insert(touch);
+                }
+            }
+        }
+    }
+
+    return block;
 }
 
 bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
@@ -615,8 +618,8 @@ bool GestureManager::onTouchUp(ITouch::SUpEvent ev) {
         return false;
     }
 
-    // While touches are held the compositor still points at the surface of an earlier sequence, which
-    // forwardTouchUp checks: only a recognised gesture decides.
+    // While touches are held the compositor has not processed them yet: only a recognised gesture decides
+    // whether to claim them.
     const bool holding = this->isHolding();
     const bool block   = this->forwardTouchUp(ev);
     return this->holdTouchUp(holding ? this->eventForwardingInhibited() : block);
@@ -640,33 +643,10 @@ bool GestureManager::forwardTouchUp(ITouch::SUpEvent ev) {
     };
 
     const auto BLOCK = IGestureManager::onTouchUp(gesture_event);
-    if (SEND_CANCEL->value()) {
-        const auto surface = g_pInputManager->m_touchData.touchFocusSurface;
 
-        if (!surface.valid()) {
-            return true;
-        }
-
-        wl_client* client = surface.get()->client();
-        if (!client) {
-            return true;
-        }
-
-        SP<CWLSeatResource> seat = g_pSeatManager->seatResourceForClient(client);
-        if (!seat.get()) {
-            return true;
-        }
-
-        auto touches = seat.get()->m_touches;
-        for (const auto& touch : touches) {
-            this->touchedResources.remove(touch);
-        }
-
-        return BLOCK;
-    } else {
-        // send_cancel is turned off; we need to rely on touchup events
-        return false;
-    }
+    // With cancel enabled, the gesture engine decides whether this up is forwarded. With it disabled,
+    // the client must see the up because it will never get a cancel for an active touch.
+    return SEND_CANCEL->value() ? BLOCK : false;
 }
 
 bool GestureManager::onTouchMove(ITouch::SMotionEvent ev) {
@@ -868,6 +848,7 @@ void GestureManager::releaseHeldTouches() {
 
     g_pSeatManager->sendTouchFrame();
 
+    // Replaying the held downs above made the compositor resolve the current touch focus.
     // A gesture recognised later (a two-finger long press) cancels the window like any touched surface.
     const auto surface = g_pInputManager->m_touchData.touchFocusSurface;
     if (!surface || !surface->client()) {
